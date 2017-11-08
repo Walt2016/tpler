@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>tpler string</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,minimal-ui">
+    <script src="js/custom/tpler.js"></script>
+    <style>
+    .container {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    #result {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 4px;
+    }
+
+    .item {
+        background: #eee;
+        border: 1px solid #ccc;
+        margin-top: 4px;
+        font-size: 12px;
+        line-height: 20px;
+        height: 20px;
+        width: 100%;
+        padding-left: 4px;
+    }
+
+    .btn {
+        width: 100px;
+        background: #eee;
+
+        line-height: 40px;
+        height: 40px;
+        font-size: 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 1px solid #ccc
+    }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+    <div>
+    //测试字符串拼接的速度
+    //+=方式比  数组快
+    </div>
+        <div class="btn" id="run">run</div>
+        <div id="console_log" template="_console_log_tpl"></div>
+    </div>
+    <script type="text/template" id="_console_log_tpl">
+        <div class="item">{=result}</div>
+    </script>
+    <script>
+
+
+    var add1 = function() {
+        var str = ""
+        for (var i = 0; i < 1000; i++) {
+            str += i;
+        }
+        return str;
+    }
+
+    var add2 = function() {
+        var arr = [];
+        for (var i = 0; i < 1000; i++) {
+            arr.push(i)
+        }
+        return arr.join("")
+    }
+
+    console.log = function() {
+        var arg = Array.prototype.slice.call(arguments);
+        tpler({
+            el: "#console_log",
+            act: "append",
+            data: {
+                result: arg
+            }
+        })
+    }
+
+    toucher({
+        el: "#run",
+        type: "click",
+        callback: function() {
+        	console.log("run begin")
+            _.fast(add1, add2, 10000)
+        }
+    })
+    </script>
+</body>
+
+</html>

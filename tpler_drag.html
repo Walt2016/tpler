@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,minimal-ui">
+    <title>tpler drag</title>
+    <link rel="stylesheet" href="css/console.min.css">
+    <style>
+    .box {
+        width: 150px;
+        height: 150px;
+        background: #eee;
+        position: absolute;
+    }
+
+    </style>
+    <script src="js/custom/tpler.js"></script>
+</head>
+
+<body>
+    <div class="box" id="box"></div>
+    <script>
+    var el = _.$("#box")
+    logger();
+    var p1, p2, p0;
+
+    toucher([{
+            el: el,
+            type: "touchstart",
+            callback: function(item, ev) {
+                console.log(_.type(ev))
+                p0 = _.pos(item);
+                p1 = _.pos(ev);
+                console.log(p0)
+                console.log(p1)
+            }
+        },
+        {
+            el: el,
+            type: "touchmove",
+            callback: function(item, ev) {
+                p2 = _.pos(ev);
+                console.log(p2)
+                item.css({
+                    top: p2.y - p1.y + p0.y + "px",
+                    left: p2.x - p1.x + p0.x + "px"
+                })
+            }
+        },
+        {
+            el: el,
+            type: "touchend",
+            callback: function(item, ev) {
+                console.log(item)
+            }
+        }
+    ])
+    // toucher({
+    //  el:"#box",
+    //  type:"drag",
+    //  callback:function(){
+
+    //  }
+    // })
+    </script>
+</body>
+
+</html>

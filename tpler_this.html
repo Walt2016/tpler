@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>this</title>
+    <script src="js/custom/tpler.js"></script>
+</head>
+<style>
+.red {
+    color: red
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+div {
+    border: 1px solid #ccc;
+    margin-bottom: 5px;
+}
+
+.btn {
+    border: 1px solid #ccc;
+    background-color: #eee;
+    height: 40px;
+    line-height: 40px;
+    font-size: 15px;
+    text-align: center;
+    width: 100px;
+}
+
+.gap {
+    background-color: #eee;
+    height: 30px;
+}
+
+.readme {
+    background-color: #eee;
+    padding: 10px;
+}
+
+.code {
+    text-align: justify-all;
+    overflow: auto;
+    padding: 14px;
+}
+</style>
+
+<body>
+    <div class="readme" template id="title">{=readme|markdown}</div>
+    <div template id="_a">
+        <div>{=text}</div>
+        <div>{=text|text}</div>
+        <div>{=text|markdown}</div>
+        <div>{=text|viewmore}</div>
+        <div class="code">{=this|escape}
+            <--点按钮，这个不会变，template是自身区块，而不是引用区块</div>
+                <div>{=obj}</div>
+                <div class="btn" on="aHandler">click a</div>
+        </div>
+        <div class="gap"></div>
+        <div template id="_b">
+            {=text}
+            <div custom class="btn">click b</div>
+        </div>
+        <div class="gap"></div>
+        <div template="_c_tpl" id="_c"></div>
+        <script type="text/template" id="_c_tpl">
+            <div>{=text|text}</div>
+            <div class="code">{=this|escape}
+                <--点按钮，这个会变</div>
+                    <div class="btn" on="cHandler">click c </div>
+                    <div custom class="btn">click me</div>
+        </script>
+        <script>
+        var fn=function(){}
+        console.log(fn.prototype)
+        var data = {
+            readme: "# 说明: filters methods directives中关键字this代表 当前template区块中的options。",
+            text: "*haha*\n# haha<span class=\"red\">oo~</span> {=text}",
+            this: "this",
+            obj: { test: "test" },
+            flag: true
+        };
+        tpler({
+            el:"#title",
+            data:data
+        })
+        tpler({
+            el: "body",
+            // data:[],  //try this
+            // data: {},
+
+            filters: {
+                viewmore: function(val) {
+                    console.log("viewmore")
+                    console.log(this)
+                    console.log(val)
+                    return val;
+                }
+            },
+            methods: {
+                aHandler: function(item, ev) {
+                    console.log(item, this)
+                    var options = _.extend({}, this, { data: _.extend(data, { this: this }) });
+
+                    tpler(options)
+
+                },
+                cHandler: function(item, ev) {
+                    console.log(item, this)
+                    var options = _.extend({}, this, { data: _.extend(data, { this: this }) });
+                   
+                    tpler(options)
+                }
+            },
+            directives: {
+                custom: function(item, ev) {
+                    console.log(item, this)
+
+                    // var options = _.extend({}, this, { data: _.extend(data, { this: this }) });
+                     var options = _.extend({}, this, { data: { this: [1,2,true,undefined,function test(){console.log("dd")},{el:_.query("#title")}] } });
+                    tpler(options)
+
+                }
+            }
+        })
+        </script>
+</body>
+
+</html>

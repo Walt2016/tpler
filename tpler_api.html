@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>tpler api</title>
+    <link rel="stylesheet" href="css/tpler.css">
+    <link rel="stylesheet" href="css/git.css">
+    <script src="js/custom/tpler.js"></script>
+</head>
+
+<body>
+    <div id="container">
+        <div class="tabs wraper" id="tabs">
+            <div class="tab_head" on="tabsHandler" template="_tab_head_tpl" data="tab_head">
+            </div>
+            <div id="tab_content" class="tab_content" template="_tab_content_tpl" data="tab_content">
+            </div>
+        </div>
+    </div>
+    <div class="tips" id="tips" template="_tips_tpl"></div>
+    <script type="text/template" id="_tips_tpl">
+        <div class="tip tipPage">
+            <div class="screen screen52">
+                <div class="tipTitle">{=title}</div>
+            </div>
+            <div class="flex height-43">
+                <div class="tipContent">{=content}
+                </div>
+                <div class="tipBtnGroup">
+                </div>
+            </div>
+        </div>
+    </script>
+    <script type="text/template" id="_tab_head_tpl">
+        <div class="tab {=cls}" target="{=key}">{=text}</div>
+    </script>
+    <script type="text/template" id="_tab_content_tpl">
+        <div class="tab_panel {=cls}" id="{=key}">{=list|list}</div>
+    </script>
+    <script type="text/template" id="_list_tpl">
+        <li class="item" route="{=route}" param="{=param}" package="{=package}" on="linkHandler">{=$index}.{=route},{=text} </li>
+    </script>
+    <script type="text/template" id="_readme_tpl">
+
+    思路：
+    1、减少指令，用过滤器。html代码中减少逻辑代码。都交由js中实现。减少指令语法学习。
+    没有循环指令。
+    自动判断数据类型。数组自动循环。
+
+    2、事件，为移动开发定制，移动端touch和pc 端click，点击和触摸类型自动切换。
+    移动端事件，扩展。长按，双击。拖动。滑动。手势。
+    事件挂载，自动覆盖机制 clear:true。避免重复事件。特别是在单页开发中，模块重新加载，容易导致事件重复加载
+
+
+        
+    </script>
+    <script>
+    var str = '# 医院入围标准\r\n' +
+        '\r\n' +
+        '本项目的第一批医院名单来源于[凤凰网医院名单](http://news.ifeng.com/mainland/special/ptxyy/)，后根据社区热心人的贡献汇总而成。进入这份名单的医院符合以下三个条件中的至少一个：\r\n' +
+        '\r\n' +
+        '- 曾经投放百度竞价广告\r\n' +
+        '- 曾经被媒体报道过医疗欺诈事件\r\n' +
+        '- 与[莆田系](https://zh.wikipedia.org/wiki/莆田系)存在直接关系\r\n'
+
+    str = '> 引用 \n> 引用 \n';
+    str='- test \n-test1\n -test3'
+    str = _.markdown(str)
+    console.log(str)
+
+    var html = "<p >< a href='http://www.cnblogs.com/rubylouvre/'>Ruby Louvre</a>by <em>司徒正美</em></p>";
+    var text = html.replace(/<.*?>/g, function(math){
+        return ""
+    });
+    console.log(text)
+    var markdown = function() {
+
+        tpler({
+            el: "#tips",
+            data: { title: _.markdown("#markdwon测试"), content: _.markdown() },
+            callback: function() {
+                _.$("a").attr("href", "javascript:;").on("click", function(ev) {
+                    // alert("a")
+                    var index = parseInt(_.text(this))
+                    _.ajax("data/markdown_" + index + ".txt", function(result) {
+                        console.log(result.replace(/\r\n/g, "\\r\\n\r\n")); //.replace(/\n/g,"\\n\n").replace(/\r/g,"\\r\r"
+
+                        tpler({
+                            el: "#tips",
+                            data: { title: _.markdown("#markdwon测试"), content: _.markdown(result) }
+                        })
+
+
+                    })
+                })
+            }
+        })
+
+
+
+    }
+    var json = function() {
+        console.log("json  json")
+    }
+    _.r = router({
+        "markdown": markdown,
+        "json": json
+    });
+    var url = window.location.href;
+    var domain = url.substring(0, url.lastIndexOf("/"));
+    var _pageIndex = 0;
+    tpler({
+        el: "#tabs",
+        data: {
+            "tab_head": [
+                { "key": "template", "text": "模板", "cls": "active" },
+                { "key": "events", "text": "事件" },
+                { "key": "tools", "text": "工具" },
+                { "key": "router", "text": "路由" }
+            ],
+
+            "tab_content": [{
+                    "key": "template",
+                    "cls": "active",
+                    "list": [{ "text": "say hello", "route": "hello" },
+                        { "text": "过滤器", "route": "filters", "param": "eid=2852" },
+                        { "text": "方法", "route": "methods", "param": "eid=1" },
+                        { "text": "事件代理", "route": "events", "param": "eid=2852" },
+                        { "text": "自定义指令", "route": "driectives", "param": "eid=2852" },
+
+                        { "text": "on指令", "route": "on", "param": "eid=3506&rid=16074" },
+                        { "text": "model双向绑定", "route": "model" },
+                        { "text": "bind单向绑定", "route": "bind" },
+                        { "text": "预处理", "route": "before", "param": "eid=2723" },
+                        { "text": "after/callback后处理", "route": "callback", "param": "eid=4557" },
+
+                    ]
+                },
+                {
+                    "key": "events",
+                    "list": [
+                        { "text": "快击", "route": "tap", "param": "eid=2852" },
+                        { "text": "拖动", "route": "drag", "param": "eid=2723" },
+                        { "text": "滚动，上下滑动", "route": "scroll", "param": "characterid=77" },
+                        { "text": "翻页，左右滑动 ", "route": "swipe", "param": "eid=3506&rid=16074" },
+                    ]
+                },
+                {
+                    "key": "tools",
+                    "list": [
+                        { "text": "dom操作", "route": "dom", "param": "eid=4557" },
+                        { "text": "base64", "route": "base64", "param": "eid=4557" },
+                        { "text": "MD5", "route": "MD5", "param": "eid=4557" },
+
+                        { "text": "json", "route": "json", "param": "eid=4557" },
+                        { "text": "ajax", "route": "ajax", "param": "eid=4557" },
+                        { "text": "markdown", "route": "markdown", "param": "eid=4557" },
+                        { "text": "jquery+underscore", "route": "jquery", "param": "eid=4557" },
+                    ]
+                },
+                {
+                    "key": "router",
+                    "list": [
+                        { "text": "锚点", "route": "hash", "param": "eid=4557" },
+
+                        { "text": "参数", "route": "params", "param": "eid=4557" },
+
+                    ]
+                }
+            ]
+        },
+        filters: {
+            list: function(val) {
+                return _.parseTpl({
+                    tpl: '<li class="item" route="{=route}" param="{=param}" package="{=package}" on="linkHandler">{=$index}.{=route},{=text} </li>',
+                    data: val
+                });
+            }
+        },
+        methods: {
+            linkHandler: function(item, ev) {
+                var url = domain;
+                if (item.attr("package") != "") {
+                    url += "/" + item.attr("package")
+                }
+                if (item.attr("param") != "") {
+                    url += "?" + item.attr("param")
+                }
+                if (item.attr("route") != "") {
+                    url += "#" + item.attr("route")
+                }
+                // window.location.href = url;
+                _.r.go(item.attr("route"));
+            },
+            tabsHandler: function(item, ev) {
+                var tab = ev.target.closest('.tab');
+                if (tab) {
+                    tab.active().siblings().passive();
+                    var target = tab.attr("target");
+
+
+                    var tab_panel = _.$("#" + target + ".tab_panel");
+                    if (tab_panel) {
+                        tab_panel.active().siblings().passive();
+                    }
+
+                    _.r.go(target);
+
+
+
+                    // location.hash = "#"+target;
+                    console.log(router().parseUrl())
+                    // _pageIndex ++;
+                    // history.replaceState && history.replaceState({_pageIndex: _pageIndex}, '', location.href);
+
+                }
+            }
+        }
+    })
+
+
+
+
+
+    // _.fast(function() {
+
+    var tpl = _.parseTpl({
+        tpl: '<div model="name">dfdf</div><div bind="age">dfdf</div><div Model="age">dfdf</div>',
+        data: { name: "hahah", age: 22, "company": { name: "eheh" } }
+    })
+    console.log(tpl)
+
+
+    var t = {};
+    // for (var i = 0; i < 5; i++) {
+    //     (function(i) {
+    //         t[i] = function() {
+    //             alert(i)
+    //         }
+    //     }).call(i, i)
+    // }
+
+    for (let i = 0; i < 5; i++) {
+        t[i] = function() {
+            alert(i)
+        }
+    }
+    // t[4]()
+
+    // })
+
+
+
+
+
+    // var str = "<body>test\n</body>"
+    // //  var body=str.match(/<body[^>]*>([\s\S]*)<\/body>/)
+    // // body&&body.length>1&& console.log(body[1])
+
+    // var w = walker({ text: "bbb| fidld1|field2|field3|aaa \n |new| line|fff|" });
+    // var f = "",
+    //     ch
+    // console.log(w.text)
+    // console.log(w.table)
+
+
+
+    // console.log(_.getBody(str))
+    var task, i = 5;
+    var fn = function() {
+        i--;
+        console.log("fn" + i);
+        if (i == 0 && task != null) {
+            clearTimeout(task)
+            return;
+        }
+        // task&&task()
+        task = setTimeout("fn()", 1000)
+    }
+
+    fn();
+
+    // var task = setTimeout("fn()", 1000)
+    </script>
+    <!-- <link rel="import" href="./test/page.html"> -->
+</body>
+
+</html>

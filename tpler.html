@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,minimal-ui">
+    <title>tpler demo</title>
+    <link rel="stylesheet" href="css/tpler.min.css">
+    <script src="js/custom/tpler.js?v=3.2.1.1"></script>
+
+    <body>
+        <div class="container" id="container">
+            <div class="top">tpler demo
+                <div class="icon" target="help">?</div>
+            </div>
+            <div class="main" id="main">
+                <div class="addon">
+                    <select class="addon-flied">
+                        <option value="">选择demo</option>
+                        <option value="try">demo1-try</option>
+                        <option value="child">demo2-child object</option>
+                        <option value="array">demo3-array</option>
+                        <option value="operation">demo4-operation</option>
+                        <option value="filter">demo5-filter</option>
+                        <option value="custom">demo6-custom filter </option>
+                        <option value="group">demo7-group </option>
+                        <option value="model">demo7-model </option>
+                        <option value="childarray">demo8-child array (todo) </option>
+                        <option value="markdown">demo8-markdown (todo)</option>
+                    </select>
+                    <div class="btn" id="run">run</div>
+                </div>
+                <div class="mt10">
+                    template:{=name|filter}
+                </div>
+                <div class="editer" contenteditable="true" id="tpl_editor"></div>
+                <div class="hide" id="group_editor_addon">
+                    <div class="mt10">group template</div>
+                    <div class="editer" contenteditable="true" id="group_editor"></div>
+                </div>
+                <div class="hide" id="custom_editor_addon">
+                    <div class="mt10">custom :function</div>
+                    <div class="editer" contenteditable="true" id="custom_editor"></div>
+                </div>
+                <div class="mt10">data:json</div>
+                <div class="editer" contenteditable="true" id="data_editor"></div>
+                <div class="mt10">result: <span id="result_type">html</span></div>
+                <div class="editer" id="result_editor">
+                </div>
+            </div>
+            <!-- <div id="help" class="main hide" template="_help_tpl">
+        </div> -->
+            <div id="help" class="main hide">
+                tpler help **template:{=name|filter}** \n data:json **operation symbol: + - * / ** filter: pipe symbol |,
+                <div id="_array_help">
+                    array ： render by autocycle .giv up "for" statement .*{=$index}* is sequence
+                </div>
+                var params = { el: "#result_editor", data: data, filters:{ "sayhello":function(data) { return "hello",data+",today is" +(new Date()); } } }; tpler(params); # This is an H1 ## This is an H2 ###### This is an H6
+                <div class="btn" on="clickHandler">this is a button,click me</div>
+                model:
+                <div model="name">this is a model </div>
+                bind:
+                <div bind="name">this is a bind </div>
+                <div>model:
+                    <input type="text" value="" model="name" />
+                </div>
+            </div>
+        </div>
+        <script type="text/template" id="_help_tpl">
+            tpler help **template:{=name|filter}** \n data:json **operation symbol: + - * / ** filter: pipe symbol |,
+            <div id="_array_help">
+                array ： render by autocycle .giv up "for" statement .*{=$index}* is sequence
+            </div>
+            var params = { el: "#result_editor", data: data, filters:{ "sayhello":function(data) { return "hello",data+",today is" +(new Date()); } } }; tpler(params); # This is an H1 ## This is an H2 ###### This is an H6
+            <div class="btn" on="clickHandler">this is a button,click me</div>
+            model:
+            <div model="name">this is a model </div>
+            bind:
+            <div bind="name">this is a bind </div>
+            <div>model:
+                <input type="text" value="" model="name" />
+            </div>
+        </script>
+        <script type="text/template" id="_markdown_tpl">
+            **hello {=name} **
+        </script>
+        <script type="text/template" id="_default_tpl">
+            hello,{=name}!
+            <br> nice to meet u
+        </script>
+        <script type="text/template" id="_child_tpl">
+            score of chinese :{=score.chinese}
+        </script>
+        <script type="text/template" id="_array_tpl">
+            <li>{=$index}/{=$length} hello,{=name}!</li>
+        </script>
+        <script type="text/template" id="_operation_tpl">
+            total：{=a+b-c*d} float :{=f+g} child total :{=child.a + child.b-child.c*child.d/child.e} string:{=str.a+' '+str.b}
+        </script>
+        <script type="text/template" id="_filter_tpl">
+            date:{=time|date}
+            <br> {=friends}
+            <br> {=friends|first}
+            <br>{=friends|last,string}
+            <br>{=family|first}
+        </script>
+        <script type="text/template" id="_custom_tpl">
+            {=name|sayhello}
+        </script>
+        <script type="text/template" id="_group_tpl">
+            <li>{=$index} my name is,{=name}!</li>
+        </script>
+        <script type="text/template" id="_model_tpl">
+            hello {=name}
+            <div model="name"></div>
+            <div bind="name"></div>
+        </script>
+        <script type="text/template" id="_group_group_tpl">
+            <div>class: {=class}</div>
+        </script>
+        <script type="text/template" id="_childarray_tpl">
+            hello,{=name} ! there are my companies
+            <ul>
+                <li>{=companies|todo}</li>
+            </ul>
+        </script>
+        <script type="text/template" id="_custom_function">
+            { "sayhello": "function(data){ return 'hello,'+data+',today is:' +(new Date()).toLocaleString(); }"}
+        </script>
+        <script type="text/template" id="_default_data">
+            {"name":"haha","from":"sz","age":11,"score":{"chinese":60,"mathematics":78},"time":"1493956194004","friends":[{"name":"hehe"},{"name":"hoho"}],"family":["father",'mather','brother']}
+        </script>
+        <script type="text/template" id="_operation_data">
+            { a: 1, b: 2, c: 3, d: 4, e: 5, f: 0.09999999, g: 0.00000001, child:{ a:3, b:4, c:5, d:6, e:7 }, str:{ a:"hello", b:"world" } }
+        </script>
+        <script type="text/template" id="_try_data">
+            {"name":"haha"}
+        </script>
+        <script type="text/template" id="_array_data">
+            [{"name":"haha"},{"name":"hoho"},{"name":"hehe"}]
+        </script>
+        <script type="text/template" id="_group_data">
+            [{"name":"haha","class":"A"},{"name":"hoho","class":"A"},{"name":"hehe","class":"B"}]
+        </script>
+        <script type="text/template" id="_childarray_data">
+            {name:"xxoo",companies:[{"name":"haha"},{"name":"hoho"},{"name":"hehe"}]}
+        </script>
+        <script>
+        var _ = tpler();
+        var $ = _.$;
+        console.log($("[target]"))
+        var tpl_editor = $("#tpl_editor");
+        var data_editor = $("#data_editor");
+        var result_editor = $("#result_editor");
+        var result_type = $("#result_type");
+        var custom_editor = $("#custom_editor");
+        var custom_editor_addon = $("#custom_editor_addon");
+        var group_editor = $("#group_editor");
+        var group_editor_addon = $("#group_editor_addon");
+
+        var key;
+
+        data_editor.on("blur", function() {
+            $("#run").trigger("click");
+        });
+
+
+        $("select").on("change", function() {
+            console.log(_.type(this))
+            console.log(_.type($(this)))
+            key = $(this).val();
+            var tplname = "_" + key + "_tpl";
+            if ($("#" + tplname).length == 0) {
+                tplname = "_default_tpl";
+            }
+            var tpl = $("#" + tplname).html();
+            var $data = $("#_" + key + "_data");
+            if ($data.length == 0) {
+                $data = $("#_default_data");
+            }
+            var data = $data.html();
+            tpl = _.enHtml(tpl);
+            tpl_editor.html(tpl);
+            data_editor.html(data);
+            result_editor.attr("template", tplname);
+            result_editor.removeAttr("group");
+            _.hide(group_editor_addon, custom_editor_addon);
+
+            switch (key) {
+                case "group":
+                    var group = "_" + key + "_group_tpl";
+                    result_editor.attr("group", group);
+                    _.show(group_editor_addon);
+                    group_editor.html($("#" + group).html())
+                    break;
+                case "custom":
+                    var custom = "_" + key + "_function";
+                    custom_editor.html($("#" + custom).html())
+                    _.show(custom_editor_addon);
+                    break;
+            }
+        });
+
+        $("#run").on("click", function() {
+            var tpl = tpl_editor.text();
+            tpl = _.deHtml(tpl);
+            var tplname = result_editor.attr("template");
+            if (!tplname) {
+                $("select").trigger("change");
+                tplname = result_editor.attr("template");
+            }
+            $("#" + tplname).html(tpl);
+
+            var group = result_editor.attr("group");
+            if (group) {
+                var groupTpl = group_editor.text();
+                groupTpl = _.deHtml(groupTpl);
+                $("#" + group).html(groupTpl);
+            }
+
+            // try {
+            var starTime = (new Date()).getTime();
+            var data = _.json(data_editor.text());
+            // console.log(data.toJSONString());
+            console.log(JSON.stringify(data));
+            if (_.isObject(data)) {
+                data_editor.html(_.toJSONString(data));
+            }
+
+            var params = {
+                el: "#result_editor",
+                data: data,
+                callback: function() {
+                    console.log("tpler done! use time: " + ((new Date()).getTime() - starTime) + "ms")
+                }
+            }
+
+            if (key == "custom") {
+                params.filters = _.json(custom_editor.text());
+            }
+            if (key == "markdown") {
+                params.syntax = "markdown"
+            }
+            var t = tpler(params);
+            console.log(t);
+
+
+
+            // } catch (e) {
+            //     result_editor.html(e);
+
+            // }
+        });
+
+        $("[target]").on("click", function() {
+            var id = $(this).attr("target")
+            if (_.isShow($("#" + id))) {
+                _.hide($("#" + id));
+                _.show($("#main"));
+            } else {
+                _.show($("#" + id));
+                _.hide($("#main"));
+                var data = {
+                    name: "oooo",
+                    age: 25
+                }
+                var params = {
+                    el: "#" + id,
+                    data: data,
+                    syntax: "markdown"
+                }
+                params.clickHandler = function() {
+                    // $(this).css({
+                    //     "background": _.color()
+                    // });
+                    this.style.backgroundColor = _.color()
+                }
+                var t = tpler(params);
+                console.log(t);
+
+
+
+                setTimeout(function() {
+                    console.log(data);
+                    data.name = "u see,the name changed";
+                    console.log(data);
+
+                }, 3000)
+            }
+        });
+
+        result_editor.on("click", function() {
+            var result = result_editor.html();
+            if (_.isHtml(result)) {
+                result = _.enHtml(result)
+                result_type.html("html source");
+            } else {
+                result = _.deHtml(result)
+                result_type.html("html");
+            }
+            result_editor.html(result);
+        });
+        </script>
+    </body>
+
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,minimal-ui">
+    <title>tpler pos</title>
+    <script src="js/custom/tpler.js"></script>
+    <style>
+    .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+
+        height: 2000px;
+        background: #eee
+    }
+
+    .box {
+        margin-top: 100px;
+        width: 200px;
+        height: 300px;
+
+        background: #444;
+        position: relative;
+        ;
+    }
+
+    #info {
+        width: 300px;
+        height: 50px;
+        line-height: 50px;
+        font-size: 12px;
+        text-align: center;
+    }
+
+    #markpoint {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background-color: #fff;
+        border-radius: 50%;
+    }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="box" id="box" template="_box_tpl">
+            <div id="markpoint"></div>
+        </div>
+        <div id="info" template="_info_tpl"> </div>
+    </div>
+    <script type="text/template" id="_box_tpl">
+        <div id="markpoint">x:{=x} y:{=y}</div>
+    </script>
+    <script type="text/template" id="_info_tpl">
+        x:{=x} y:{=y}
+    </script>
+    <script>
+    var box = _.$(".box");
+    var pos = _.pos(box)
+    console.log(pos)
+
+    toucher({
+        el: box,
+        type: "touchend",
+        callback: function(item, ev) {
+            console.log(item, ev)
+
+
+            if (ev.changedTouches.length > 0) {
+                var x = ev.changedTouches[0].pageX, //clientX , //screenX,
+                    y = ev.changedTouches[0].pageY; //clientY; //screenY;
+
+                console.log(x - pos.x)
+                console.log(y - pos.y)
+
+                _.$("#markpoint").css({
+                    top: y - pos.y + "px",
+                    left: x - pos.x + "px"
+                })
+
+
+                tpler({
+                        el: "#info",
+                        data: {
+                            x: x - pos.x,
+                            y: y - pos.y
+                        }
+                    }
+
+                );
+
+                // tpler([{
+                //         el: "#info",
+                //         data: {
+                //             x: x - pos.x,
+                //             y: y - pos.y
+                //         },
+                //         {
+                //             el: "#box",
+                //             data: {
+                //                 x: x - pos.x,
+                //                 y: y - pos.y
+                //             },
+                //             callback: function(item,ev) {
+                //                 // this.el.css({
+                //                 //     top: y - pos.y + "px",
+                //                 //     left: x - pos.x + "px"
+                //                 // })
+                //             }
+                //         }
+                //     }
+
+                // ]);
+
+
+            }
+
+        }
+    })
+    </script>
+</body>
+
+</html>
