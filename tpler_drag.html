@@ -14,55 +14,44 @@
         position: absolute;
     }
 
+    .green {
+        background: green
+    }
+
+    .red {
+        background: red
+    }
     </style>
     <script src="js/custom/tpler.js"></script>
 </head>
 
 <body>
     <div class="box" id="box"></div>
+    <div class="box green" id="box2"></div>
+    <div class="box red" id="box3"></div>
     <script>
-    var el = _.$("#box")
     logger();
-    var p1, p2, p0;
-
     toucher([{
-            el: el,
-            type: "touchstart",
+            el: "#box",
+            type: "drag",
             callback: function(item, ev) {
-                console.log(_.type(ev))
-                p0 = _.pos(item);
-                p1 = _.pos(ev);
-                console.log(p0)
-                console.log(p1)
+                console.log(item, ev)
             }
         },
         {
-            el: el,
-            type: "touchmove",
+            el: "#box2",
+            type: "drag-x",
             callback: function(item, ev) {
-                p2 = _.pos(ev);
-                console.log(p2)
-                item.css({
-                    top: p2.y - p1.y + p0.y + "px",
-                    left: p2.x - p1.x + p0.x + "px"
-                })
+                console.log(item, ev)
             }
-        },
-        {
-            el: el,
-            type: "touchend",
+        }, {
+            el: "#box3",
+            type: "drag-y",
             callback: function(item, ev) {
-                console.log(item)
+                console.log(item, ev)
             }
         }
     ])
-    // toucher({
-    //  el:"#box",
-    //  type:"drag",
-    //  callback:function(){
-
-    //  }
-    // })
     </script>
 </body>
 

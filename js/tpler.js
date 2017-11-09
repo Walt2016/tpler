@@ -409,36 +409,45 @@
 
             },
             //位置信息
-            pos: function(el) {
-                function CPos(x, y) {
+            pos: function(e) {
+                function CPos(x, y, el) {
                     this.x = x;
                     this.y = y;
+                    this.time = +(new Date());
+                    this.el = el;
                 }
+                if (_.isElement(e)) { //元素
+                    var el = e;
 
-                if (_.isElement(el)) {
-                    function _pos(ATarget) {
-                        var target = ATarget;
-                        var pos = new CPos(target.offsetLeft, target.offsetTop);
-
-                        var target = target.offsetParent;
+                    function _pos(el) {
+                        var pos = new CPos(el.offsetLeft, el.offsetTop, el);
+                        var target = el.offsetParent;
                         while (target) {
                             pos.x += target.offsetLeft;
                             pos.y += target.offsetTop;
-
                             target = target.offsetParent
                         }
                         return pos;
                     }
                     return _pos(el);
 
-                } else if (_.isTouchEvent(el)) {
-                    var ev = el,
-                        x, y;
-                    if (ev.changedTouches.length > 0) {
-                        x = ev.changedTouches[0].pageX; //clientX , //screenX,
-                        y = ev.changedTouches[0].pageY;
+                } else if (_.isTouchEvent(e) || _.isMouseEvent(e)) { //事件
+                    var ev = e,
+                        x, y,
+                        el = ev.currentTarget;
+                    var _touches = ev.touches && ev.touches.length > 0 ? ev.touches : ev.changedTouches;
+
+                    if (!_touches || _touches.length === 0) {
+                        // x = ev.offsetX;
+                        // y = ev.offsetY;
+                        x = ev.clientX;
+                        y = ev.clientY;
+                    } else {
+                        var pos = _touches[0];
+                        x = pos.pageX;
+                        y = pos.pageY;
                     }
-                    return new CPos(x, y);
+                    return new CPos(x, y, el);
                 }
             },
             //url信息
@@ -670,6 +679,7 @@
                 // }
 
             },
+            //代替 JSON.stringify()
             stringify: function(json) {
                 var sb = [],
                     str = "",
@@ -682,6 +692,8 @@
                     str = "\"" + json + "\""
                 } else if (_.isNumber(json)) {
                     str = json;
+                } else if (_.isDocument(json)) {
+                    str = "#document"
                 } else if (_.isElement(json)) {
                     str = json.tagName.toLowerCase() + "#" + json.id
                 } else if (_.isFunction(json)) {
@@ -709,10 +721,13 @@
                     }
                     sb.pop();
                     str = "{" + sb.join("") + "}";
+                } else if (_.isMouseEvent(json)) {
+                    str = "MouseEvent";
+                } else if (_.isTouchEvent(json)) {
+                    str = "TouchEvent";
                 } else {
                     str = "unknowtype";
                 }
-
                 return str;
             },
             //符合格式的json字符串
@@ -984,11 +999,9 @@
             // },
             isShow: function(elem) {
                 //display:none  elem.offsetWidth ==0  不占空间
+                //opacity:0 elem.offsetWidth>0  占空间
                 elem = _.isElement(elem) ? elem : _.query(elem);
                 return elem.offsetWidth > 0 || elem.offsetHeight > 0;
-
-                //opacity:0 elem.offsetWidth>0  占空间
-
             },
             isHide: function(elem) {
                 elem = _.isElement(elem) ? elem : _.query(elem);
@@ -1282,9 +1295,16 @@
                 }
                 //多维数组转一维
                 var ta = _.isArray(array) ? array.join(",").split(",") : array.split(",");
-
+                //去非数字
+                for (var i = 0; i < ta.length; i++) {
+                    // if (!_.isNumber(ta[i])) {
+                    if (ta[i]=="") {
+                        ta.splice(i, 1);
+                        i--;
+                    }
+                }
+                if (ta == []) return 0;
                 return Math.max.apply(Math, ta);
-
             },
             min: function(array) {
                 var args = slice.call(arguments),
@@ -1294,6 +1314,15 @@
                 }
                 //多维数组转一维
                 var ta = _.isArray(array) ? array.join(",").split(",") : array.split(",");
+                //去非数字
+                for (var i = 0; i < ta.length; i++) {
+                    // if (!_.isNumber(ta[i])) {
+                    if (ta[i]=="") {
+                        ta.splice(i, 1);
+                        i--;
+                    }
+                }
+                if (ta == []) return 0;
                 return Math.min.apply(Math, ta);
             },
 
@@ -1421,10 +1450,11 @@
         // }
 
 
-        //去掉'Element' 'Object',, 增加NodeList Arguments Window touchevent
+        //去掉'Element' 'Object'
+        //增加NodeList Arguments Window touchevent MouseEvent
         ['Null', 'Undefined', 'Array', 'String', 'Number',
             'Boolean', 'Function', 'RegExp', 'NaN', 'Infinite',
-            'NodeList', 'Arguments', 'Window', 'TouchEvent'
+            'NodeList', 'Arguments', 'Window', 'TouchEvent', "MouseEvent"
         ].forEach(function(t) {
             _['is' + t] = function(o) {
                 return _.type(o) === t.toLowerCase();
@@ -2672,34 +2702,7 @@
         };
         var startPos = {},
             endPos = {},
-            getPosInfo = function(ev) {
-                ev = ev || event; //兼容firefox
-                // var _touches = ev.touches;
-
-                var _touches = ev.touches && ev.touches.length > 0 ? ev.touches : ev.changedTouches;
-                if (!_touches || _touches.length === 0) {
-
-                    // return   ;
-                    // pos = ev;
-                    return {
-                        x: ev.offsetX,
-                        y: ev.offsetY,
-                        now: +(new Date()),
-                        el: ev.currentTarget //ev.target
-                    }
-
-                }
-                var pos = _touches[0];
-
-                return {
-                    x: pos.pageX,
-                    y: pos.pageY,
-                    clientX: pos.clientX || 0,
-                    clientY: pos.clientY || 0,
-                    now: +(new Date()),
-                    el: ev.currentTarget //ev.target
-                };
-            },
+            offset = {},
             _touchstart = isSupportTouch ? "touchstart" : "mousedown",
             _touchend = isSupportTouch ? "touchend" : "mouseup",
             _touchmove = isSupportTouch ? "touchmove" : "mousemove";
@@ -2730,142 +2733,117 @@
                 },
                 on: function(type, el, listener, once) {
                     var self = this;
-
                     if (!isSupportTouch && type == _tap) {
                         type = "click";
                     }
-
-                    var canDrag = true;
-
-                    //触发事件 不重复
-                    // var tirgged = false;
-
-                    var isDragging;
-
-                    var tapHandler = function(ev) {
-
-                        var x = endPos.x - startPos.x,
-                            y = endPos.y - startPos.y,
-                            duration = endPos.now - startPos.now;
-
-                        var ti = [];
-                        ti.push("tap");
-                        ti.push("endPos:(" + endPos.x + "," + endPos.y + ")");
-                        ti.push("move:(" + x + "," + y + ")");
-                        ti.push("duration:" + duration);
+                    // var canDrag = true;
 
 
-                        if (Math.abs(x) <= 5 && Math.abs(y) <= 5 && duration < 200) { //快击
-                            if (_.isFunction(listener)) {
-                                listener.call(el, endPos.el, ev);
-                            } else if (_.isArray(listener)) {
-                                listener.forEach(function(item) {
-                                    item.call(el, endPos.el, ev);
-                                });
+                    switch (type) {
+                        case _tap:
+                            var starHandler = function(ev) {
+                                startPos = _.pos(ev);
+                            }
+                            var endHandler = function(ev) {
+                                endPos = _.pos(ev);
+                                var x = endPos.x - startPos.x,
+                                    y = endPos.y - startPos.y,
+                                    duration = endPos.time - startPos.time;
+
+                                if (Math.abs(x) <= 5 && Math.abs(y) <= 5 && duration < 200) { //快击
+                                    if (_.isFunction(listener)) {
+                                        listener.call(el, endPos.el, ev);
+                                    } else if (_.isArray(listener)) {
+                                        listener.forEach(function(item) {
+                                            item.call(el, endPos.el, ev);
+                                        });
+                                    }
+                                    if (once) {
+                                        self.off(type, el);
+                                    }
+                                }
+                            }
+                            addEvent(_touchstart, el, starHandler);
+                            addEvent(_touchend, el, endHandler);
+                            break;
+                        case _drag:
+                        case "drag-y":
+                        case "drag-x":
+                            var isDragging;
+                            var preventDefault = function(ev) {
+                                ev.preventDefault();
                             }
 
-                            // tirgged = true;
-                            if (once) {
-                                self.off(type, el) // tapHandler listener
+
+                            var starHandler = function(ev) {
+                                startPos = _.pos(ev);
+                                offset = _.pos(startPos.el);
+
+                                el.css({
+                                    position: "absolute"
+                                })
+
+                                isDragging = true;
+                                //不准整屏移动
+                                addEvent(_touchmove, document, preventDefault);
                             }
+                            var moveHandler = function(ev) {
+                                endPos = _.pos(ev);
+                                // isDragging && startPos.el.css({
+                                //     top: endPos.y - startPos.y + offset.y + "px",
+                                //     left: endPos.x - startPos.x + offset.x + "px"
+                                // })
+                                isDragging &&
+                                    (function() {
+                                        if (type != "drag-y") el.style.left = endPos.x - startPos.x + offset.x + "px";
+                                        if (type != "drag-x") el.style.top = endPos.y - startPos.y + offset.y + "px";
+                                    })()
 
-                            ti.push("tirgged");
-                        }
-
-                        console.log(ti.join(" "));
-
-                    }
-
-
-
-                    var preventDefault = function(ev) {
-                        ev.preventDefault();
-                    }
-
-                    var dragMoveHandler = function(ev) {
-                        // endPos = getPosInfo(ev);
-                        if (isDragging) {
-                            if (isSupportTouch) {
-                                var x = endPos.x - startPos.x;
-                                var y = endPos.y - startPos.y;
-                                endPos.el.css({ "left": x + "px", "top": y + "px" });
                             }
-                            // else {
-                            //     var left = endPos.el.offsetLeft + endPos.x - startPos.x;
-                            //     var top = endPos.el.offsetTop + endPos.y - startPos.y;
-                            //     endPos.el.css({ "left": left + "px", "top": top + "px" });
-                            // }
-                        }
-                    }
+                            var endHandler = function(ev) {
+                                endPos = _.pos(ev);
 
-                    var dragEndHandler = function(ev) {
-                        if (isDragging) {
-                            if (isSupportTouch) {
-                                var top = endPos.y > 0 ? endPos.y : 0;
-                                endPos.el.css({ "top": top + "px", "left": "auto" });
+                                isDragging = false;
+                                //允许整屏移动
+                                removeEvent(_touchmove, document, preventDefault);
                                 if (_.isFunction(listener)) {
                                     listener.call(el, endPos.el, ev);
                                 }
                             }
-                        }
-                    }
-
-                    var starHandler = function(ev) {
-                        startPos = getPosInfo(ev);
-                        if ([_drag, "drag-y"].indexOf(type) >= 0) {
-                            isDragging = true;
-                            //不准整屏移动
-                            addEvent(_touchmove, document, preventDefault);
-                        }
-                    }
-                    var moveHandler = function(ev) {
-                        endPos = getPosInfo(ev);
-                        if ([_drag, "drag-y"].indexOf(type) >= 0) {
-                            dragMoveHandler(ev)
-                        }
-
-                    }
-                    var endHandler = function(ev) {
-                        endPos = getPosInfo(ev);
-                        if (type == _tap) {
-                            tapHandler(ev);
-                            isDragging = false;
-                        }
-                        if ([_drag, "drag-y"].indexOf(type) >= 0) {
-                            dragEndHandler(ev)
-                            isDragging = false;
-                            //允许整屏移动
-                            removeEvent(_touchmove, document, preventDefault);
-                        }
-                    }
 
 
+                            addEvent("mouseover", el, function(ev) {
+                                el.css({
+                                    cursor: "move"
+                                })
+                            });
+                            addEvent("mouseout", el, function(ev) {
+                                el.css({
+                                    cursor: "normal"
+                                })
+                            });
+                            addEvent(_touchstart, el, starHandler);
+                            addEvent(_touchmove, document, moveHandler);
+                            addEvent(_touchend, document, endHandler);
+                            break;
+                        default:
+                            var _handler = function(ev) {
+                                if (_.isFunction(listener)) {
+                                    listener.call(el, el, ev);
 
-                    if ([_tap, _drag, "drag-y"].indexOf(type) >= 0) {
-                        addEvent(_touchstart, el, starHandler);
-                        addEvent(_touchmove, el, moveHandler);
-                        addEvent(_touchend, el, endHandler);
-                    } else {
-
-                        var _handler = function(ev) {
-                            if (_.isFunction(listener)) {
-                                listener.call(el, el, ev);
-
-                            } else if (_.isArray(listener)) {
-                                listener.forEach(function(item) {
-                                    item.call(el, el, ev);
-                                });
+                                } else if (_.isArray(listener)) {
+                                    listener.forEach(function(item) {
+                                        item.call(el, el, ev);
+                                    });
+                                }
+                                if (once) {
+                                    self.off(type, el);
+                                }
                             }
-                            if (once) {
-                                self.off(type, el); //_handler
-                            }
-                        }
-                        addEvent(type, el, _handler);
-
+                            addEvent(type, el, _handler);
+                            break;
                     }
-
                 },
-
                 off: function(type, el, listener) {
                     if (_tap == type) {
                         removeEvent(_touchstart, el);
@@ -2892,13 +2870,11 @@
                 }
                 var es = [];
                 var _option = function(opt) {
-                    var el = _.query(opt.el);
-                    var type = opt.type || "click";
-                    var clear = opt.clear; //clear 打扫:加载新事件事情，清除掉之前的事件,
-
-                    _.isUndefined(clear);
-                    var listener = opt.listener || opt.callback;
-                    var once = opt.once || false; //事件只运行一次，运行一次就自行remove
+                    var el = _.query(opt.el),
+                        type = opt.type || "click",
+                        clear = _.isUndefined(opt.clear) ? true : opt.clear, //clear 打扫:加载新事件事情，清除掉之前的事件,
+                        listener = opt.listener || opt.callback,
+                        once = opt.once || false; //事件只运行一次，运行一次就自行remove
                     if (_.isElement(el)) {
                         if (clear) {
                             self.clear({
@@ -2913,16 +2889,16 @@
                             once: once
                         })
                     } else if (_.isArray(el)) {
-                        el.forEach(function(elem) {
+                        el.forEach(function(t) {
                             if (clear) {
                                 self.clear({
-                                    el: elem,
+                                    el: t,
                                     type: type
                                 });
                             }
                             es.push({
                                 type: type,
-                                el: elem,
+                                el: t,
                                 listener: listener,
                                 once: once
                             })
@@ -2941,15 +2917,15 @@
                 self._onEvent(es);
             },
             _onEvent: function(es) {
-                es.forEach(function(item) {
-                    Events.store(item);
-                    Events.on(item.type, item.el, item.listener, item.once);
+                es.forEach(function(t) {
+                    Events.store(t);
+                    Events.on(t.type, t.el, t.listener, t.once);
                 });
                 return this;
             },
             _offEvent: function(filter) {
-                Events.filter(filter).forEach(function(item) {
-                    Events.off(item.type, item.el);
+                Events.filter(filter).forEach(function(t) {
+                    Events.off(t.type, t.el);
                 });
                 return this;
             },
@@ -3264,12 +3240,6 @@
                         value += this.ch;
                     }
                 }
-            },
-            _parseBoo: function() {
-                // if(this.peek(4)=="true"){
-                // }
-                // if(this.peek(5)=="false"){
-                // }
             },
             _parseValue: function() {
                 var value = this.ch;
@@ -3662,7 +3632,6 @@
                 if (_.isArray(val) || _.isObject(val)) {
                     // val = JSON.stringify(val);
                     val = _.stringify(val);
-                    // val=_.escape(val)
                 }
                 return val;
             },
@@ -3672,7 +3641,6 @@
                     val = val[0];
                 }
                 return val;
-
             },
             last: function(val) {
                 if (_.isArray(val)) {
@@ -3734,28 +3702,19 @@
                 ////文件加载  ajax加载 "/comein-files/" + val.substr(val.indexOf('Detail'), val.length)
                 return "<div data-file='" + val + "'></div>";
             },
-            // markdown: function(val) {
-            //     return _.markdown(val);
-            // },
             text: function(val) {
                 return _.escape(val)
             },
-            // escape:function(val){
-            //     return _.escape(val)
-            // },
-            // unescape:function(val){
-            //     return _.unescape(val)
-            // }
         };
         ["markdown", "escape", "unescape"].forEach(function(t) {
             StandardFilters[t] = function(val) {
                 return _[t](val);
             }
         });
-        ['round', 'ceil', 'floor'].forEach(function(item) {
-            StandardFilters[StandardFilters] = function(val) {
+        ['round', 'ceil', 'floor'].forEach(function(t) {
+            StandardFilters[t] = function(val) {
                 if (_.isNumber(Number(val))) {
-                    return Math[item](Number(val));
+                    return Math[t](Number(val));
                 } else {
                     return val;
                 }
