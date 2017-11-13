@@ -1,6 +1,5 @@
-**tpler**
+##tpler##
 一个js开发框架
-2017-11-8
 
 
 
@@ -35,7 +34,7 @@ after/callback 回调处理
 
 js调用方式：
 支持数组 tper([])/tper({})
-
+`
 tpler({
 	el:"#mySwiper",
 	data:[],
@@ -54,35 +53,44 @@ tpler({
 		
 	}
 })
+`
 
 html：
-// <div class="swiper-wrapper" template="_ppt_tpl" lazy="_ppt_tpl_lazy" id="mySwiper">
-// <script type="text/template" id="_ppt_tpl">
-//     <div class="swiper-slide" style="background-image: url('{=picUrl|n_800_600}');" on="myHandler"></div>
-// </script>
-// <script type="text/template" id="_ppt_tpl_lazy">
-//     <div class="swiper-slide">
-//         <div data-background="{=picUrl|n_800_600}" class="swiper-lazy"></div>
-//     </div>
-// </script>
-
+`
+<div class="swiper-wrapper" template="_ppt_tpl" lazy="_ppt_tpl_lazy" id="mySwiper">
+ <script type="text/template" id="_ppt_tpl">
+     <div class="swiper-slide" style="background-image: url('{=picUrl|n_800_600}');" on="myHandler"></div>
+ </script>
+ <script type="text/template" id="_ppt_tpl_lazy">
+     <div class="swiper-slide">
+         <div data-background="{=picUrl|n_800_600}" class="swiper-lazy"></div>
+     </div>
+ </script>
+`
 
 
 3、事件模块  
 移动开发自动切换click到tap模式
+`
 toucher({
             el: el,
             type: "touchstart",
             callback: function(item, ev) {
             }
         })
-
+`
 
 4.日志
 嵌入调试
+`
 logger()
+`
 
 5、路由
+`
 var config={}
 var r=router(config)
 r.go("home")
+`
+
+联系qq22802768

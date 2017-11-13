@@ -17,18 +17,26 @@
     max-height: 300px;
     overflow: hidden;
     overflow-y: auto;
+    background: #efefef;
+}
+._console_handle{
+    height: 20px;
+    background: #ccc;
 }
 
-._log {
+._console_log {
     display: flex;
     justify-content: center;
     align-items: flex-start;
     flex-direction: column;
    
 }
+._console_log.hide{
+    display: none
+}
 
-._console ._item {
-    background: #eee;
+._console_log ._item {
+    background: #efefef;
     font-size: 12px;
     line-height: 20px;
     height: 20px;

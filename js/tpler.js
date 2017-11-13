@@ -415,6 +415,7 @@
                     this.y = y;
                     this.time = +(new Date());
                     this.el = el;
+
                 }
                 if (_.isElement(e)) { //元素
                     var el = e;
@@ -436,10 +437,7 @@
                         x, y,
                         el = ev.currentTarget;
                     var _touches = ev.touches && ev.touches.length > 0 ? ev.touches : ev.changedTouches;
-
                     if (!_touches || _touches.length === 0) {
-                        // x = ev.offsetX;
-                        // y = ev.offsetY;
                         x = ev.clientX;
                         y = ev.clientY;
                     } else {
@@ -680,35 +678,35 @@
 
             },
             //代替 JSON.stringify()
-            stringify: function(json) {
+            stringify: function(obj) {
                 var sb = [],
                     str = "",
                     k, v;
-                if (_.isUndefined(json)) {
+                if (_.isUndefined(obj)) {
                     str = "undefined";
-                } else if (_.isBoolean(json)) {
-                    str = json ? "true" : "false"
-                } else if (_.isString(json)) {
-                    str = "\"" + json + "\""
-                } else if (_.isNumber(json)) {
-                    str = json;
-                } else if (_.isDocument(json)) {
+                } else if (_.isBoolean(obj)) {
+                    str = obj ? "true" : "false"
+                } else if (_.isString(obj)) {
+                    str = "\"" + obj + "\""
+                } else if (_.isNumber(obj)) {
+                    str = obj;
+                } else if (_.isDocument(obj)) {
                     str = "#document"
-                } else if (_.isElement(json)) {
-                    str = json.tagName.toLowerCase() + "#" + json.id
-                } else if (_.isFunction(json)) {
-                    var name = json.prototype.constructor.name
-                    // str = toString.call(json)
-                    str = "function " + name + "(){}"
-                } else if (_.isArray(json)) {
-                    json.forEach(function(t) {
+                } else if (_.isElement(obj)) {
+                    str = obj.tagName.toLowerCase();
+                    str += obj.id ? "#" + obj.id : "";
+                    str += obj.className ? "." + obj.className.replace(/\s+/g, ".") : "";
+                } else if (_.isFunction(obj)) {
+                    str = "function " + obj.prototype.constructor.name + "(){}"
+                } else if (_.isArray(obj)) {
+                    obj.forEach(function(t) {
                         sb.push(_.stringify(t))
                     })
                     str = "[" + sb.join(",") + "]";
-                } else if (_.isObject(json)) {
-                    for (k in json) {
+                } else if (_.isObject(obj)) {
+                    for (k in obj) {
                         sb.push("\"" + k + "\":");
-                        v = json[k];
+                        v = obj[k];
 
                         if (_.isArray(v)) {
                             v.forEach(function(t) {
@@ -721,10 +719,12 @@
                     }
                     sb.pop();
                     str = "{" + sb.join("") + "}";
-                } else if (_.isMouseEvent(json)) {
+                } else if (_.isMouseEvent(obj)) {
                     str = "MouseEvent";
-                } else if (_.isTouchEvent(json)) {
+                    str += "(" + _.stringify(obj.target) + ")"
+                } else if (_.isTouchEvent(obj)) {
                     str = "TouchEvent";
+                    str += "(" + _.stringify(obj.target) + ")"
                 } else {
                     str = "unknowtype";
                 }
@@ -1298,7 +1298,7 @@
                 //去非数字
                 for (var i = 0; i < ta.length; i++) {
                     // if (!_.isNumber(ta[i])) {
-                    if (ta[i]=="") {
+                    if (ta[i] == "") {
                         ta.splice(i, 1);
                         i--;
                     }
@@ -1317,7 +1317,7 @@
                 //去非数字
                 for (var i = 0; i < ta.length; i++) {
                     // if (!_.isNumber(ta[i])) {
-                    if (ta[i]=="") {
+                    if (ta[i] == "") {
                         ta.splice(i, 1);
                         i--;
                     }
@@ -1893,11 +1893,11 @@
                     _error($file, result)
                 });
             } else if (_.isArray($file)) {
-                $file.forEach(function(item) {
-                    _.ajax(item.attr("data-file"), function(result) {
-                        _success(item, result);
+                $file.forEach(function(t) {
+                    _.ajax(t.attr("data-file"), function(result) {
+                        _success(t, result);
                     }, function(result) {
-                        _error(item, result)
+                        _error(t, result)
                     });
                 })
             }
@@ -1945,28 +1945,44 @@
 
 
         //兼容  替代函数
-        _.polyfill = function(arr, obj) {
+        _.polyfill = function(obj, arr, fn) {
             for (var i = 0, len = arr.length; i < len; i++) {
-                var fn = obj[arr[i]];
-                if (_.isFunction(fn)) {
+                var f = obj[arr[i]];
+                if (_.isFunction(f)) {
                     if (i == 0) {
-                        return fn;
+                        return f;
                     } else {
-                        return obj[arr[0]] = fn;
+                        return obj[arr[0]] = f;
                     }
                 }
             }
+            return obj[arr[0]] = fn;
         }
-        _.polyfill(['matches', 'webkitMatchesSelector', 'mozMatchesSelector', 'msMatchesSelector', 'oMatchesSelector'], Element.prototype);
+
+
+        // _.polyfill(Element.prototype, ['matches', 'webkitMatchesSelector', 'mozMatchesSelector', 'msMatchesSelector', 'oMatchesSelector'], function(s) {
+        //     // return [].indexOf.call(document.querySelectorAll(s), this) !== -1;
+        //     var matches = document.querySelectorAll(s), //(this.document || this.ownerDocument)
+        //         i = matches.length;
+        //     while (--i >= 0 && matches.item(i) !== this) {}
+        //     return i > -1;
+        // });
+
+
+        _.selectorMatches = function(el, selector) {
+            var p = Element.prototype;
+            var f = p.matches || p.webkitMatchesSelector || p.mozMatchesSelector || p.msMatchesSelector ||
+                function(s) { return [].slice.call(document.querySelectorAll(s)).indexOf(this) !== -1; };
+            return f.call(el, selector);
+        }
 
         _.closest = function(selector) {
-            var parent, el = this;
+            var el = this;
             while (el) {
-                parent = el.parentElement;
-                if (parent && parent.matches(selector)) {
-                    return parent;
+                if (el && _.selectorMatches(el, selector)) { //parent.matches(selector)
+                    return el;
                 }
-                el = parent;
+                el = el.parentElement; //parentNode
             }
             return [];
         }
@@ -2271,8 +2287,8 @@
                 if (len == 1) {
                     self.removeAttribute(key);
                 } else {
-                    keys.forEach(function(item) {
-                        self.removeAttribute(item);
+                    keys.forEach(function(t) {
+                        self.removeAttribute(t);
                     });
                 }
                 return self;
@@ -2388,11 +2404,6 @@
                 return this.parentNode;
             },
             closest: function(selector) {
-                // elem = _.query(elem);
-                // // return _.size(elem.query(this)) > 0 ? elem : null;
-                // elem = elem.query(this);
-                // return _.size(elem) > 0 ? elem : null;
-
                 return _.closest.call(this, selector);
             },
             sibling: function(n, elem) {
@@ -2666,8 +2677,8 @@
 
             } else if (_.isArray(listener)) {
 
-                listener.forEach(function(item) {
-                    addEvent(type, el, item);
+                listener.forEach(function(t) {
+                    addEvent(type, el, t);
                 })
             }
         };
@@ -2694,8 +2705,8 @@
                 }
 
             } else {
-                el.events && el.events.forEach(function(item) {
-                    removeEvent(item.type, item.el, item.listener)
+                el.events && el.events.forEach(function(t) {
+                    removeEvent(t.type, t.el, t.listener)
                 })
             }
 
@@ -2754,8 +2765,8 @@
                                     if (_.isFunction(listener)) {
                                         listener.call(el, endPos.el, ev);
                                     } else if (_.isArray(listener)) {
-                                        listener.forEach(function(item) {
-                                            item.call(el, endPos.el, ev);
+                                        listener.forEach(function(t) {
+                                            t.call(el, endPos.el, ev);
                                         });
                                     }
                                     if (once) {
@@ -2773,32 +2784,39 @@
                             var preventDefault = function(ev) {
                                 ev.preventDefault();
                             }
+                            //容器
+                            // var container=el.parent();
+                            // var containerPos=_.pos(container);
+                            // console.log(containerPos)
+                            // container.with
+
+
+                            var maxLeft = document.documentElement.clientWidth - el.clientWidth;
+                            var maxTop = document.documentElement.clientHeight - el.clientHeight;
+
 
 
                             var starHandler = function(ev) {
                                 startPos = _.pos(ev);
-                                offset = _.pos(startPos.el);
-
-                                el.css({
-                                    position: "absolute"
-                                })
-
+                                offset = _.pos(el);
+                                el.css({ position: "absolute",cursor:"move" });
                                 isDragging = true;
                                 //不准整屏移动
                                 addEvent(_touchmove, document, preventDefault);
                             }
                             var moveHandler = function(ev) {
                                 endPos = _.pos(ev);
-                                // isDragging && startPos.el.css({
-                                //     top: endPos.y - startPos.y + offset.y + "px",
-                                //     left: endPos.x - startPos.x + offset.x + "px"
-                                // })
                                 isDragging &&
                                     (function() {
-                                        if (type != "drag-y") el.style.left = endPos.x - startPos.x + offset.x + "px";
-                                        if (type != "drag-x") el.style.top = endPos.y - startPos.y + offset.y + "px";
+                                        var left = endPos.x - startPos.x + offset.x;
+                                        var top = endPos.y - startPos.y + offset.y;
+                                        left = _.min(left, maxLeft);
+                                        left = _.max(0, left);
+                                        top = _.min(top, maxTop);
+                                        top = _.max(0, top);
+                                        if (type != "drag-y") el.css({ left: left + "px" });
+                                        if (type != "drag-x") el.css({ top: top + "px" });
                                     })()
-
                             }
                             var endHandler = function(ev) {
                                 endPos = _.pos(ev);
@@ -2813,14 +2831,10 @@
 
 
                             addEvent("mouseover", el, function(ev) {
-                                el.css({
-                                    cursor: "move"
-                                })
+                                el.css({ cursor: "move" })
                             });
                             addEvent("mouseout", el, function(ev) {
-                                el.css({
-                                    cursor: "normal"
-                                })
+                                el.css({ cursor: "normal" })
                             });
                             addEvent(_touchstart, el, starHandler);
                             addEvent(_touchmove, document, moveHandler);
@@ -2832,8 +2846,8 @@
                                     listener.call(el, el, ev);
 
                                 } else if (_.isArray(listener)) {
-                                    listener.forEach(function(item) {
-                                        item.call(el, el, ev);
+                                    listener.forEach(function(t) {
+                                        t.call(el, el, ev);
                                     });
                                 }
                                 if (once) {
@@ -3265,23 +3279,39 @@
                 var self = this;
                 var div = document.createElement("div");
                 div.className = "_console";
-
+                var div_handle = document.createElement("div");
+                div_handle.className = "_console_handle";
                 var div2 = document.createElement("div");
-                div2.className = "_log";
+                div2.className = "_console_log";
+                div.appendChild(div_handle);
                 div.appendChild(div2);
                 _.$("body").appendChild(div);
 
                 console.log = function() {
                     var arg = Array.prototype.slice.call(arguments);
                     template({
-                        el: "._console ._log",
+                        el: "._console_log",
                         act: "append",
                         template: '<div class="_item">{=result}</div>',
                         data: {
-                            result: arg
+                            result: arg.length == 1 ? arg[0] : arg
                         }
                     })
                 }
+
+                toucher([{
+                    el:"._console",
+                    type:"drag"
+                },{
+                    el:"._console_handle",
+                    type:"tap",
+                    callback:function(item,ev){
+                        var log=_.$("._console_log");
+
+                        _.isShow(log)?_.hide(log):_.show(log);
+
+                    }
+                }])
             }
         }
 
@@ -4187,9 +4217,12 @@
                         break;
                     case 1:
                         if (_.isArray(options)) {
-                            _.each(options, function(item) {
-                                template(item);
-                            });
+                            // _.each(options, function(item) {
+                            //     template(item);
+                            // });
+                            options.forEach(function(t) {
+                                template(t)
+                            })
                             return;
                         } else if (_.isObject(options)) {
                             _.each(options, function(v, k) {
@@ -4358,12 +4391,24 @@
 
                 //事件代理
                 if (self.events) {
-                    toucher({
-                        el: el,
-                        type: "tap",
-                        clear: true,
-                        listener: self.events
-                    })
+                    if (_.isFunction(self.events)) {
+                        toucher({
+                            el: el,
+                            type: "tap",
+                            clear: true,
+                            listener: self.events
+                        })
+                    } else if (_.isObject(self.events)) {
+                        var tp = [];
+                        for (x in self.events) {
+                            tp.push({
+                                el: el,
+                                type: x,
+                                listener: self.events[x]
+                            })
+                        }
+                        toucher(tp);
+                    }
                 }
             },
             parser: function(el) {

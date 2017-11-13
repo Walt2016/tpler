@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,minimal-ui">
+    <title>closest</title>
+    <link rel="stylesheet" href="css/console.min.css">
+    <script src="js/custom/tpler.js"></script>
+</head>
+
+<body>
+    <div class="parent">
+        <div class="child"></div>
+    </div>
+    <script>
+    logger()
+    var el = _.$(".child");
+    var el1=el.closest(".child");
+    console.log(el1);
+    var el2=_.closest.call(el,".child");
+    console.log(el2);
+    console.log([],12,"str")
+    </script>
+</body>
+
+</html>
