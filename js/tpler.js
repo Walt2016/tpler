@@ -84,12 +84,9 @@
             _template = "template",
             _noloop = "noloop",
             _loop = "loop",
-            // _active = "active",
             _on = "on", //绑定事件
             _model = "model", //双向绑定模型
             _bind = "bind", //单向绑定
-            // _if = "if",
-            // _tabs = "tabs",
             _tap = "tap",
             _drag = "drag";
 
@@ -117,33 +114,6 @@
             return target;
         };
 
-
-        // if (typeof Object.assign != 'function') {
-        //     (function() {
-        //         Object.assign = function(target) {
-        //             'use strict';
-        //             if (target === undefined || target === null) {
-        //                 throw new TypeError('Cannot convert undefined or null to object');
-        //             }
-
-        //             var output = Object(target);
-        //             for (var index = 1; index < arguments.length; index++) {
-        //                 var source = arguments[index];
-        //                 if (source !== undefined && source !== null) {
-        //                     for (var nextKey in source) {
-        //                         if (source.hasOwnProperty(nextKey)) {
-        //                             output[nextKey] = source[nextKey];
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //             return output;
-        //         };
-        //     })();
-        // }
-
-
-
         var _createClass = function() {
             function defineProperties(target, props) {
                 for (var i = 0; i < props.length; i++) {
@@ -163,6 +133,10 @@
 
 
         // Browser environment sniffing
+
+        // function isIE() {
+        //     return !!window.ActiveXObject;
+        // }
 
         var inBrowser = typeof window !== 'undefined';
         var UA = inBrowser && window.navigator.userAgent.toLowerCase();
@@ -227,6 +201,17 @@
         //工具  underscore  + jquery
         var _ = {
             envt: envt,
+            screen: {
+                x: document.documentElement.clientWidth,
+                y: document.documentElement.clientHeight
+            },
+
+            // screenX:function(){
+            //     return document.documentElement.clientWidth;
+            // },
+            // screenY:function(){
+            //      return document.documentElement.clientHeight;
+            // },
             toDate: function(str) {
                 if (/^\d*$/.test(str)) {
                     return new Date(Number(str));
@@ -319,17 +304,10 @@
             },
             //一年中的第几周
             week: function(dateStr) {
-                // var b = _.toDate(dateStr);
-                // var s = (new Date() - b) / (60 * 60 * 24 * 1000);
-                // if (s < 0) return false;
-                // return (b.getDay() == 0) ? Math.ceil(s / 7) : Math.ceil(s / 7) + 1;
-
                 var totalDays = 0;
                 var d = _.toDate(dateStr); //new Date();
                 if (!d) return "";
                 var years = d.getFullYear();
-                // if (years < 1000)
-                //     years += 1900
                 var days = new Array(12);
                 days[0] = 31;
                 days[2] = 31;
@@ -367,11 +345,6 @@
                 var d = _.toDate(dateStr);
                 return d ? d.getMonth() : "";
             },
-            // //todo
-            // toString(date, likeFormate) {
-            //     console.log(date);
-            //     return date.format("yyyy-MM-dd");
-            // },
             text: function(obj) {
                 //HTMLScriptElement.text  是一个属性，故用此方法
                 if (_.isElement(obj)) {
@@ -408,7 +381,7 @@
                 }
 
             },
-            //位置信息
+            //位置信息 支持事件 和Element
             pos: function(e) {
                 function CPos(x, y, el) {
                     this.x = x;
@@ -448,6 +421,14 @@
                     return new CPos(x, y, el);
                 }
             },
+            //拖动事件
+            drag: function(el) {
+                toucher({
+                    el: el,
+                    type: "drag"
+                })
+            },
+
             //url信息
             parseUrl: function(url) {
                 var params = {},
@@ -1177,6 +1158,167 @@
                 }
                 return false;
             },
+            isImage: function(o) {
+                return _.type(o) == "htmlimageelement";
+            },
+            isCanvas: function(o) {
+                return _.type(o) == "htmlcanvaselement";
+            },
+            //图片状态
+            isImgLoad: function(img) {
+                return isIE ? img.readyState == 'complete' : img.complete;
+            },
+            createImg: function(imgSrc, callback) {
+                var originImg; //原图
+                if (_.isImage(imgSrc)) {
+                    originImg = imgSrc
+                } else if (_.isCanvas(imgSrc)) {
+                    var canvas = imgSrc;
+                    originImg = new Image();
+                    originImg.src = canvas.toDataURL('image/jpeg'); //quality
+                } else {
+                    originImg = new Image();
+                    originImg.src = imgSrc;
+                }
+
+                if (_.isImgLoad(originImg)) {
+                    callback && callback(originImg)
+                } else {
+                    originImg.onload = function(e) {
+                        callback && callback(originImg)
+                    }
+                    originImg.onerror = function(e) {
+                        console.log("加载图片失败：" + e.path[0].src)
+                    }
+                }
+            },
+            toDataURL: function(imgSrc, callback) {
+                var _toDataURL = function(originImg) {
+                    var canvas = document.createElement("canvas");
+                    var ctx = canvas.getContext("2d");
+                    var width = originImg.width;
+                    var height = originImg.height;
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(originImg, 0, 0, width, height);
+                    var img = new Image();
+                    img.src = canvas.toDataURL('image/jpeg'); //quality
+                    callback && callback(img);
+                }
+                _.createImg(imgSrc, _toDataURL);
+            },
+            toCanvas: function(imgSrc, callback) {
+                var _toCanvas = function(originImg) {
+                    var canvas = document.createElement("canvas");
+                    var ctx = canvas.getContext("2d");
+                    var width = originImg.width;
+                    var height = originImg.height;
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(originImg, 0, 0, width, height);
+                    callback && callback(canvas);
+                }
+                _.createImg(imgSrc, _toCanvas);
+            },
+            //切图
+            //x轴n等分
+            //y轴n等分
+            cutImg: function(imgSrc, splitX, splitY, callback) {
+
+                var splitX = _.isUndefined(splitX) ? 3 : splitX;
+                var splitY = _.isUndefined(splitY) ? 3 : splitY;
+                var _cutImg = function(originImg) {
+                    var canvas = document.createElement("canvas");
+                    var ctx = canvas.getContext("2d");
+                    var width = originImg.width;
+                    var height = originImg.height;
+                    canvas.width = width;
+                    canvas.height = height;
+                    //切图
+                    var imgArr = [];
+                    var swidth = width / splitX;
+                    var sheight = height / splitY;
+                    var index = 0;
+                    for (var j = 0; j < splitY; j++) {
+                        for (var i = 0; i < splitX; i++) {
+                            ctx.drawImage(originImg, i * swidth, j * sheight, swidth, sheight, 0, 0, width, height);
+                            var img = new Image();
+                            img.src = canvas.toDataURL('image/jpeg');
+                            img.width = swidth;
+                            img.height = sheight;
+                            img.className = "thumbnail";
+                            img.id = "_thumbnail_" + index++;
+                            imgArr.push(img);
+                        }
+                    }
+                    callback && callback(imgArr);
+                }
+                _.createImg(imgSrc, _cutImg);
+            },
+
+            zoomImg: function(imgSrc, zoom, callback) {
+                var _toDataURL = function(originImg) {
+                    var canvas = document.createElement("canvas");
+                    var ctx = canvas.getContext("2d");
+                    var width = originImg.width * zoom;
+                    var height = originImg.height * zoom;
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(originImg, 0, 0, width, height);
+                    var img = new Image();
+                    img.src = canvas.toDataURL('image/jpeg'); //quality
+                    callback && callback(img);
+                }
+                _.createImg(imgSrc, _toDataURL);
+            },
+            //反色
+            reverse: function(imgSrc, callback) {
+                var _reverse = function(originImg) {
+                    var canvas = document.createElement("canvas");
+                    var ctx = canvas.getContext("2d");
+                    
+                    var width = originImg.width;
+                    var height = originImg.height;
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(originImg, 0, 0);
+                    var imgData = ctx.getImageData(0, 0, width, height);
+                    // 反转颜色
+                    for (var i = 0; i < imgData.data.length; i += 4) {
+                        imgData.data[i] = 255 - imgData.data[i];
+                        imgData.data[i + 1] = 255 - imgData.data[i + 1];
+                        imgData.data[i + 2] = 255 - imgData.data[i + 2];
+                        imgData.data[i + 3] = 255;
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+                    var img = new Image();
+                    img.src = canvas.toDataURL('image/jpeg'); //quality
+                    callback && callback(img);
+                }
+                _.createImg(imgSrc, _reverse);
+            },
+            masic:function(imgSrc, callback){
+                var _masic=function(originImg){
+
+                }
+
+            },
+            //时序sequence ,间隔时间
+            timeSeq: function(arr, interval, callback) {
+                arr.forEach(function(t, i) {
+                    (function(index) {
+                        setTimeout(function() {
+                            callback && callback(t);
+                        }, (interval || 500) * index)
+                    })(i)
+                })
+            },
+            background: function(el, imgSrc) {
+                var el = _.query(el);
+                _.createImg(imgSrc, function(img) {
+                    el.style.backgroundImage = 'url("' + img.src + '")';
+                })
+            },
             isJQuery: function(o) {
                 if (o) {
                     return !!(o.jquery);
@@ -1208,11 +1350,9 @@
                         } else {
                             return false;
                         }
-
                     }
                     return true;
                 }
-
             },
             keys: function(obj) {
                 if (!_.isObject(obj)) return [];
@@ -1260,8 +1400,6 @@
                 });
                 return !!result;
             },
-
-
             contains: function(obj, target) {
                 if (obj == null) return false;
                 if (obj == target) return true; //
@@ -1270,14 +1408,10 @@
                     return value === target;
                 });
             },
-
-
-
             size: function(obj) {
                 if (obj == null) return 0;
                 return (obj.length === +obj.length) ? obj.length : _.keys(obj).length;
             },
-
             filter: function(obj, predicate, context) {
                 var results = [];
                 if (obj == null) return results;
@@ -1325,7 +1459,6 @@
                 if (ta == []) return 0;
                 return Math.min.apply(Math, ta);
             },
-
             extend: function(obj) {
                 _.each(slice.call(arguments, 1), function(source) {
                     if (source) {
@@ -1665,10 +1798,7 @@
             return result.join("&");
         };
 
-
-
         _.ajax = function(uri) {
-
             var xmlHttp = false;
             var done = false;
             var invokeTimes = 0;
@@ -2799,7 +2929,7 @@
                             var starHandler = function(ev) {
                                 startPos = _.pos(ev);
                                 offset = _.pos(el);
-                                el.css({ position: "absolute",cursor:"move" });
+                                el.css({ position: "absolute", cursor: "move" });
                                 isDragging = true;
                                 //不准整屏移动
                                 addEvent(_touchmove, document, preventDefault);
@@ -3017,6 +3147,8 @@
             init: function(options) {
                 if (_.isString(options)) {
                     this.text = options
+                } else if (_.isNumber(options)) {
+                    this.text = "" + options
                 } else if (_.isObject(options)) {
                     this.text = options.text || "";
                     this.debug = options.debug || false;
@@ -3253,6 +3385,7 @@
                         }
                         value += this.ch;
                     }
+                    return value;
                 }
             },
             _parseValue: function() {
@@ -3264,6 +3397,7 @@
                     }
                     value += this.ch;
                 }
+                return value;
             }
         }
         walker.prototype.init.prototype = walker.prototype;
@@ -3300,15 +3434,15 @@
                 }
 
                 toucher([{
-                    el:"._console",
-                    type:"drag"
-                },{
-                    el:"._console_handle",
-                    type:"tap",
-                    callback:function(item,ev){
-                        var log=_.$("._console_log");
+                    el: "._console",
+                    type: "drag"
+                }, {
+                    el: "._console_handle",
+                    type: "tap",
+                    callback: function(item, ev) {
+                        var log = _.$("._console_log");
 
-                        _.isShow(log)?_.hide(log):_.show(log);
+                        _.isShow(log) ? _.hide(log) : _.show(log);
 
                     }
                 }])

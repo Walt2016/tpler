@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>draw</title>
+    <script src="js/custom/tpler.js"></script>
+    <style>
+    body {
+        background-repeat: no-repeat;
+        margin: 0;
+        padding: 0;
+        background-size: contain;
+    }
+
+    .box {
+        width: 300px;
+        height: 200px;
+    }
+    </style>
+</head>
+
+<body>
+    <div class="box"></div>
+    <script>
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#FF0000";
+    // ctx.fillRect(0, 0, 150, 75);
+
+    // canvas.width=200;
+    // canvas.height=100;
+    // ctx.moveTo(0, 0);
+    // ctx.lineTo(200, 100);
+    // ctx.stroke();
+
+
+
+
+
+    // 创建渐变
+    var grd = ctx.createLinearGradient(0, 0, 200, 0);
+    grd.addColorStop(0, "red");
+    grd.addColorStop(1, "white");
+
+    // 填充渐变
+    // ctx.fillStyle = grd;
+    // ctx.fillRect(0, 0, 300, 200);
+
+    ctx.font = "30px Arial";
+    ctx.fillText("Hello World", 10, 50);
+
+    //arc(x,y,r,start,stop)
+    // ctx.beginPath();
+    // ctx.arc(50, 50, 50, 0, Math.PI);
+    // ctx.stroke();
+
+    _.cutImg(canvas, 3, 3, function(imgArr) {
+        imgArr.forEach(function(img){
+        	document.body.appendChild(img);
+            _.drag(img);
+        })
+    })
+
+
+    _.background(".box", canvas)
+
+    _.drag(".box")
+    </script>
+</body>
+
+</html>
