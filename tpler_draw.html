@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
     <title>draw</title>
-    <script src="js/custom/tpler.js"></script>
+    <script src="js/tpler.js"></script>
     <style>
     body {
         background-repeat: no-repeat;
@@ -18,11 +18,20 @@
         width: 300px;
         height: 200px;
     }
+
+    #canvas {
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        margin: 0px;
+        background: #ffffff;
+        /*border: thin solid #aaaaaa;*/
+    }
     </style>
 </head>
 
 <body>
-    <div class="box"></div>
+    <!-- <div class="box"></div> -->
     <script>
     var canvas = document.createElement("canvas");
     var ctx = canvas.getContext("2d");
@@ -56,17 +65,512 @@
     // ctx.arc(50, 50, 50, 0, Math.PI);
     // ctx.stroke();
 
-    _.cutImg(canvas, 3, 3, function(imgArr) {
-        imgArr.forEach(function(img){
-        	document.body.appendChild(img);
-            _.drag(img);
-        })
-    })
+    // _.cutImg(canvas, 3, 3, function(imgArr) {
+    //     imgArr.forEach(function(img) {
+    //         document.body.appendChild(img);
+    //         _.drag(img);
+    //     })
+    // })
 
 
-    _.background(".box", canvas)
+    // _.background(".box", canvas)
 
-    _.drag(".box")
+    // _.drag(".box")
+
+
+
+    // var canvas = document.getElementById('canvas'),
+    //     context = canvas.getContext('2d'),
+    //     snapshotButton = document.getElementById('snapshotButton'),
+    //     snapshotImageElement = document.getElementById('snapshotImageElement'),
+    //     FONT_HEIGHT = 15,
+    //     MARGIN = 35,
+    //     HAND_TRUNCATION = canvas.width/25,
+    //     HOUR_HAND_TRUNCATION = canvas.width/10,
+    //     NUMERAL_SPACING = 20,
+    //     RADIUS = canvas.width/2 - MARGIN,
+    //     HAND_RADIUS = RADIUS + NUMERAL_SPACING,
+    //     loop;
+
+
+    var draw = function() {
+        this.canvas = document.createElement("canvas");
+        this.context = this.canvas.getContext("2d");
+        this.canvas.width = 300;
+        this.canvas.height = 400;
+        this.canvas.id = "canvas"
+
+        this.MARGIN = 35;
+        this.RADIUS = this.canvas.width / 2 - this.MARGIN;
+        this.NUMERAL_SPACING = 20;
+        this.HAND_RADIUS = this.RADIUS + this.NUMERAL_SPACING;
+        this.FONT_HEIGHT = 15;
+
+        this.context.font = this.FONT_HEIGHT + 'px Arial';
+    }
+    draw.prototype.circle = function() {
+        this.context.beginPath();
+        this.context.arc(this.canvas.width / 2, this.canvas.height / 2, this.RADIUS, 0, Math.PI * 2, true);
+        this.context.stroke();
+        return this.canvas
+    }
+
+    draw.prototype.numerals = function() {
+        var self = this;
+        var numerals = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+            angle = 0,
+            numeralWidth = 0;
+
+        numerals.forEach(function(numeral) {
+            angle = Math.PI / 6 * (numeral - 3);
+            numeralWidth = self.context.measureText(numeral).width;
+            self.context.fillText(numeral,
+                self.canvas.width / 2 + Math.cos(angle) * (self.HAND_RADIUS) - numeralWidth / 2,
+                self.canvas.height / 2 + Math.sin(angle) * (self.HAND_RADIUS) + self.FONT_HEIGHT / 3);
+        });
+
+        return this.canvas
+    }
+
+    draw.prototype.center = function() {
+        this.context.beginPath();
+        this.context.arc(this.canvas.width / 2, this.canvas.height / 2, 5, 0, Math.PI * 2, true);
+        this.context.fill();
+        return this.canvas
+    }
+
+
+    draw.prototype.hands = function() {
+        var _hand = function(loc, isHour) {
+            // var angle = (Math.PI * 2) * (loc / 60) - Math.PI / 2,
+            //     handRadius = isHour ? self.RADIUS - self.HAND_TRUNCATION - self.HOUR_HAND_TRUNCATION :
+            //     self.RADIUS - self.HAND_TRUNCATION;
+
+            // self.context.moveTo(self.canvas.width / 2, self.canvas.height / 2);
+            // self.context.lineTo(self.canvas.width / 2 + Math.cos(angle) * handRadius,
+            //     self.canvas.height / 2 + Math.sin(angle) * handRadius);
+            // self.context.stroke();
+
+
+            var angle = (Math.PI * 2) * (loc / 60) - Math.PI / 2,
+                handRadius = isHour ? this.RADIUS - this.HAND_TRUNCATION - this.HOUR_HAND_TRUNCATION :
+                this.RADIUS - this.HAND_TRUNCATION;
+
+            this.context.moveTo(this.canvas.width / 2, this.canvas.height / 2);
+            this.context.lineTo(this.canvas.width / 2 + Math.cos(angle) * handRadius,
+                this.canvas.height / 2 + Math.sin(angle) * handRadius);
+            this.context.stroke();
+
+        }
+        var date = new Date,
+            hour = date.getHours();
+        hour = hour > 12 ? hour - 12 : hour;
+        _hand.call(this, hour * 5 + (date.getMinutes() / 60) * 5, true, 0.5);
+        _hand.call(this, date.getMinutes(), false, 0.5);
+        _hand.call(this, date.getSeconds(), false, 0.2);
+        return this.canvas
+    }
+
+    draw.prototype.clock = function() {
+        // this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // this.context.save();
+
+        // this.context.fillStyle = 'rgba(255,255,255,0.8)';
+        // this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // this.circle();
+        // this.center();
+        // this.hands();
+
+        // this.context.restore();
+
+        // this.numerals();
+
+
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.circle();
+        this.center();
+        this.hands();
+        this.numerals();
+
+        return this.canvas
+    }
+
+    draw.prototype.smileface = function() {
+        var path = new Path2D();
+        path.arc(75, 75, 50, 0, Math.PI * 2, true);
+        path.moveTo(110, 75);
+        path.arc(75, 75, 35, 0, Math.PI, false);
+        path.moveTo(65, 65);
+        path.arc(60, 65, 5, 0, Math.PI * 2, true);
+        path.moveTo(95, 65);
+        path.arc(90, 65, 5, 0, Math.PI * 2, true);
+        // this.context.strokeStyle = '#0000ff';
+        this.context.stroke(path);
+        return this.canvas
+    }
+
+    draw.prototype.stock = function(data) {
+        //     var
+        // canvas = document.getElementById('stock-canvas'),
+        // width = canvas.width,
+        // height = canvas.height,
+        // ctx = canvas.getContext('2d');
+        // console.log(JSON.stringify(data[0])); // {"date":"20150602","open":4844.7,"close":4910.53,"high":4911.57,"low":4797.55,"vol":62374809900,"change":1.69}
+        var self = this;
+
+        var
+            NUMS = 30,
+            data = r.data;
+        if (data.length > NUMS) {
+            data = data.slice(data.length - NUMS);
+        }
+        data = data.map(function(x) {
+            return {
+                date: x[0],
+                open: x[1],
+                close: x[2],
+                high: x[3],
+                low: x[4],
+                vol: x[5],
+                change: x[6]
+            };
+        });
+
+        self.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        self.context.fillText('Test Canvas', 10, 10);
+
+
+        self.context.fillStyle = '#000000';
+        self.context.fillRect(0, 0, width, height);
+        self.context.fillStyle = '#FFFFFF';
+        self.context.strokeStyle = '#FFFFFF';
+        self.context.fillText('Test Canvas', 10, 10);
+        var line = new Path2D();
+        line.moveTo(10, 10);
+        line.lineTo(10, canvas.height - 10);
+        line.lineTo(canvas.width - 10, canvas.height - 10);
+        self.context.stroke(line);
+
+        var max = Math.floor(data.reduce(function(a, b) {
+            return a.high > b.high ? a : b;
+        }).high / 100 + 1) * 100;
+        var min = Math.floor(data.reduce(function(a, b) {
+            return a.low < b.low ? a : b;
+        }).low / 100 - 0) * 100;
+
+
+        function vtoy(v) {
+            return canvas.height - 10 - (v - min) * (canvas.height - 20) / (max - min);
+        }
+
+        function dtox(d) {
+            return 10 + (canvas.width - 20) * (d + 2) / 33;
+        }
+        self.context.fillText(max, 10, 20);
+        self.context.fillText(min, 10, canvas.height - 10);
+
+
+        data.map(function(v, d) {
+            var top, bottom;
+            if (v.open > v.close) {
+                top = v.open;
+                bottom = v.close;
+                self.context.fillStyle = '#FF1111';
+                //self.context.strokeStyle = '#FF1111';
+            } else {
+                top = v.close;
+                bottom = v.open;
+                self.context.fillStyle = '#00FF11';
+                //self.context.strokeStyle = '#00FF11';
+            }
+            line.moveTo(dtox(d), vtoy(v.high));
+            line.lineTo(dtox(d), vtoy(v.low));
+            self.context.stroke(line);
+
+            self.context.fillRect(dtox(d) - 3, vtoy(top), 7, vtoy(bottom) - vtoy(top));
+        });
+    }
+
+
+    draw.prototype.font = function(str) {
+        this.context.font = '38pt Arial';
+        this.context.fillStyle = 'cornflowerblue';
+        this.context.strokeStyle = 'blue';
+
+        this.context.fillText(str || "Hello Canvas", this.canvas.width / 2 - 150,
+            this.canvas.height / 2 + 15);
+
+        this.context.strokeText(str || "Hello Canvas", this.canvas.width / 2 - 150,
+            this.canvas.height / 2 + 15);
+        return this.canvas;
+    }
+
+
+    //     水平”是horizontal
+    // “竖直”是vertical 
+    draw.prototype.lineY = function(options) {
+        this.context.strokeStyle = options ? options.color : "";
+        this.context.fillStyle = '#eeeeee'; // '#ffffff';
+        this.context.lineWidth = 0.5;
+        var step = options ? options.step || 10 : 10
+
+        for (var i = step + this.context.lineWidth; i < this.context.canvas.width; i += step) {
+            this.context.beginPath();
+            this.context.moveTo(i, 0);
+            this.context.lineTo(i, this.context.canvas.height);
+            this.context.stroke();
+        }
+        return this;
+    }
+
+
+    draw.prototype.lineX = function(options) {
+        this.context.strokeStyle = options ? options.color : "";
+        this.context.fillStyle = '#eeeeee'; // '#ffffff';
+        this.context.lineWidth = 0.5;
+        var step = options ? options.step || 10 : 10
+
+        for (var i = step + this.context.lineWidth; i < this.context.canvas.height; i += step) {
+            this.context.beginPath();
+            this.context.moveTo(0, i);
+            this.context.lineTo(this.context.canvas.width, i);
+            this.context.stroke();
+        }
+        return this;
+    }
+
+
+    draw.prototype.grid = function(color, stepx, stepy) {
+        var stepx = stepx || 10;
+        var stepy = stepy || 10;
+        this.context.save()
+
+        this.context.shadowColor = undefined;
+        this.context.shadowOffsetX = 0;
+        this.context.shadowOffsetY = 0;
+
+        this.context.strokeStyle = color;
+        this.context.fillStyle = '#eeeeee'; // '#ffffff';
+        this.context.lineWidth = 0.5;
+        this.context.fillRect(0, 0, this.context.canvas.width, this.context.canvas.height);
+
+        for (var i = stepx + 0.5; i < this.context.canvas.width; i += stepx) {
+            this.context.beginPath();
+            this.context.moveTo(i, 0);
+            this.context.lineTo(i, this.context.canvas.height);
+            this.context.stroke();
+        }
+
+        for (var i = stepy + 0.5; i < this.context.canvas.height; i += stepy) {
+            this.context.beginPath();
+            this.context.moveTo(0, i);
+            this.context.lineTo(this.context.canvas.width, i);
+            this.context.stroke();
+        }
+
+        for (var i = stepy + 0.5; i < this.context.canvas.height; i += stepy) {
+            this.context.beginPath();
+            this.context.moveTo(0, i);
+            this.context.lineTo(i, 0);
+            this.context.stroke();
+        }
+
+        for (var i = stepy + 0.5; i < this.context.canvas.height; i += stepy) {
+            this.context.beginPath();
+            this.context.moveTo(i, 0);
+            this.context.lineTo(this.context.canvas.width, i);
+            this.context.stroke();
+        }
+
+        for (var i = stepy + 0.5; i < this.context.canvas.height; i += stepy) {
+            this.context.beginPath();
+            this.context.moveTo(i, 0);
+            this.context.lineTo(i, this.context.canvas.height);
+            this.context.stroke();
+        }
+
+        this.context.restore();
+        return this;
+    }
+
+
+    draw.prototype.background = function() {
+        var STEP_Y = 12,
+            i = this.context.canvas.height;
+
+        this.context.strokeStyle = 'lightgray';
+        this.context.lineWidth = 0.5;
+
+        this.context.save();
+        this.context.restore();
+
+        while (i > STEP_Y * 4) {
+            this.context.beginPath();
+            this.context.moveTo(0, i);
+            this.context.lineTo(this.context.canvas.width, i);
+            this.context.stroke();
+            i -= STEP_Y;
+        }
+
+        this.context.save();
+
+        this.context.strokeStyle = 'rgba(100,0,0,0.3)';
+        this.context.lineWidth = 1;
+
+        this.context.beginPath();
+
+        this.context.moveTo(35, 0);
+        this.context.lineTo(35, this.context.canvas.height);
+        this.context.stroke();
+
+        this.context.restore();
+        return this
+    }
+
+    draw.prototype.erase = function(time) {
+        var self = this;
+        if (time) {
+            setTimeout(function() {
+                self.context.clearRect(0, 0, self.canvas.width, self.canvas.height);
+            }, time)
+        } else {
+            self.context.clearRect(0, 0, self.canvas.width, self.canvas.height);
+        }
+        return self;
+    }
+
+
+
+    var Point = function(x, y) {
+        this.x = x;
+        this.y = y;
+    };
+
+    var Polygon = function(centerX, centerY, radius, sides, startAngle, strokeStyle, fillStyle, filled) {
+        this.x = centerX;
+        this.y = centerY;
+        this.radius = radius;
+        this.sides = sides;
+        this.startAngle = startAngle;
+        this.strokeStyle = strokeStyle;
+        this.fillStyle = fillStyle;
+        this.filled = filled;
+    };
+
+    Polygon.prototype = {
+        getPoints: function() {
+            var points = [],
+                angle = this.startAngle || 0;
+
+            for (var i = 0; i < this.sides; ++i) {
+                points.push(new Point(this.x + this.radius * Math.sin(angle),
+                    this.y - this.radius * Math.cos(angle)));
+                angle += 2 * Math.PI / this.sides;
+            }
+            return points;
+        },
+
+        createPath: function(context) {
+            var points = this.getPoints();
+
+            context.beginPath();
+
+            context.moveTo(points[0].x, points[0].y);
+
+            for (var i = 1; i < this.sides; ++i) {
+                context.lineTo(points[i].x, points[i].y);
+            }
+
+            context.closePath();
+        },
+
+        stroke: function(context) {
+            context.save();
+            this.createPath(context);
+            context.strokeStyle = this.strokeStyle;
+            context.stroke();
+            context.restore();
+        },
+
+        fill: function(context) {
+            context.save();
+            this.createPath(context);
+            context.fillStyle = this.fillStyle;
+            context.fill();
+            context.restore();
+        },
+
+        move: function(x, y) {
+            this.x = x;
+            this.y = y;
+        },
+    };
+
+
+    draw.prototype.frame = function() {
+        this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
+
+        // create background rectangle
+        // this.context.lineWidth = 10;  
+        this.context.fillStyle = "gray";
+        this.context.fillRect(0, 0, this.context.canvas.width, this.context.canvas.height);
+
+        // draw frame
+        this.context.lineWidth = 10;
+        this.context.strokeStyle = "green";
+        this.context.strokeRect(0, 0, this.context.canvas.width, this.context.canvas.height);
+
+        // draw author infomation
+        this.context.fillStyle = "blue";
+        this.context.font = "20px Times New Roman";
+        this.context.fillText("-created by gloomyfish", 150, 30);
+
+        // draw inner rectangle
+        this.context.lineWidth = 10;
+        this.context.strokeStyle = "black";
+        this.context.strokeRect(45, 45, self.canvas.width - 100, self.canvas.height - 100);
+
+        return this;
+    }
+
+    // document.body.appendChild(d.circle()) // document.body.appendChild(d.numerals()) // document.body.appendChild(d.center())
+    var d = new draw();
+    // document.body.appendChild(d.font("hello"))
+    // document.body.appendChild(d.clock())
+    d.erase()
+
+    // d.grid('lightgray', 10, 10)
+    // d.grid() //.frame()
+    d.lineX().lineY()
+
+    //  d.erase(3000)
+
+    // // setTimeout(function() {
+    // //    
+    // // }, 2000)
+
+
+    // var p = new Polygon(0, 0, 0, 5);
+    // p.fill(d.context)
+
+
+    document.body.appendChild(d.canvas)
+
+    // _.cutImg(d.canvas, 3, 3, function(imgArr) {
+    //     //时序
+    //     _.timeSeq(imgArr, 100, function(img) {
+    //         document.body.appendChild(img);
+    //         //拖动
+    //         _.drag(img);
+    //     })
+    // })
+
+
+    //     context.font = FONT_HEIGHT + 'px Arial';
+    // loop = setInterval(drawClock, 1000);
     </script>
 </body>
 

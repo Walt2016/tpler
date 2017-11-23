@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,minimal-ui">
+    <title>matrix</title>
+    <script src="js/tpler.js"></script>
+    <style>
+    .box {
+        width: 300px;
+        height: 200px;
+        /*background-image: url('image/cir.gif');*/
+        /*background-size: 32px 32px;*/
+        background-position: center center;
+        background-repeat: no-repeat;
+        border: 10px solid #ccc;
+        margin-top: 20px;
+        margin-left: 10px;
+        position: relative;
+    }
+
+    .abs {
+        position: absolute;
+    }
+    </style>
+</head>
+
+<body>
+    <div class="box"></div>
+    <script>
+    console.log(_.pos(".box"))
+
+
+
+
+
+    var puzzle = function(el, imageSrc, row, col) {
+        var pos = _.pos(el)
+        _.extend(this, pos)
+        this.imageSrc = imageSrc;
+        this.imgArr = [];
+        this.posArr = [];
+
+
+        var row = this.row = row || 3;
+        var col = this.col = col || 3;
+
+        this.matrix(row, col);
+        // this.randomImg();
+        this.render(row, col)
+
+        var boxPos = this.boxPos = _.pos(".box");
+
+    }
+
+    puzzle.prototype = {
+
+        //生成 row * col 的矩阵
+        matrix: function(row, col) {
+            var row = row || 3;
+            var col = col || 3;
+
+            var debrisWidth = this.debrisWidth = this.width / row;
+            var debrisHeight = this.debrisHeight = this.height / col;
+            for (var i = 0; i < row; i++) {
+                for (var j = 0; j < col; j++) {
+                    var div = document.createElement('div');
+                    div.className = "debris abs"
+                    var index = i * col + j;
+                    div.id = "debris_" + index;
+                    div.setAttribute("index", index);
+                    div.css({
+                        'width': (debrisWidth - 2) + 'px',
+                        'height': (debrisHeight - 2) + 'px',
+                        'left': j * debrisWidth + 'px',
+                        'top': i * debrisHeight + 'px',
+                        "backgroundImage": "url('" + this.imageSrc + "')",
+                        'backgroundPosition': (-j) * debrisWidth + 'px ' + (-i) * debrisHeight + 'px'
+                    });
+                    this.imgArr.push(div);
+                    this.posArr.push({
+                        'left': j * debrisWidth + 'px',
+                        'top': i * debrisHeight + 'px'
+                    })
+                }
+            }
+        },
+        //随机排序
+        randomImg: function() {
+            this.imgArr = this.imgArr.sort(function() {
+                return Math.random() - Math.random();
+            });
+        },
+        render: function(row, col) {
+            var self = this;
+            self.status = "ok"
+
+            var fragment = document.createDocumentFragment();
+            this.imgArr.forEach(function(t, index) {
+                // var i = parseInt(index / col);
+                // var j = index % col;
+                // t.css({
+                //     top: i * self.debrisHeight  + 'px', //+ boxPos.y
+                //     left: j * self.debrisWidth  + 'px',//+ boxPos.x
+                // })
+                t.css(self.posArr[index]);
+                fragment.appendChild(t);
+                if (t.attr("index") != index) {
+                    self.status = "notok"
+                }
+            })
+            // document.body.appendChild(fragment)
+
+            _.$(".box").appendChild(fragment)//.empty()
+
+        },
+        //被覆盖的图片
+        calculateOverlap: function(eventPos) {
+            var row = Math.floor((eventPos.y - this.boxPos.y) / this.debrisHeight) + 1,
+                col = Math.floor((eventPos.x - this.boxPos.x) / this.debrisWidth) + 1;
+            var index = (row - 1) * this.col + col;
+            return index - 1
+            // return index < this.imgArr.length ? index - 1 : this.imgArr.length - 1; //索引从0开始算
+        }
+    }
+    //cir.gif
+    _.createImg('image/1.jpg', function(img) {
+        var width = img.width;
+        var height = img.height;
+
+        _.$(".box").css({
+            width: width + "px",
+            height: height + "px"
+        })
+
+        var p = new puzzle(".box", img.src, 3, 3)
+        // p.matrix(2, 2)
+        // p.render()
+
+        // _.drag(".debris")
+        var startPos, endPos, offset, el;
+        var zIndex = 1;
+
+        var orginalIndex, targetIndex;
+        toucher([{
+            el: ".debris",
+            type: "touchstart",
+            callback: function(item, ev) {
+                el = item;
+                el.css({ 'z-index': zIndex++ });
+                el.css({ position: "absolute", cursor: "move" });
+                startPos = _.pos(ev);
+                offset = _.pos(el);
+                orginalIndex = p.calculateOverlap(_.pos(ev))
+            }
+        }, {
+            el: ".debris", //document,
+            type: "touchmove",
+            callback: function(item, ev) {
+                endPos = _.pos(ev);
+                var left = endPos.x - startPos.x + offset.x;
+                var top = endPos.y - startPos.y + offset.y;
+                el.css({ left: left + "px", top: top + "px" });
+            }
+        }, {
+            el: ".debris", //document,
+            type: "touchend",
+            callback: function(item, ev) {
+                targetIndex = p.calculateOverlap(_.pos(ev))
+                //交换
+                if (targetIndex < p.imgArr.length && targetIndex >= 0) {
+                    var temp = p.imgArr[targetIndex];
+                    p.imgArr.splice(targetIndex, 1, item);
+                    p.imgArr.splice(orginalIndex, 1, temp);
+                }
+                p.render();
+
+                if (p.status == "ok") {
+                    console.log("ok",p.imgArr)
+
+                    // new puzzle(".box", 'image/2.jpg', 3, 3)
+                }
+                // item.css(p.posArr[targetIndex]);
+                // var target=_.$('.debris[index="'+targetIndex+'"]')
+                // target.css(p.posArr[orginalIndex]);
+
+            }
+
+        }])
+    })
+    </script>
+</body>
+
+</html>

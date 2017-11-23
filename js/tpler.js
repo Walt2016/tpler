@@ -383,18 +383,25 @@
             },
             //位置信息 支持事件 和Element
             pos: function(e) {
-                function CPos(x, y, el) {
+                function Postion(x, y, el) {
                     this.x = x;
                     this.y = y;
-                    this.time = +(new Date());
+                    this.time = +new Date();
                     this.el = el;
-
+                    this.width = el.clientWidth; //不包括边框   el.offsetWidth包括边框;
+                    this.height = el.clientHeight; //el.offsetHeight;
+                    this.rang = {
+                        top: y,
+                        left: x,
+                        right: x + this.width,
+                        bottom: y + this.height
+                    }
                 }
                 if (_.isElement(e)) { //元素
                     var el = e;
 
                     function _pos(el) {
-                        var pos = new CPos(el.offsetLeft, el.offsetTop, el);
+                        var pos = new Postion(el.offsetLeft, el.offsetTop, el);
                         var target = el.offsetParent;
                         while (target) {
                             pos.x += target.offsetLeft;
@@ -404,7 +411,6 @@
                         return pos;
                     }
                     return _pos(el);
-
                 } else if (_.isTouchEvent(e) || _.isMouseEvent(e)) { //事件
                     var ev = e,
                         x, y,
@@ -418,7 +424,10 @@
                         x = pos.pageX;
                         y = pos.pageY;
                     }
-                    return new CPos(x, y, el);
+                    return new Postion(x, y, el);
+                } else if (_.isString(e)) {
+                    var el = _.query(e);
+                    return _.pos(el)
                 }
             },
             //拖动事件
@@ -1180,15 +1189,14 @@
                     originImg = new Image();
                     originImg.src = imgSrc;
                 }
-
                 if (_.isImgLoad(originImg)) {
-                    callback && callback(originImg)
+                    callback && callback(originImg);
                 } else {
                     originImg.onload = function(e) {
-                        callback && callback(originImg)
+                        callback && callback(originImg);
                     }
                     originImg.onerror = function(e) {
-                        console.log("加载图片失败：" + e.path[0].src)
+                        console.log("加载图片失败：" + e.path[0].src);
                     }
                 }
             },
@@ -1276,7 +1284,7 @@
                 var _reverse = function(originImg) {
                     var canvas = document.createElement("canvas");
                     var ctx = canvas.getContext("2d");
-                    
+
                     var width = originImg.width;
                     var height = originImg.height;
                     canvas.width = width;
@@ -1297,8 +1305,8 @@
                 }
                 _.createImg(imgSrc, _reverse);
             },
-            masic:function(imgSrc, callback){
-                var _masic=function(originImg){
+            masic: function(imgSrc, callback) {
+                var _masic = function(originImg) {
 
                 }
 
@@ -2923,6 +2931,27 @@
 
                             var maxLeft = document.documentElement.clientWidth - el.clientWidth;
                             var maxTop = document.documentElement.clientHeight - el.clientHeight;
+
+                            var range = {
+                                top: 0,
+                                left: 0,
+                                right: maxLeft,
+                                bottom: maxTop
+                            }
+
+                            var _posInRange = function(pos, range) {
+                                // var pos=
+                               var x = _.min(pos.x, range.right);
+                                x = _.max(x, range.left);
+                               var y = _.min(pos.y, range.bottom);
+                                y = _.max(y, range.top);
+
+                                return {
+                                    left: x,
+                                    top: y
+                                }
+
+                            }
 
 
 
