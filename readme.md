@@ -3,6 +3,11 @@
 
 
 
+why tpler？
+因为不是很喜欢在html里写循环和判断。
+
+
+
 简要说明：
 也是一个js开发套件，功能包括
 模板
@@ -34,7 +39,7 @@ after/callback 回调处理
 
 js调用方式：
 支持数组 tper([])/tper({})
-`
+```
 tpler({
 	el:"#mySwiper",
 	data:[],
@@ -53,10 +58,10 @@ tpler({
 		
 	}
 })
-`
+```
 
 html：
-`
+```
 <div class="swiper-wrapper" template="_ppt_tpl" lazy="_ppt_tpl_lazy" id="mySwiper">
  <script type="text/template" id="_ppt_tpl">
      <div class="swiper-slide" style="background-image: url('{=picUrl|n_800_600}');" on="myHandler"></div>
@@ -66,31 +71,30 @@ html：
          <div data-background="{=picUrl|n_800_600}" class="swiper-lazy"></div>
      </div>
  </script>
-`
+```
 
 
 3、事件模块  
 移动开发自动切换click到tap模式
-`
+```
 toucher({
             el: el,
             type: "touchstart",
             callback: function(item, ev) {
             }
         })
-`
+```
 
 4.日志
 嵌入调试
-`
+```
 logger()
-`
-
+```
 5、路由
-`
+```
 var config={}
 var r=router(config)
 r.go("home")
-`
+```
 
 联系qq22802768

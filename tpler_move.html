@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+	<title>move</title>
+	<script src="js/tpler.js"></script>
+	<style>
+		.box{
+			width: 100px;
+			height:100px;
+			background-color: #ccc;
+			position: absolute;
+			border-radius: 50%;
+
+		}
+		.flex{
+			display: -webkit-box;display: -ms-flexbox;display: flex;
+
+		}
+		.trans {
+    -webkit-transition-property:all; 
+    /*// background-color;*/
+    -webkit-transition-duration: 0.3s;
+    -webkit-transition-timing-function: linner
+    /*ease;*/
+}
+/*.trans:hover {
+    background-color: #486AAA;
+    color: #fff;
+}*/
+
+	</style>
+</head>
+<body>
+	<div class="box trans"></div>
+	<script>
+
+		var translate=function(el,pos){
+			// transform: translate(50px,100px);
+            //-ms-transform: translate(50px,100px); /* IE 9 */
+            //-webkit-transform: translate(50px,100px); /* Safari and Chrome */
+            el.css({
+            	'transform': 'translate('+pos.x+'px,'+pos.y+'px)',
+            	'-ms-transform': 'translate('+pos.x+'px,'+pos.y+'px)',
+            	'-webkit-transform': 'translate('+pos.x+'px,'+pos.y+'px)',
+            	'transition-duration':'3s',
+            	'-webkit-transition-duration':'3s',
+            	'background-color':_.color()
+            })
+		}
+		
+		toucher({
+			el:document,
+			type:"touchstart",
+			callback:function(item,ev){
+
+				var pos=_.pos(ev);
+				var box=_.$(".box");
+
+				// pos.x=_.min(pos.x
+				// box.css({
+				// 	left:pos.x+"px",
+				// 	top:pos.y+"px"
+				// })
+
+				translate(box,pos)
+
+			}
+		})
+	</script>
+</body>
+</html>

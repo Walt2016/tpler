@@ -4,9 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,minimal-ui">
-    <title>matrix</title>
+    <title>puzzle</title>
     <script src="js/tpler.js"></script>
     <style>
+    .container{
+        display: flex;
+        flex-direction: column;
+    }
     .box {
         width: 300px;
         height: 200px;
@@ -23,17 +27,25 @@
     .abs {
         position: absolute;
     }
+    .step,.success{
+        color: red;
+        font-size: 15px;
+    }
+    .hide{
+        display: none;
+    }
     </style>
 </head>
 
 <body>
-    <div class="box"></div>
+<div class="container">
+        <div class="box"></div>
+    <div class="step"></div>
+    <div class="success hide">成功！</div>
+</div>
+
     <script>
     console.log(_.pos(".box"))
-
-
-
-
 
     var puzzle = function(el, imageSrc, row, col) {
         var pos = _.pos(el)
@@ -41,13 +53,14 @@
         this.imageSrc = imageSrc;
         this.imgArr = [];
         this.posArr = [];
+        this.step=0;
 
 
         var row = this.row = row || 3;
         var col = this.col = col || 3;
 
         this.matrix(row, col);
-        // this.randomImg();
+        this.randomImg();
         this.render(row, col)
 
         var boxPos = this.boxPos = _.pos(".box");
@@ -113,6 +126,14 @@
             // document.body.appendChild(fragment)
 
             _.$(".box").appendChild(fragment)//.empty()
+            setTimeout(function(){
+                if( self.status == "ok"&&self.step>0){
+                 alert("ok")
+                _.show(".success")
+            }
+
+            },500)
+            
 
         },
         //被覆盖的图片
@@ -122,10 +143,22 @@
             var index = (row - 1) * this.col + col;
             return index - 1
             // return index < this.imgArr.length ? index - 1 : this.imgArr.length - 1; //索引从0开始算
+        },
+        //交换图片
+        exchange:function(orginalIndex,targetIndex){
+            // console.log(orginalIndex,targetIndex)
+            if (targetIndex < this.imgArr.length && targetIndex >= 0&&targetIndex!=orginalIndex) {
+                    var temp = this.imgArr[targetIndex];
+                    this.imgArr.splice(targetIndex, 1, item);
+                    this.imgArr.splice(orginalIndex, 1, temp);
+                    this.step++;
+                    _.$(".step").html(p.step);
+                }
         }
     }
     //cir.gif
-    _.createImg('image/1.jpg', function(img) {
+    var img="image/"+_.random(["1","2","3","4","5","6","7","8","9"])+".jpg"
+    _.loadImg(img, function(img) {
         var width = img.width;
         var height = img.height;
 
@@ -152,7 +185,8 @@
                 el.css({ position: "absolute", cursor: "move" });
                 startPos = _.pos(ev);
                 offset = _.pos(el);
-                orginalIndex = p.calculateOverlap(_.pos(ev))
+                orginalIndex = p.calculateOverlap(_.pos(ev));
+                ev.preventDefault();
             }
         }, {
             el: ".debris", //document,
@@ -162,6 +196,7 @@
                 var left = endPos.x - startPos.x + offset.x;
                 var top = endPos.y - startPos.y + offset.y;
                 el.css({ left: left + "px", top: top + "px" });
+                ev.preventDefault();
             }
         }, {
             el: ".debris", //document,
@@ -169,18 +204,22 @@
             callback: function(item, ev) {
                 targetIndex = p.calculateOverlap(_.pos(ev))
                 //交换
-                if (targetIndex < p.imgArr.length && targetIndex >= 0) {
+                if (targetIndex < p.imgArr.length && targetIndex >= 0&&targetIndex!=orginalIndex) {
                     var temp = p.imgArr[targetIndex];
                     p.imgArr.splice(targetIndex, 1, item);
                     p.imgArr.splice(orginalIndex, 1, temp);
+                    p.step++;
+                    _.$(".step").html(p.step);
                 }
+                // p.exchange(orginalIndex,targetIndex);
                 p.render();
 
-                if (p.status == "ok") {
-                    console.log("ok",p.imgArr)
+                // if (p.status == "ok") {
+                //     console.log("ok",p.imgArr)
+                //     alert("ok")
 
-                    // new puzzle(".box", 'image/2.jpg', 3, 3)
-                }
+                //     // new puzzle(".box", 'image/2.jpg', 3, 3)
+                // }
                 // item.css(p.posArr[targetIndex]);
                 // var target=_.$('.debris[index="'+targetIndex+'"]')
                 // target.css(p.posArr[orginalIndex]);

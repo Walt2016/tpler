@@ -6,67 +6,63 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,minimal-ui">
     <title>tpler demo</title>
     <link rel="stylesheet" href="css/tpler.min.css">
-    <script src="js/tpler.js?v=3.2.1.1"></script>
+    <!-- <script src="js/libs/jquery-2.1.1.min.js"></script> -->
+    <!-- <script src="js/tpler.min.js"></script> -->
+    <script src="js/custom/tpler.js"></script>
+</head>
 
-    <body>
-        <div class="container" id="container">
-            <div class="top">tpler demo
-                <div class="icon" target="help">?</div>
+<body>
+    <div class="cooo">
+        <div class="append events" template="_append_tpl">
+            <li>------</li>
+        </div>
+    </div>
+    <div class="icon hide" target="test">?
+        <div class=".test">
+        </div>
+    </div>
+    <div class="container" id="container">
+        <div class="top">tpler demo
+            <div class="icon" target="help">?</div>
+        </div>
+        <div class="main" id="main">
+            <div class="addon">
+                <select class="addon-flied">
+                    <option value="try">demo1-try</option>
+                    <option value="child">demo2-child object</option>
+                    <option value="array">demo3-array</option>
+                    <option value="operation">demo4-operation</option>
+                    <option value="filter">demo5-filter</option>
+                    <option value="custom">demo6-custom filter </option>
+                    <option value="group">demo7-group </option>
+                    <option value="model">demo7-model </option>
+                    <option value="childarray">demo8-child array (todo) </option>
+                    <option value="markdown">demo8-markdown (todo)</option>
+                </select>
+                <div class="btn" id="run">run</div>
             </div>
-            <div class="main" id="main">
-                <div class="addon">
-                    <select class="addon-flied">
-                        <option value="">选择demo</option>
-                        <option value="try">demo1-try</option>
-                        <option value="child">demo2-child object</option>
-                        <option value="array">demo3-array</option>
-                        <option value="operation">demo4-operation</option>
-                        <option value="filter">demo5-filter</option>
-                        <option value="custom">demo6-custom filter </option>
-                        <option value="group">demo7-group </option>
-                        <option value="model">demo7-model </option>
-                        <option value="childarray">demo8-child array (todo) </option>
-                        <option value="markdown">demo8-markdown (todo)</option>
-                    </select>
-                    <div class="btn" id="run">run</div>
-                </div>
-                <div class="mt10">
-                    template:{=name|filter}
-                </div>
-                <div class="editer" contenteditable="true" id="tpl_editor"></div>
-                <div class="hide" id="group_editor_addon">
-                    <div class="mt10">group template</div>
-                    <div class="editer" contenteditable="true" id="group_editor"></div>
-                </div>
-                <div class="hide" id="custom_editor_addon">
-                    <div class="mt10">custom :function</div>
-                    <div class="editer" contenteditable="true" id="custom_editor"></div>
-                </div>
-                <div class="mt10">data:json</div>
-                <div class="editer" contenteditable="true" id="data_editor"></div>
-                <div class="mt10">result: <span id="result_type">html</span></div>
-                <div class="editer" id="result_editor">
-                </div>
+            <div class="mt10">
+                template:{=name|filter}
+                <div class="ooo">ff</div>
             </div>
-            <!-- <div id="help" class="main hide" template="_help_tpl">
-        </div> -->
-            <div id="help" class="main hide">
-                tpler help **template:{=name|filter}** \n data:json **operation symbol: + - * / ** filter: pipe symbol |,
-                <div id="_array_help">
-                    array ： render by autocycle .giv up "for" statement .*{=$index}* is sequence
-                </div>
-                var params = { el: "#result_editor", data: data, filters:{ "sayhello":function(data) { return "hello",data+",today is" +(new Date()); } } }; tpler(params); # This is an H1 ## This is an H2 ###### This is an H6
-                <div class="btn" on="clickHandler">this is a button,click me</div>
-                model:
-                <div model="name">this is a model </div>
-                bind:
-                <div bind="name">this is a bind </div>
-                <div>model:
-                    <input type="text" value="" model="name" />
-                </div>
+            <div class="editer" contenteditable="true" id="tpl_editor"></div>
+            <div class="hide" id="group_editor_addon">
+                <div class="mt10">group template</div>
+                <div class="editer" contenteditable="true" id="group_editor"></div>
+            </div>
+            <div class="hide" id="custom_editor_addon">
+                <div class="mt10">custom :function</div>
+                <div class="editer" contenteditable="true" id="custom_editor"></div>
+            </div>
+            <div class="mt10">data:json</div>
+            <div class="editer" contenteditable="true" id="data_editor"></div>
+            <div class="mt10">result: <span id="result_type">html</span></div>
+            <div class="editer" id="result_editor">
             </div>
         </div>
-        <script type="text/template" id="_help_tpl">
+        <!-- <div id="help" class="main hide" template="_help_tpl">
+        </div> -->
+        <div id="help" class="main hide">
             tpler help **template:{=name|filter}** \n data:json **operation symbol: + - * / ** filter: pipe symbol |,
             <div id="_array_help">
                 array ： render by autocycle .giv up "for" statement .*{=$index}* is sequence
@@ -80,227 +76,1298 @@
             <div>model:
                 <input type="text" value="" model="name" />
             </div>
-        </script>
-        <script type="text/template" id="_markdown_tpl">
-            **hello {=name} **
-        </script>
-        <script type="text/template" id="_default_tpl">
-            hello,{=name}!
-            <br> nice to meet u
-        </script>
-        <script type="text/template" id="_child_tpl">
-            score of chinese :{=score.chinese}
-        </script>
-        <script type="text/template" id="_array_tpl">
-            <li>{=$index}/{=$length} hello,{=name}!</li>
-        </script>
-        <script type="text/template" id="_operation_tpl">
-            total：{=a+b-c*d} float :{=f+g} child total :{=child.a + child.b-child.c*child.d/child.e} string:{=str.a+' '+str.b}
-        </script>
-        <script type="text/template" id="_filter_tpl">
-            date:{=time|date}
-            <br> {=friends}
-            <br> {=friends|first}
-            <br>{=friends|last,string}
-            <br>{=family|first}
-        </script>
-        <script type="text/template" id="_custom_tpl">
-            {=name|sayhello}
-        </script>
-        <script type="text/template" id="_group_tpl">
-            <li>{=$index} my name is,{=name}!</li>
-        </script>
-        <script type="text/template" id="_model_tpl">
-            hello {=name}
-            <div model="name"></div>
-            <div bind="name"></div>
-        </script>
-        <script type="text/template" id="_group_group_tpl">
-            <div>class: {=class}</div>
-        </script>
-        <script type="text/template" id="_childarray_tpl">
-            hello,{=name} ! there are my companies
-            <ul>
-                <li>{=companies|todo}</li>
-            </ul>
-        </script>
-        <script type="text/template" id="_custom_function">
-            { "sayhello": "function(data){ return 'hello,'+data+',today is:' +(new Date()).toLocaleString(); }"}
-        </script>
-        <script type="text/template" id="_default_data">
-            {"name":"haha","from":"sz","age":11,"score":{"chinese":60,"mathematics":78},"time":"1493956194004","friends":[{"name":"hehe"},{"name":"hoho"}],"family":["father",'mather','brother']}
-        </script>
-        <script type="text/template" id="_operation_data">
-            { a: 1, b: 2, c: 3, d: 4, e: 5, f: 0.09999999, g: 0.00000001, child:{ a:3, b:4, c:5, d:6, e:7 }, str:{ a:"hello", b:"world" } }
-        </script>
-        <script type="text/template" id="_try_data">
-            {"name":"haha"}
-        </script>
-        <script type="text/template" id="_array_data">
-            [{"name":"haha"},{"name":"hoho"},{"name":"hehe"}]
-        </script>
-        <script type="text/template" id="_group_data">
-            [{"name":"haha","class":"A"},{"name":"hoho","class":"A"},{"name":"hehe","class":"B"}]
-        </script>
-        <script type="text/template" id="_childarray_data">
-            {name:"xxoo",companies:[{"name":"haha"},{"name":"hoho"},{"name":"hehe"}]}
-        </script>
-        <script>
-        var _ = tpler();
-        var $ = _.$;
-        console.log($("[target]"))
-        var tpl_editor = $("#tpl_editor");
-        var data_editor = $("#data_editor");
-        var result_editor = $("#result_editor");
-        var result_type = $("#result_type");
-        var custom_editor = $("#custom_editor");
-        var custom_editor_addon = $("#custom_editor_addon");
-        var group_editor = $("#group_editor");
-        var group_editor_addon = $("#group_editor_addon");
+        </div>
+    </div>
+    <script type="text/template" id="_help_tpl">
+        tpler help **template:{=name|filter}** \n data:json **operation symbol: + - * / ** filter: pipe symbol |,
+        <div id="_array_help">
+            array ： render by autocycle .giv up "for" statement .*{=$index}* is sequence
+        </div>
+        var params = { el: "#result_editor", data: data, filters:{ "sayhello":function(data) { return "hello",data+",today is" +(new Date()); } } }; tpler(params); # This is an H1 ## This is an H2 ###### This is an H6
+        <div class="btn" on="clickHandler">this is a button,click me</div>
+        model:
+        <div model="name">this is a model </div>
+        bind:
+        <div bind="name">this is a bind </div>
+        <div>model:
+            <input type="text" value="" model="name" />
+        </div>
+    </script>
+    <script type="text/template" id="_markdown_tpl">
+        **hello {=name} **
+    </script>
+    <script type="text/template" id="_default_tpl">
+        hello,{=name}!
+        <br> nice to meet u
+    </script>
+    <script type="text/template" id="_child_tpl">
+        score of chinese :{=score.chinese}
+    </script>
+    <script type="text/template" id="_array_tpl">
+        <li>{=$index}/{=$length} hello,{=name}!</li>
+    </script>
+    <script type="text/template" id="_operation_tpl">
+        total：{=a+b-c*d} float :{=f+g} child total :{=child.a + child.b-child.c*child.d/child.e} string:{=str.a+' '+str.b}
+    </script>
+    <script type="text/template" id="_filter_tpl">
+        date:{=time|date}
+        <br> {=friends}
+        <br> {=friends|first}
+        <br>{=friends|last,string}
+        <br>{=family|first}
+    </script>
+    <script type="text/template" id="_custom_tpl">
+        {=name|sayhello}
+    </script>
+    <script type="text/template" id="_group_tpl">
+        <li>{=$index} my name is,{=name}!</li>
+    </script>
+    <script type="text/template" id="_model_tpl">
+        hello {=name}
+        <div model="name"></div>
+        <div bind="name"></div>
+    </script>
+    <script type="text/template" id="_group_group_tpl">
+        <div>class: {=class}</div>
+    </script>
+    <script type="text/template" id="_childarray_tpl">
+        hello,{=name} ! there are my companies
+        <ul>
+            <li>{=companies|todo}</li>
+        </ul>
+    </script>
+    <script type="text/template" id="_custom_function">
+        { "sayhello": "function(data){ return 'hello,'+data+',today is:' +(new Date()).toLocaleString(); }"}
+    </script>
+    <script type="text/template" id="_default_data">
+        {"name":"haha","from":"sz","age":11,"score":{"chinese":60,"mathematics":78},"time":"1493956194004","friends":[{"name":"hehe"},{"name":"hoho"}],"family":["father",'mather','brother']}
+    </script>
+    <script type="text/template" id="_operation_data">
+        { a: 1, b: 2, c: 3, d: 4, e: 5, f: 0.09999999, g: 0.00000001, child:{ a:3, b:4, c:5, d:6, e:7 }, str:{ a:"hello", b:"world" } }
+    </script>
+    <script type="text/template" id="_try_data">
+        {"name":"haha"}
+    </script>
+    <script type="text/template" id="_array_data">
+        [{"name":"haha"},{"name":"hoho"},{"name":"hehe"}]
+    </script>
+    <script type="text/template" id="_group_data">
+        [{"name":"haha","class":"A"},{"name":"hoho","class":"A"},{"name":"hehe","class":"B"}]
+    </script>
+    <script type="text/template" id="_childarray_data">
+        {name:"xxoo",companies:[{"name":"haha"},{"name":"hoho"},{"name":"hehe"}]}
+    </script>
+    <script type="text/template" id="_append_tpl">
+        <li id="li{=text}">{=text}</li>
+    </script>
+    <script>
+    var _ = tpler();
+    var $ = _.query;
+    console.log($("[target]"))
+    var tpl_editor = $("#tpl_editor");
+    var data_editor = $("#data_editor");
+    var result_editor = $("#result_editor");
+    var result_type = $("#result_type");
+    var custom_editor = $("#custom_editor");
+    var custom_editor_addon = $("#custom_editor_addon");
+    var group_editor = $("#group_editor");
+    var group_editor_addon = $("#group_editor_addon");
 
-        var key;
+    var key;
 
-        data_editor.on("blur", function() {
-            $("#run").trigger("click");
-        });
+    data_editor.on("blur", function() {
+        $("#run").trigger("click");
+    });
 
 
-        $("select").on("change", function() {
-            console.log(_.type(this))
-            console.log(_.type($(this)))
-            key = $(this).val();
-            var tplname = "_" + key + "_tpl";
-            if ($("#" + tplname).length == 0) {
-                tplname = "_default_tpl";
+    $("select").on("change", function() {
+        console.log(_.type(this))
+        console.log(_.type($(this)))
+        key = $(this).val();
+        var tplname = "_" + key + "_tpl";
+        if ($("#" + tplname).length == 0) {
+            tplname = "_default_tpl";
+        }
+        var tpl = $("#" + tplname).html();
+        var $data = $("#_" + key + "_data");
+        if ($data.length == 0) {
+            $data = $("#_default_data");
+        }
+        var data = $data.html();
+        tpl = _.enHtml(tpl);
+        tpl_editor.html(tpl);
+        data_editor.html(data);
+        result_editor.attr("template", tplname);
+        result_editor.removeAttr("group");
+        _.hide(group_editor_addon, custom_editor_addon);
+
+        switch (key) {
+            case "group":
+                var group = "_" + key + "_group_tpl";
+                result_editor.attr("group", group);
+                _.show(group_editor_addon);
+                group_editor.html($("#" + group).html())
+                break;
+            case "custom":
+                var custom = "_" + key + "_function";
+                custom_editor.html($("#" + custom).html())
+                _.show(custom_editor_addon);
+                break;
+        }
+    });
+
+    $("#run").on("click", function() {
+        var tpl = tpl_editor.text();
+        tpl = _.deHtml(tpl);
+        var tplname = result_editor.attr("template");
+        if (!tplname) {
+            $("select").trigger("change");
+            tplname = result_editor.attr("template");
+        }
+        $("#" + tplname).html(tpl);
+
+        var group = result_editor.attr("group");
+        if (group) {
+            var groupTpl = group_editor.text();
+            groupTpl = _.deHtml(groupTpl);
+            $("#" + group).html(groupTpl);
+        }
+
+        // try {
+        var starTime = (new Date()).getTime();
+        var data = _.json(data_editor.text());
+        // console.log(data.toJSONString());
+        console.log(JSON.stringify(data));
+        if (_.isObject(data)) {
+            data_editor.html(_.toJSONString(data));
+        }
+
+        var params = {
+            el: "#result_editor",
+            data: data,
+            callback: function() {
+                console.log("tpler done! use time: " + ((new Date()).getTime() - starTime) + "ms")
             }
-            var tpl = $("#" + tplname).html();
-            var $data = $("#_" + key + "_data");
-            if ($data.length == 0) {
-                $data = $("#_default_data");
-            }
-            var data = $data.html();
-            tpl = _.enHtml(tpl);
-            tpl_editor.html(tpl);
-            data_editor.html(data);
-            result_editor.attr("template", tplname);
-            result_editor.removeAttr("group");
-            _.hide(group_editor_addon, custom_editor_addon);
+        }
 
-            switch (key) {
-                case "group":
-                    var group = "_" + key + "_group_tpl";
-                    result_editor.attr("group", group);
-                    _.show(group_editor_addon);
-                    group_editor.html($("#" + group).html())
-                    break;
-                case "custom":
-                    var custom = "_" + key + "_function";
-                    custom_editor.html($("#" + custom).html())
-                    _.show(custom_editor_addon);
-                    break;
-            }
-        });
+        if (key == "custom") {
+            params.filters = _.json(custom_editor.text());
+        }
+        if (key == "markdown") {
+            params.syntax = "markdown"
+        }
+        var t = tpler(params);
+        console.log(t);
 
-        $("#run").on("click", function() {
-            var tpl = tpl_editor.text();
-            tpl = _.deHtml(tpl);
-            var tplname = result_editor.attr("template");
-            if (!tplname) {
-                $("select").trigger("change");
-                tplname = result_editor.attr("template");
-            }
-            $("#" + tplname).html(tpl);
 
-            var group = result_editor.attr("group");
-            if (group) {
-                var groupTpl = group_editor.text();
-                groupTpl = _.deHtml(groupTpl);
-                $("#" + group).html(groupTpl);
-            }
 
-            // try {
-            var starTime = (new Date()).getTime();
-            var data = _.json(data_editor.text());
-            // console.log(data.toJSONString());
-            console.log(JSON.stringify(data));
-            if (_.isObject(data)) {
-                data_editor.html(_.toJSONString(data));
-            }
+        // } catch (e) {
+        //     result_editor.html(e);
 
+        // }
+    });
+
+    $("[target]").on("click", function() {
+        var id = $(this).attr("target")
+        if (_.isShow($("#" + id))) {
+            _.hide($("#" + id));
+            _.show($("#main"));
+        } else {
+            _.show($("#" + id));
+            _.hide($("#main"));
+            var data = {
+                name: "oooo",
+                age: 25
+            }
             var params = {
-                el: "#result_editor",
+                el: "#" + id,
                 data: data,
-                callback: function() {
-                    console.log("tpler done! use time: " + ((new Date()).getTime() - starTime) + "ms")
-                }
+                syntax: "markdown"
             }
-
-            if (key == "custom") {
-                params.filters = _.json(custom_editor.text());
-            }
-            if (key == "markdown") {
-                params.syntax = "markdown"
+            params.clickHandler = function() {
+                // $(this).css({
+                //     "background": _.color()
+                // });
+                this.style.backgroundColor = _.color()
             }
             var t = tpler(params);
             console.log(t);
 
 
 
-            // } catch (e) {
-            //     result_editor.html(e);
+            setTimeout(function() {
+                console.log(data);
+                data.name = "u see,the name changed";
+                console.log(data);
 
-            // }
+            }, 3000)
+        }
+    });
+
+    result_editor.on("click", function() {
+        var result = result_editor.html();
+        if (_.isHtml(result)) {
+            result = _.enHtml(result)
+            result_type.html("html source");
+        } else {
+            result = _.deHtml(result)
+            result_type.html("html");
+        }
+        result_editor.html(result);
+    });
+
+
+    //测试
+    var xxx = function() {
+
+        var Person = {
+            name: "fdfdsf",
+            age: 55
+        }
+        Person = ["test", "sdf"]
+        var names = Object.getOwnPropertyNames(Person);
+        // var names=Object.getOwnPropertyNames.call(null,Person);
+        // names=_.keys(Person);
+        // names=Object.keys(Person);
+        console.log("names", names);
+        var b = document.getElementById("container");
+        console.log(b);
+
+        // var d=_.query(".container").query("[target]")
+
+        // console.log($("[target]")) 
+
+        // d= _.query("[target]")
+
+        console.log(_.query("#container .top"), _.query("#container .top").length)
+        console.log(_.query("#container .mt10"), _.query("#container .mt10").length)
+
+        _.fast(function() {
+            _.query("#container .mt10")
+        }, function() {
+            $("#container .mt10")
+        })
+
+        console.log(_.query("#container .mt10"), _.query("#container").query(".mt10").length)
+
+        // console.log(_.makeid());
+        // console.log(_.random());
+
+        // _.fast(_.makeid,_.random)
+
+        // _.fast(_.random,_.makeid)
+        // _.fast(_.random,_.makeid,function(){
+        //    return Math.random()
+
+        // })
+
+        // console.log(_.query("[value]").toObject())
+        console.log(_.query("[value]"));
+        console.log(_.query("[value]:first-child"));
+
+
+        console.log(_.query("[value]").query(":first-child"));
+        console.log(_.query("[value]").query("[value='child']"));
+
+        console.log(_.query(".mt10").query(".ooo"))
+        console.log(_.type(_.query("[value]")));
+        _.each(_.query("body").query(".mt10"), function(val, index) {
+            console.log(_.type(val), val);
         });
 
-        $("[target]").on("click", function() {
-            var id = $(this).attr("target")
-            if (_.isShow($("#" + id))) {
-                _.hide($("#" + id));
-                _.show($("#main"));
-            } else {
-                _.show($("#" + id));
-                _.hide($("#main"));
-                var data = {
-                    name: "oooo",
-                    age: 25
+        console.log(Array.prototype);
+        console.log(Element.prototype);
+
+        console.log(_.type(_.query("body")))
+
+        _.query("body").attr("ttt", "ggg");
+        _.query(".mt10").attr("ttt", "ggg")
+
+
+        console.log($("body"))
+        console.log(_.type($("body")))
+
+        console.log(!!(_.query("body").attr("test")))
+
+        console.log(($("body").attr("test")))
+
+        _.fast(function() {
+            var attr;
+            var eles = document.querySelectorAll(".mt10");
+            try {
+                arr = Array.prototype.slice.call(eles);
+            } catch (e) { //兼容处理
+                arr = new Array();
+                for (var i = 0; i < eles.length; i++) {
+                    arr.push(eles[i]);
                 }
-                var params = {
-                    el: "#" + id,
-                    data: data,
-                    syntax: "markdown"
-                }
-                params.clickHandler = function() {
-                    // $(this).css({
-                    //     "background": _.color()
-                    // });
-                    this.style.backgroundColor = _.color()
-                }
-                var t = tpler(params);
-                console.log(t);
-
-
-
-                setTimeout(function() {
-                    console.log(data);
-                    data.name = "u see,the name changed";
-                    console.log(data);
-
-                }, 3000)
             }
+            return attr;
+        }, function() {
+            var eles = document.querySelectorAll(".mt10");
+            return Array.prototype.slice.call(eles);
+        }, 100000)
+
+
+        //         // var d = _.query(".container [target]");
+        //         console.log(d);
+        //         console.log(_.type(d));
+
+
+
+        var ele = document.querySelector("#tpl_editor")
+        ele.text("<em>dfdffs</em>")
+        // ele.html("<em>dfdffs</em>")
+
+        // _.query(ele).text("<em>dfdffs</em>")
+        // _.query(ele).html("<em>dfdffs</em>")
+
+
+        // _.query("#tpl_editor").text("<em>dfdffs</em>")
+        // _.query("#tpl_editor").html("<em>dfdffs</em>")
+
+        // $("#tpl_editor").text("<em>dfdffs</em>");
+
+        console.log(Element.prototype);
+        console.log(window.dispatchEvent);
+
+        console.log(_.query("#_try_tpl"))
+
+        console.log(HTMLScriptElement.prototype)
+
+
+
+        console.log(_.query("#_default_tpl"), _.query("#_default_tpl").prototype)
+
+        console.log(document.querySelector("#_default_tpl"), document.querySelector("#_default_tpl").prototype)
+
+        console.log(_.query("#container"), _.query("#container").prototype)
+
+        console.log(document.querySelector("#container"), document.querySelector("#container").__proto__)
+
+
+
+
+        // var c=document.querySelector("#container");
+        var c = _.query("#container")
+        console.log(_.type(c))
+        console.log(c, c.text())
+
+        var c = _.query("#_default_tpl")
+        console.log(_.type(c), c.nodeType)
+        console.log(c.name) //.Symbol
+
+        console.log(Object.prototype.toString.call(c))
+
+        console.log(c.__proto__) //,c.text()
+        console.log(c.innerText)
+
+
+        function fo() {
+            console.log(this);
+            console.log(Object.prototype.toString.call(this));
+            console.log(Object.prototype.toString(this));
+        }
+        fo.call("hello");
+
+        console.log(Object.prototype.toString({}))
+
+        console.log(Object.prototype.toString.call("dfdf"))
+
+    }
+
+
+
+
+    // (function(){
+
+
+    //     // console.log(_.type(arguments));
+    // })()
+
+    var test = function() {
+        console.log(Object.prototype.toString.call(arguments))
+
+        var j = JSON.parse('{"test":"test"}')
+        console.log(Object.prototype.toString.call(j));
+
+        console.log(Object.prototype.toString.call({
+            "test": "test"
+        }))
+
+        var c = document.querySelectorAll("[value]");
+        console.log(c)
+        console.log(Object.prototype.toString.call(c), c.nodeType);
+
+        c = document.querySelector("[value]")
+        console.log(Object.prototype.toString.call(c), c.nodeType);
+        console.log(_.type(arguments));
+        console.log(Object.prototype.toString.call(new Map())) //"[object Map]"
+
+        console.log(Object.prototype.toString.call(new Set())) //"[object Set]"
+        console.log(Object.prototype.toString.apply(new WeakMap()));
+
+        var e = new TypeError('Symbol expected.')
+        console.log(Object.prototype.toString.apply(e));
+
+    }
+
+    // test();
+
+
+    var test2 = function() {
+        var t = document.querySelector("#tpl_editor")
+        console.log(Object.prototype.toString.call(t), t.nodeType);
+        console.log(t.text(), _.type(t))
+
+        var t = document.querySelector("#_default_tpl")
+        console.log(Object.prototype.toString.call(t), t.nodeType);
+
+        console.log(t.__proto__)
+
+        console.log(t.text)
+
+        // [Exception: TypeError: Illegal invocation at HTMLScriptElement.remoteFunction (<anonymous>:3:14)
+
+        // console.log(t.text?(function(){
+        //     t.text()
+
+        // })():t.innerText)
+    }
+
+    // test2()
+
+
+    var test3 = function() {
+        // var t =document.querySelectorAll("#help :visible,#help:visible");
+        // var t = document.querySelectorAll("#help:visible");
+        // console.log(t);
+
+    }
+
+    // test3();
+
+    // console.log(Array.prototype)
+
+
+
+
+
+
+
+
+
+    // var test = function() {
+    //     var args = Array.prototype.slice.call(arguments);
+    //     console.log(args.length);
+    //     var first = args.shift();
+    //     console.log(args.length);
+
+    //     console.log(first, _.type(first));
+    // }
+
+    // test();
+    // test(null);
+    // test(undefined);
+    // test(1);
+    // test(true);
+    // test(Number("ff"))
+    // test('test');
+    // test([]);
+    // test(function() {})
+    // test({})
+    // test(/fff/g)
+    // test(result_editor)
+    // test(result_editor.get(0))
+    // test(document.querySelector("#result_editor"))
+    // test(document.querySelectorAll("#result_editor"));
+    // test(Math);
+    // test(Object);
+    // test(new Object());
+    // test(typeof "");
+    // var Person = new Object();
+    // Person.age = 25;
+    // console.log(Person);
+    // test(Person.constructor);
+
+    // var person = {
+    //     age: 10
+    // };
+    // Object.defineProperty(person, "type", {
+    //     get: function() {
+    //         if (person.age > 17) {
+    //             return "成人";
+    //         }
+    //         return "小孩";
+    //     }
+    // })
+    // console.log(person.type); //小孩    
+    // person.age = 18;
+    // console.log(person.type); //成人    
+    // // test(Object.defineProperty.call({}));
+
+    // var obj = {
+    //     name: "name"
+    // };
+    // console.log(obj.name); //name        
+    // Object.defineProperty(obj, "name", {
+    //     value: "newValue",
+    //     writable: false
+    // })
+    // console.log(obj.name); //newValue   
+    // obj.name = "oldValue";
+    // console.log(obj.name); //newValue
+
+
+    // Object.defineProperty(person, "age", {
+    //     get:function(){
+    //         return person.age;
+
+    //     },
+    //     set: function(val) {
+    //         // person.age++;
+    //         console.log("set "+val);
+    //     }
+    // });
+    // person.age =33;
+    // setTimeout(function(){
+
+    //     person.age =55 ;//
+    //     // person.age=person.age+1;
+
+    // },1000)
+
+    // function Person() {
+    //     Person.age = 1;
+    //     Person.go = function() {
+    //         console.log("Person.go");
+    //     }
+    // }
+
+    // var o={
+    //     age:24
+    // }
+
+    // function log(obj) {
+    //     console.log("------------")
+    //     console.log(_.objectName(obj))
+    //     console.log(_.type(obj))
+    //     // console.log(obj.prototype.constructor.name)
+    //         // console.log(obj)
+    //     console.log(obj.prototype)
+    //     console.log(obj.constructor.prototype)
+    //     console.log("------------")
+
+    // }
+    // log(Person)
+    // var p = new Person();
+    // log(p)
+    // log(o)
+
+    // ;
+    // (function() {
+    //     function _$(els) {
+    //         _$.prototype.init(els)
+    //     }
+    //     _$.prototype = {
+    //             init: function(els) {
+    //                 this.elements = [];
+    //                 for (var i = 0, len = els.length; i < len; i++) {
+    //                     var element = els[i];
+    //                     if (typeof element === "string") {
+    //                         element = document.getElementById(element);
+    //                     }
+    //                     this.elements.push(element);
+    //                 }
+
+    //             },
+    //             each: function(fn) {
+    //                 for (var i = 0, len = this.elements.length; i < len; i++) {
+    //                     fn.call(this, this.elements[i]);
+    //                     console.log(this.elements[i])
+    //                 }
+    //             },
+    //             setStyle: function(prop, val) {
+    //                 this.each(function(el) {
+    //                     console.log(el)
+    //                     el.style[prop] = val;
+    //                 })
+    //             }
+    //         }
+    //         // console.log(_$)
+    //         // console.log(_$.prototype)
+
+    //     window._$ = function() {
+    //         return new _$(arguments);
+    //     }
+    // })();
+    // console.log(_$("container"))
+    // _$("container").setStyle("color", "red")
+
+
+    // var $1, format;
+    // format = "yyy-ddd"
+    // if (/(y+)/.test(format)) {
+    //     $1 = RegExp.$1,
+    //         format = format.replace($1, (4 - $1.length));
+    // }
+    // console.log(format)
+
+    // var test = "888-yyy-ddd-sdsd".replace(/(y+).*?(d+)/, function(match) {
+    //     console.log(match)
+
+    //     return match.replace(RegExp.$1, RegExp.$2)
+    //         // return match;
+
+    // });
+    // console.log(test)
+
+    // var k = "key"
+    // var v = "ff"
+    // var o = {
+    //     k: v
+    // }
+    // var o = {}
+    //     // o=new Object()
+
+    // // // 
+    // o[k] = v
+
+    // // var o= ({}[k]=v)
+
+    // console.log(o, o.prototype)
+    // console.log({}, {}.prototype)
+    //     // console.log(({})[k]=v)
+    //     // console.log(o[k]=v)
+
+    // var txt = "ffffffffffffffddddd";
+    // txt.replace(/(f+)|(d+)/g, function(match, f, d, offset) {
+    //     console.log(match);
+    //     f && console.log("f:" + f);
+    //     d && console.log("d:" + d)
+    //     console.log(offset)
+
+    // })
+
+
+    // Element.prototype.test = function() {
+    //     console.log("test");
+
+    // }
+
+    // var p = {
+    //     a: function() {
+
+    //     },
+    //     b: function() {
+
+    //     }
+    // }
+
+    // Element.prototype = _.extend(Element.prototype, p);
+
+    // console.log(Element.prototype)
+
+    // console.log(_.isElement(document), _.type(document))
+
+    // console.log(_.type(window));
+
+    // var e = document.querySelector("#result_editor");
+    // console.log(e.aaaa)
+
+    // _.query("#container").css("color", "green");
+
+    // // var selector = ".main:visible"
+
+    // // if (/([^:]*?)\:([^:]*?)/g.test(selector)) {
+    // //     var $1 = RegExp.$1;
+    // //     var $2 = RegExp.$2;
+    // //     console.log($1,$2)
+    // // }
+    // // console.log(/([^:]*?)\:([^:]*?)/g.exec(selector))
+    // var p = [{
+    //     a: "a"
+    // }, {
+    //     b: "b"
+    // }]
+
+    // console.log(_.type(p));
+
+    // console.log(_.isObject(p))
+
+    // console.log(Element.prototype)
+
+    // // var p=_.extend({},null,_);
+    // console.log(_.type(document.getElementById))
+
+    // var d = document.getElementById;
+
+    // var s = d.call(document, "data_editor").innerHTML = "dfdf"
+
+    // // alert(s);
+
+    // // var s= d("data_editor").innerHTML="ggg"
+
+    // console.log(s)
+    // console.log(Object.create)
+
+    // var Person = (function(window) {
+    //     var Person = function(name) {
+    //         return new Person.fn.init(name);
+    //     }
+
+    //     Person.fn = Person.prototype = {
+    //         // constructor: Person,
+    //         init: function(name) {
+    //             this.name = name;
+    //             this.sayHello = function() {
+    //                 this.makeArray();
+    //             }
+    //         },
+    //         makeArray: function() {
+    //             console.log(this.name);
+    //         }
+    //     }
+
+    //     Person.fn.init.prototype = Person.fn;
+
+    //     return Person;
+    // })();
+
+    // var p = new Person({
+    //     name: "a",
+    //     age: 11,
+    //     sex: "man"
+    // })
+    // p.sayHello()
+
+    // var a = new Array(1, 2, 3)
+    // console.log(a)
+    // console.log(a.constructor.name)
+    // console.log(Array)
+
+    // var myArray = (function() {
+    //     myArray = function() {
+    //         return myArray.fn.init(arguments)
+    //     }
+    //     myArray.fn = myArray.prototype = {
+    //         constructor: Array,
+    //         init: function() {
+    //             console.log(Array.prototype.slice.call(arguments)[0])
+    //             return Array.prototype.slice.call(arguments)[0];
+    //         }
+    //     }
+    //     myArray.fn.init.prototype = myArray.fn;
+    //     return myArray
+    // })()
+
+    // console.log(Array)
+
+    // var a = new myArray(1, 2, 3)
+    // console.log(a)
+
+    // var b = myArray(1, 2, 3, 4)
+    // console.log(b)
+
+    // var c = myArray([1, 2, 3, 4])
+    // console.log(c)
+
+    // function x() {
+
+    // }
+    // console.log(x, x.prototype)
+    // var y = new x();
+    // console.log(y, y.prototype)
+    // console.log(tpler);
+    // console.log(tpler.prototype)
+    // console.log(tpler(), tpler().isObject(""))
+
+    // console.log('<div model="name"></div>'.preModel())
+
+
+    'a<div model="name"></div>c'.replace(/<[^>]+?model=\"(.*?)\".*?>(.*?)<\/[^>]+?>/gi, function(match) {
+        // body...
+        console.log(match)
+        console.log(RegExp)
+        console.log(RegExp.$1, RegExp.$2)
+    });
+    console.log("-----------")
+    var data = {
+        a: 1,
+        b: 2,
+        c: 3,
+        d: 4,
+        e: 5,
+        f: 0.09999999,
+        g: 0.00000001
+    }
+    var str = "a+b-c*d/e"
+
+    // var operation = function(obj, str) {
+    //     var symbol = str.match(/([\+|\-|\*|\/]+)/g)
+    //     var ps = [];
+    //     var data = obj;
+    //     var fn = function(str) {
+    //         if (symbol.length == 0) {
+    //             ps.push("data." + str);
+    //             return;
+    //         }
+    //         var first = symbol.shift();
+    //         var pos = str.indexOf(first);
+    //         ps.push("data." + str.substring(0, pos) + first);
+    //         var surplus = str.substring(pos + 1);
+    //         fn(surplus);
+    //     }
+    //     fn(str)
+    //     return eval(ps.join(""));
+    // }
+
+    // Object.prototype.operation = function(reg) {
+    //     return operation(this, reg);
+    // };
+
+
+    // 通过isEqual工具方法判断数值是否相等
+    function isEqual(number1, number2, digits) {
+        digits = digits == undefined ? 10 : digits; // 默认精度为10
+        return number1.toFixed(digits) === number2.toFixed(digits);
+    }
+
+    // isEqual(1.0 - 0.7, 0.3); // return true
+
+    // 原生扩展方式，更喜欢面向对象的风格
+    Number.prototype.isEqual = function(number, digits) {
+        digits = digits == undefined ? 10 : digits; // 默认精度为10
+        return this.toFixed(digits) === number.toFixed(digits);
+    }
+
+    //浮点运算
+
+    //加法  
+    function FloatAdd(arg1, arg2) {
+        var r1, r2, m;
+        try {
+            r1 = arg1.toString().split(".")[1].length
+        } catch (e) {
+            r1 = 0
+        }
+        try {
+            r2 = arg2.toString().split(".")[1].length
+        } catch (e) {
+            r2 = 0
+        }
+        m = Math.pow(10, Math.max(r1, r2));
+        return (arg1 * m + arg2 * m) / m;
+    }
+
+    //减法  
+    function FloatSub(arg1, arg2) {
+        var r1, r2, m, n;
+        try {
+            r1 = arg1.toString().split(".")[1].length
+        } catch (e) {
+            r1 = 0
+        }
+        try {
+            r2 = arg2.toString().split(".")[1].length
+        } catch (e) {
+            r2 = 0
+        }
+        m = Math.pow(10, Math.max(r1, r2));
+        //动态控制精度长度  
+        n = (r1 >= r2) ? r1 : r2;
+        return ((arg1 * m - arg2 * m) / m).toFixed(n);
+    }
+
+    //乘法  
+    function FloatMul(arg1, arg2) {
+        var m = 0,
+            s1 = arg1.toString(),
+            s2 = arg2.toString();
+        try {
+            m += s1.split(".")[1].length
+        } catch (e) {}
+        try {
+            m += s2.split(".")[1].length
+        } catch (e) {}
+        return Number(s1.replace(".", "")) * Number(s2.replace(".", "")) / Math.pow(10, m);
+    }
+
+
+    //除法  
+    function FloatDiv(arg1, arg2) {
+        var t1 = 0,
+            t2 = 0,
+            r1, r2;
+        try {
+            t1 = arg1.toString().split(".")[1].length
+        } catch (e) {}
+        try {
+            t2 = arg2.toString().split(".")[1].length
+        } catch (e) {}
+        with(Math) {
+            r1 = Number(arg1.toString().replace(".", ""));
+
+            r2 = Number(arg2.toString().replace(".", ""));
+            return (r1 / r2) * pow(10, t2 - t1);
+        }
+    }
+
+    // Number.prototype.div = function(arg) {
+    //     return FloatDiv(this, arg);
+    // }
+
+    // //给Number类型增加一个add方法，调用起来更加方便。 
+    // Number.prototype.add = function(arg) {
+    //     return FloatAdd(arg, this);
+    // }
+
+    // //给Number类型增加一个mul方法，调用起来更加方便。 
+    // Number.prototype.mul = function(arg) {
+    //     return FloatMul(arg, this);
+    // }
+
+    // (1.0 - 0.7).isEqual(0.3); // return true
+
+    // var c = cmd(data, str);
+    // console.log(c)
+
+    console.log(data.cmd("f+g"))
+
+    console.log(1 + 7 * 0.8)
+    // console.log(FloatMul(7, 0.8))
+    console.log((1).add((7).mul(0.8)))
+
+    // var has = function(obj, key) {
+    //     // if(key.indexOf("."))
+    //     var ks = key.split(".");
+    //     var len = ks.length;
+    //     var fn = function(o, k) {
+    //         return Object.prototype.hasOwnProperty.call(o, k)
+    //     }
+    //     var o = obj;
+    //     for (var i = 0; i < len; i++) {
+    //         var k = ks.shift();
+    //         if (fn(o, k)) {
+    //             o = o[k];
+    //         } else {
+    //             return false;
+    //         }
+
+    //     }
+    //     return true;
+
+    // };
+
+    // var o = {
+    //     a: 1,
+    //     sub: {
+    //         a: 2
+    //     }
+    // }
+    // console.log(has(o, "a"))
+    // console.log(has(o, "b"))
+    // console.log(has(o, "sub"))
+    // console.log(has(o, "sub.a"))
+    // console.log(has(o, "sub.b"))
+
+    // console.log(ps.join(""))
+    // console.log(data, eval(ps.join("")))
+    // console.log(eval(ps.join("")).toString())
+
+    function a() {
+        // alert(this);
+        console.log(this);
+    }
+    a.call(null);
+    a.call({});
+    a.call(this);
+
+
+    // 75.6 Number {[[PrimitiveValue]]: 77.99}
+    // console.log(75.6+77.99)
+    // console.log(75.6.add(77.99))
+
+    // console.log((75.6*100+77.99*100)/100)
+    // console.log((0.6*100+0.99*100)/100)
+
+    // console.log((75.6*100+77.99*100))
+    // console.log((77.99*100))
+
+    // console.log(77.99.mul(100))
+
+    // console.log(756/10)
+
+    // console.log(756*Math.pow(10,-1))
+
+
+    for (var i = 0; i < 1000; i++) {
+
+        var r1 = i / 10;
+
+        r1.isInfinity(function() {
+            console.log(i, r1)
+        })
+
+        // var r2=i*Math.pow(10,-1);
+        var r2 = i.div(10)
+        r2.isInfinity(function() {
+            console.log(i, r2)
+        })
+    }
+
+    // for (var i = 0; i < 1000; i++) {
+
+    //     // for (var j = 0; j < 100; j++) {
+    //         var r1 = i /10
+
+    //         var r2=i.div(10)
+
+    //         r1.isInfinity(function() {
+    //             console.log(i+"/"+j, r1+" "+r2)
+    //         })
+
+    //         r2.isInfinity(function() {
+    //             console.log(i+"/"+j, r1+" "+r2)
+    //         })
+
+
+
+
+    //     // }
+    // }
+
+
+    // var operation=function(str) {
+    //         // var symbol = str.match(/([\+|\-|\*|\/]+)/g)
+    //         var symbol = str.match(reg_operation_symbol);
+    //         var ps = [];
+    //         var self = this;
+    //         var fn = function(str) {
+    //             if (symbol.length == 0) {
+    //                 ps.push("self." + str);
+    //                 return;
+    //             }
+    //             var first = symbol.shift();
+    //             var pos = str.indexOf(first);
+    //             var sub = str.substring(0, pos).trim();
+    //             if (_.has(self, sub)) {
+    //                 ps.push("self." + sub + first);
+    //             } else {
+    //                 ps.push(sub + first);
+    //             }
+    //             var surplus = str.substring(pos + first.length);
+    //             fn(surplus);
+    //         }
+    //         fn(str)
+    //         return eval(ps.join(""));
+    //     }
+    // };
+
+    //  console.log(Element.prototype, Element["remove"])
+
+    //  var o = {
+    //      a: ""
+    //  }
+    //  Object.prototype.b = function() {
+
+    //  }
+
+    //  Object.defineProperty(Object.prototype, "c", {
+    //      value: 1,
+    //      writable: false,
+    //      enumerable:false,
+    //  });
+    //  var log = function(o, key) {
+    //      if (Object.prototype.hasOwnProperty.call(o, key)) {
+    //          console.log(o, o[key]);
+    //      }else{
+
+    //            console.log(o, o[key]);
+
+    //      }
+    //  }
+    // console.log(o.b) 
+    // console.log(o.c) 
+    //  log(o,"a")
+
+    //  log(o,"b") 
+
+    //  log(o,"c")
+
+    //  var d=document.createElement("div");
+    //  document.body.appendChild(d)
+    //  var c=d["children"]
+    //  console.log(c)
+
+    //  console.log(Number("0002"))
+
+    //  console.log(756*Math.pow(10,-1) )
+
+    //  console.log(756/10 )
+
+    //  for(var i=0;i<1000;i++){
+    //      (i/10 ).isInfinity(function(){
+    //          console.log(i)
+    //      });
+
+    //      (i*0.1).isInfinity(function(){
+    //          console.log(i,i*Math.pow(10,-1))
+    //      })
+    //  }
+
+    //  var done=false;
+    //  var test=function(){
+    //      return done=true
+    //  }
+
+    //  console.log(test(),done)
+
+    tpler({
+        el: ".append",
+        act: "append", //cloneBefore
+        data: [{ text: "aaaa" }, { text: "bbbb" }]
+    })
+
+    var i = 1;
+    var len = 10;
+
+
+    var callback = function() {
+        // alert(i++);
+        setTimeout(function() {
+            tpler({
+                el: ".append",
+                act: "append", //cloneBefore
+                data: { text: i++ }
+            })
+        }, 1000 * len)
+
+    }
+    // while (len--) {
+    //     // toucher().clear();
+    //     toucher({
+    //         el: ".append",
+    //         type: "tap",
+    //         // clear:true,
+    //         // once:true,
+    //         callback: function() {
+    //             // alert(i++);
+    //             setTimeout(function() {
+    //                 tpler({
+    //                     el: ".append",
+    //                     act: "append", //cloneBefore
+    //                     data: { text: i++ }
+    //                 })
+    //             }, 1000 * this)
+
+    //         }.bind(len)
+    //     })
+
+    // }
+    len = 10
+    while (len--) {
+
+
+        tpler({
+            el: ".append",
+            act: "append", //cloneBefore
+            data: { text: len }
         });
 
-        result_editor.on("click", function() {
-            var result = result_editor.html();
-            if (_.isHtml(result)) {
-                result = _.enHtml(result)
-                result_type.html("html source");
-            } else {
-                result = _.deHtml(result)
-                result_type.html("html");
-            }
-            result_editor.html(result);
-        });
-        </script>
-    </body>
+
+
+    }
+
+
+    for (var i = 0; i < 3; i++) {
+
+        len = 10;
+        while (len--) {
+
+
+
+            toucher({
+                el: "#li" + len,
+                type: "tap",
+                clear:true,
+                // once: true,
+                callback: function(item, ev) {
+                    console.log(item, this)
+                    item.append(" "+len);
+                }.bind(len)
+            });
+
+
+        }
+    }
+
+
+
+
+    var obj = {
+        "on": "dfdf",
+        "model": "cccd"
+    }
+
+    console.log(_.keys(obj).join(",").brackets(".append"))
+
+    len = 10;
+    var keydown = function(item, ev) {
+
+        ev = ev || window.event;
+        var keycode = ev.which ? ev.which : ev.keyCode;
+        if (keycode == 13 || keycode == 108) {
+            ENTER键
+            //在这里设置你想绑定的事件 
+        }
+
+        if (keycode >= 65 && keycode <= 90) { //a
+
+            // self.setInput("");
+
+            // self.$input.blur();
+            // self.$input.removeAttr("contenteditable");
+
+        }
+        console.log(keycode)
+    }
+    while (len--) {
+        toucher({
+            el: document,
+            type: "keydown",
+            // clear: true, //clear ever event
+            // once:true,
+
+            callback: function(item, ev) {
+
+                ev = ev || window.event;
+                var keycode = ev.which ? ev.which : ev.keyCode;
+                if (keycode == 13 || keycode == 108) {
+                    ENTER键
+                    //在这里设置你想绑定的事件 
+                }
+
+                if (keycode >= 65 && keycode <= 90) { //a
+
+                    // self.setInput("");
+
+                    // self.$input.blur();
+                    // self.$input.removeAttr("contenteditable");
+
+                }
+                console.log(keycode, this)
+                console.log(item)
+            }.bind(len)
+        })
+    }
+
+
+// tpler("#id","")
+
+
+    // toucher({ // el:".append", // type:"tap", // callback:function(){ // alert(i++); // } // })
+    </script>
+</body>
 
 </html>

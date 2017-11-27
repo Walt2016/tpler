@@ -1177,7 +1177,7 @@
             isImgLoad: function(img) {
                 return isIE ? img.readyState == 'complete' : img.complete;
             },
-            createImg: function(imgSrc, callback) {
+            loadImg: function(imgSrc, callback) {
                 var originImg; //原图
                 if (_.isImage(imgSrc)) {
                     originImg = imgSrc
@@ -1213,7 +1213,7 @@
                     img.src = canvas.toDataURL('image/jpeg'); //quality
                     callback && callback(img);
                 }
-                _.createImg(imgSrc, _toDataURL);
+                _.loadImg(imgSrc, _toDataURL);
             },
             toCanvas: function(imgSrc, callback) {
                 var _toCanvas = function(originImg) {
@@ -1226,7 +1226,7 @@
                     ctx.drawImage(originImg, 0, 0, width, height);
                     callback && callback(canvas);
                 }
-                _.createImg(imgSrc, _toCanvas);
+                _.loadImg(imgSrc, _toCanvas);
             },
             //切图
             //x轴n等分
@@ -1261,7 +1261,7 @@
                     }
                     callback && callback(imgArr);
                 }
-                _.createImg(imgSrc, _cutImg);
+                _.loadImg(imgSrc, _cutImg);
             },
 
             zoomImg: function(imgSrc, zoom, callback) {
@@ -1277,7 +1277,7 @@
                     img.src = canvas.toDataURL('image/jpeg'); //quality
                     callback && callback(img);
                 }
-                _.createImg(imgSrc, _toDataURL);
+                _.loadImg(imgSrc, _toDataURL);
             },
             //反色
             reverse: function(imgSrc, callback) {
@@ -1303,7 +1303,7 @@
                     img.src = canvas.toDataURL('image/jpeg'); //quality
                     callback && callback(img);
                 }
-                _.createImg(imgSrc, _reverse);
+                _.loadImg(imgSrc, _reverse);
             },
             masic: function(imgSrc, callback) {
                 var _masic = function(originImg) {
@@ -1323,7 +1323,7 @@
             },
             background: function(el, imgSrc) {
                 var el = _.query(el);
-                _.createImg(imgSrc, function(img) {
+                _.loadImg(imgSrc, function(img) {
                     el.style.backgroundImage = 'url("' + img.src + '")';
                 })
             },
@@ -2499,18 +2499,39 @@
                 _.isFunction(fn) && fn.call(this, this, 0);
                 // _.isFunction(fn) && fn.call(this, 0, this) // fn.bind(this)(0, this);
             },
-            css: function(opt) {
+            css: function(opt) {  //todo
                 var len = arguments.length;
+                var needAPF=function(str){
+                       var reg=RegExp('[^'+['transition','animation','box-shadow','flex'].join('|')+']') ////,'@keyframes'
+                      return reg.test(str);
+                }
+                var autoprefixer = function(key, val) {
+                    var self = this;
+                    if (needAPF(key)) { 
+                        ['-webkit-', '-moz-', '-o-', ''].forEach(function(t) {
+                            this.style[t + key] = val;
+                        })
+                    } else {
+                        this.style[key] = val;
+                    }
+
+                }
                 if (len == 1) {
                     if (_.isObject(opt)) {
                         for (key in opt) {
                             // css()
-                            this.style[key] = opt[key];
+                            var val = opt[key];
+                            if (_.isNumber(val)) {
+                                val = val + "px";
+                            }
+                            this.style[key] = val;
+                            // autoprefixer.call(this, key, val);
                         }
                     }
                 } else if (len == 2) {
                     // prop, val
                     this.style[opt] = arguments[1];
+                    // autoprefixer.call(this, opt, arguments[1]);
                 }
                 return this;
             },
@@ -2941,9 +2962,9 @@
 
                             var _posInRange = function(pos, range) {
                                 // var pos=
-                               var x = _.min(pos.x, range.right);
+                                var x = _.min(pos.x, range.right);
                                 x = _.max(x, range.left);
-                               var y = _.min(pos.y, range.bottom);
+                                var y = _.min(pos.y, range.bottom);
                                 y = _.max(y, range.top);
 
                                 return {
