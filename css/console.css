@@ -19,7 +19,8 @@
     overflow-y: auto;
     background: #efefef;
 }
-._console_handle{
+
+._console_handle {
     height: 20px;
     background: #ccc;
 }
@@ -29,28 +30,32 @@
     display: -ms-flexbox;
     display: flex;
     -webkit-box-pack: center;
-        -ms-flex-pack: center;
-            justify-content: center;
+    -ms-flex-pack: center;
+    justify-content: center;
     -webkit-box-align: start;
-        -ms-flex-align: start;
-            align-items: flex-start;
+    -ms-flex-align: start;
+    align-items: flex-start;
     -webkit-box-orient: vertical;
     -webkit-box-direction: normal;
-        -ms-flex-direction: column;
-            flex-direction: column;
-   
+    -ms-flex-direction: column;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.5);
 }
-._console_log.hide{
+
+._console_log.hide {
     display: none
 }
 
 ._console_log ._item {
-    background: #efefef;
+    
     font-size: 12px;
     line-height: 20px;
-    /*height: 20px;*/
-    width: 100%;
     padding-left: 4px;
+    padding-right: 4px;
+    text-align:justify;
+    word-break:break-all;
+    word-wrap:break-word;
+
 }
 
 #_console_info {

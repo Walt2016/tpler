@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>zip image</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,minimal-ui">
+    <script src="js/tpler.js"></script>
+</head>
+
+<body>
+    <script>
+    //小图片会先加载完毕，所以 显示次序会变化
+    // var img=new Image();
+    // img.src="image/1.jpg"
+    var imgSrc = "image/1.jpg"
+
+    _.loadImg(imgSrc, function() { //确保图片已经加载 ，保障显示次序不变
+
+
+        _.zipImg({
+            img: this,
+            width: 100,
+            height: 200,
+            callback: function() {
+                document.body.appendChild(this)
+            }
+        })
+
+
+        _.zipImg({
+            img: this,
+            width: 100,
+            height: 200,
+            quality: 0.001,
+            callback: function() {
+                document.body.appendChild(this)
+            }
+        })
+
+
+        _.zipImg({
+            img: this,
+            zoom: 0.5, //定义了width 或height ，zoom就失效了
+            quality: 0,
+            callback: function() {
+                document.body.appendChild(this)
+            }
+        })
+
+    })
+
+    </script>
+</body>
+
+</html>

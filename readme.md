@@ -4,7 +4,10 @@
 
 
 why tpler？
-因为不是很喜欢在html里写循环和判断。
+因为不喜欢在html里写循环语句。
+习惯把逻辑写在javascript中。
+
+
 
 
 
@@ -38,19 +41,18 @@ before预处理
 after/callback 回调处理
 
 js调用方式：
-支持数组 tper([])/tper({})
+支持数组 tper([])和对象tper({})
 ```
 tpler({
 	el:"#mySwiper",
 	data:[],
 	methods:{
 		myHandler:function(item,ev){
-
+			console.log(item,ev)
 		}
 	},
 	filters:{
 		n_800_600:function(val){
-			//to do
 			return val;
 		}
 	},
@@ -63,9 +65,11 @@ tpler({
 html：
 ```
 <div class="swiper-wrapper" template="_ppt_tpl" lazy="_ppt_tpl_lazy" id="mySwiper">
+
  <script type="text/template" id="_ppt_tpl">
      <div class="swiper-slide" style="background-image: url('{=picUrl|n_800_600}');" on="myHandler"></div>
  </script>
+
  <script type="text/template" id="_ppt_tpl_lazy">
      <div class="swiper-slide">
          <div data-background="{=picUrl|n_800_600}" class="swiper-lazy"></div>
@@ -78,18 +82,21 @@ html：
 移动开发自动切换click到tap模式
 ```
 toucher({
-            el: el,
-            type: "touchstart",
-            callback: function(item, ev) {
-            }
-        })
+    el: el,
+    type: "touchstart",
+    callback: function(item, ev) {
+    }
+})
 ```
+
 
 4.日志
 嵌入调试
 ```
-logger()
+_.debug()
 ```
+
+
 5、路由
 ```
 var config={}

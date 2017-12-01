@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>dot</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,minimal-ui">
+    <script src="js/tpler.js"></script>
+    <link rel="shortcut icon" type="image/x-icon" href="data:image/gif;base64,YQ==">
+    <style>
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        overflow: hidden;
+    }
+    </style>
+</head>
+
+<body onload="onLoad()">
+    <div class="container">
+        <!-- <canvas id="myCanvas"></canvas> -->
+    </div>
+    <script>
+    //    	$('#tab_fullScreen').click(function(){
+    // 	fullScreen();
+    // });
+
+    //浏览器全屏属性
+    var launchFullScreen = function(ele) {
+        try {
+            if (!document.fullscreenElement && // alternative standard method
+                !document.mozFullScreenElement && !document.webkitFullscreenElement) { // current working methods
+                if (document.documentElement.requestFullscreen) {
+                    $(ele).get(0).requestFullscreen();
+                } else if (document.documentElement.mozRequestFullScreen) {
+                    $(ele).get(0).mozRequestFullScreen();
+                } else if (document.documentElement.webkitRequestFullscreen) {
+                    $(ele).get(0).webkitRequestFullscreen();
+                }
+            }
+        } catch (e) {
+            console.log(e);
+
+        }
+    }
+
+    function fullScreen(el) {
+        var element = el || document.createElement('div'),
+            method = "RequestFullScreen";
+
+
+        var prefixMethod;
+        ["webkit", "moz", "ms", "o", ""].forEach(function(prefix) {
+            if (prefixMethod)
+                return;
+            if (prefix === "") {
+                // 无前缀，方法首字母小写
+                method = method.slice(0, 1).toLowerCase() + method.slice(1);
+            }
+            var fsMethod = typeof element[prefix + method];
+            if (fsMethod + "" !== "undefined") {
+                // 如果是函数,则执行该函数
+                if (fsMethod === "function") {
+                    prefixMethod = element[prefix + method]();
+                } else {
+                    prefixMethod = element[prefix + method];
+                }
+            }
+        });
+        return prefixMethod;
+    };
+
+    function exitFullScreen() {
+        try {
+            de = document;
+
+            // exit full-screen
+            if (de.exitFullscreen) {
+                de.exitFullscreen();
+            } else if (de.webkitExitFullScreen) {
+                de.webkitExitFullScreen();
+            } else if (de.webkitCancelFullScreen) {
+                de.webkitCancelFullScreen();
+            } else if (de.mozCancelFullScreen) {
+                de.mozCancelFullScreen();
+            } else if (de.msExitFullScreen) {
+                de.msExitFullScreen();
+            }
+        } catch (err) {
+            alert(err.description);
+        }
+    };
+
+
+    toucher({
+        el: ".container",
+        type: "tap",
+        callback: function() {
+            fullScreen(_.$("canvas"));
+        }
+    })
+
+    function onLoad() {
+        // document.addEventListener("deviceready", onDeviceReady, false);
+
+        var self = this;
+        var docEl = document.documentElement,
+            resizeEvt = 'orientationchange' in window ? 'orientationchange' : 'resize';
+        var recalc = function() {
+
+            // var clientWidth = docEl.clientWidth;
+            // if (!clientWidth) return;
+            // if (clientWidth <= 375) {
+            //     docEl.style.fontSize = 100 * (clientWidth / 375) + 'px';
+            // } else {
+            //     docEl.style.fontSize = "100px";
+            // }
+
+            // if ($(".swiper-container").length > 0) {
+            //     ppter.update();
+            // }
+
+            // utils.compatibility();
+
+            // var h = screen.height - 40;
+            // var w = screen.width - 20;
+            var h = screen.availHeight
+            var w = screen.availWidth
+            // var h = window.innerHeight;
+            // var w =window.innerWidth;
+            // var c = document.getElementById("myCanvas");
+            var c = document.createElement("canvas");
+            c.setAttribute('width', w);
+            c.setAttribute('height', h);
+            var cxt = c.getContext("2d");
+            cxt.fillStyle = "#FF0000";
+            // cxt.fillRect(0, 0, w, h);
+
+
+            cxt.beginPath();
+            cxt.moveTo(0, 0);
+            cxt.lineTo(c.width, c.height)
+            cxt.stroke();
+
+
+            cxt.strokeStyle = "rgb(250,0,0)";  
+            cxt.fillStyle = "rgb(250,0,0)";  
+            cxt.lineTo(100, 0);//起点坐标  
+            cxt.lineTo(0,200);//下一个坐标，经过此时，就会绘制从坐标100,0到坐标0,200的一条线段  
+            cxt.lineTo(200,200);//从坐标0,200到坐标200,200的一条线段  
+            cxt.lineTo(100, 0);//从坐标200,200到坐标100,0的一条线段  
+  
+            cxt.moveTo(400,400);//先保存一个坐标  
+            cxt.lineTo(500,500);//从moveTo提供的坐标绘制到500,500  
+            cxt.stroke();//通过此函数将以上绘制的图形绘制到画布上  
+            _.$(".container").html("").appendChild(c)
+        };
+        recalc();
+
+        if (document.addEventListener) {
+            window.addEventListener(resizeEvt, recalc, false);
+            document.addEventListener('DOMContentLoaded', recalc, false);
+        }
+    }
+
+    // window.onLoad=onLoad
+
+    function onDeviceReady() {
+
+    }
+
+    // var canvas = document.createElement("canvas");
+    // var context = this.canvas.getContext("2d");
+
+    // var screen = {
+    //     x: document.documentElement.clientWidth,
+    //     y: document.documentElement.clientHeight
+    // }
+
+    // canvas.width = screen.x;
+    // canvas.height = screen.y;
+    // canvas.lineWidth = 0.5;
+
+
+    // context.beginPath();
+    // context.moveTo(0, 0);
+    // context.lineTo(canvas.width, canvas.height)
+    // context.stroke();
+
+
+    // // document.body.appendChild(canvas)
+    // _.$(".container").appendChild(canvas)
+
+
+    //上一次触摸坐标
+    var lastX, lastX2;
+    var lastY, lastY2;
+    //刚触摸的时间
+    var startTime;
+    //刚接触的坐标
+    var startX, startY;
+    var ctx = canvas.getContext("2d");
+    ctx.lineWidth = 2; //画笔粗细
+    ctx.strokeStyle = "#00FFFF"; //画笔颜色
+    function onTouchStart(event) {
+        try {
+            event.preventDefault();
+            //单点
+            var pos = windowToCanvas(canvas, event.touches[0].clientX, event.touches[0].clientY);
+            //第二点
+            if (event.touches[1]) {
+                var pos2 = windowToCanvas(canvas, event.touches[1].clientX, event.touches[1].clientY);
+                lastX2 = pos2.x;
+                lastY2 = pos2.y;
+            }
+            lastX = pos.x;
+            lastY = pos.y;
+
+            startX = pos.x;
+            startY = pos.y;
+            startTime = (new Date()).getTime();
+        } catch (err) {
+            alert(err.description);
+        }
+    }
+
+    function onTouchMove(event) {
+        try {
+            event.preventDefault();
+            if (getState() == DEFAULT) {
+                if (event.touches[1]) {
+                    var pos = windowToCanvas(canvas, event.touches[0].clientX, event.touches[0].clientY);
+                    var x = pos.x - lastX;
+                    var y = pos.y - lastY;
+
+                    var pos2 = windowToCanvas(canvas, event.touches[1].clientX, event.touches[1].clientY);
+                    var x2 = pos2.x - lastX2;
+                    var y2 = pos2.y - lastY2;
+
+                    var lastDis = Math.sqrt((lastX - lastX2) * (lastX - lastX2) + (lastY - lastY2) * (lastY - lastY2));
+                    var dis = Math.sqrt((pos.x - pos2.x) * (pos.x - pos2.x) + (pos.y - pos2.y) * (pos.y - pos2.y));
+
+                    var scale = dis / lastDis;
+
+                    imgScale = imgScale * scale;
+                    var centerX = (pos.x + pos2.x) / 2;
+                    var centerY = (pos.y + pos2.y) / 2;
+                    var lastCenterX = (lastX + lastX2) / 2;
+                    var lastCenterY = (pos.y + pos2.y) / 2;
+
+                    var shiftX = (x + x2) / 2;
+                    var shiftY = (y + y2) / 2;
+
+                    imgX = imgX * scale + shiftX + centerX * (1 - scale);
+                    imgY = imgY * scale + shiftY + centerY * (1 - scale);
+
+                    lastX = pos.x;
+                    lastY = pos.y;
+                    lastX2 = pos2.x;
+                    lastY2 = pos2.y;
+
+                    drawImage();
+                } else {
+                    var pos = windowToCanvas(canvas, event.touches[0].clientX, event.touches[0].clientY);
+                    var x = pos.x - lastX;
+                    var y = pos.y - lastY;
+
+                    lastX = pos.x;
+                    lastY = pos.y;
+
+                    imgX += x;
+                    imgY += y;
+                    drawImage();
+                }
+            } else if (getState() == PENCIL) {
+
+                //单点
+                var pos = windowToCanvas(canvas, event.touches[0].clientX, event.touches[0].clientY);
+
+                drawLine(lastX, lastY, pos.x, pos.y);
+                addPath(lastX, lastY, pos.x, pos.y);
+                //drawLine(lastX,lastY,event.touches[0].clientX,event.touches[0].clientY);
+                //lastX=event.touches[0].clientX;
+                //lastY=event.touches[0].clientY;			    
+                lastX = pos.x;
+                lastY = pos.y;
+            }
+        } catch (err) {
+            alert(err.description);
+        }
+
+    }
+    </script>
+</body>
+
+</html>

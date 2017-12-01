@@ -503,6 +503,8 @@
 
                 if (_.isArray(possible)) {
                     return possible[Math.floor(Math.random() * possible.length)];
+                } else if (_.isNumber(possible)) {
+                    return Math.floor(Math.random() * possible);
                 } else {
                     var str = prefix || "_",
                         len = len || 6,
@@ -1190,11 +1192,11 @@
                     originImg.src = imgSrc;
                 }
                 if (_.isImgLoad(originImg)) {
-                    callback && callback(originImg);
+                    callback && callback.call(originImg, originImg);
                 } else {
-                    originImg.onload = function(e) {
-                        callback && callback(originImg);
-                    }
+                    addEvent("load", originImg, function() { // 支持对同一图片处理
+                        callback && callback.call(originImg, originImg);
+                    })
                     originImg.onerror = function(e) {
                         console.log("加载图片失败：" + e.path[0].src);
                     }
@@ -1210,8 +1212,11 @@
                     canvas.height = height;
                     ctx.drawImage(originImg, 0, 0, width, height);
                     var img = new Image();
+                    img.onload = function() {
+                        callback && callback(img);
+                    }
                     img.src = canvas.toDataURL('image/jpeg'); //quality
-                    callback && callback(img);
+
                 }
                 _.loadImg(imgSrc, _toDataURL);
             },
@@ -1264,20 +1269,30 @@
                 _.loadImg(imgSrc, _cutImg);
             },
 
-            zoomImg: function(imgSrc, zoom, callback) {
-                var _toDataURL = function(originImg) {
-                    var canvas = document.createElement("canvas");
-                    var ctx = canvas.getContext("2d");
-                    var width = originImg.width * zoom;
-                    var height = originImg.height * zoom;
+            //缩放得到新图片 
+            //img, width, height, quality callback
+            //zoom 定义了width 或height ，zoom就失效了
+            zipImg: function(options) {
+                var canvas = document.createElement("canvas"),
+                    img = options.img,
+                    width = options.width,
+                    height = options.height,
+                    quality = options.quality,
+                    zoom = options.zoom,
+                    callback = options.callback;
+                _.loadImg(img, function() {
+                    if (_.isUndefined(width) && _.isUndefined(height) && !_.isUndefined(zoom)) {
+                        width = this.width * zoom;
+                        height = this.height * zoom;
+                    }
                     canvas.width = width;
                     canvas.height = height;
-                    ctx.drawImage(originImg, 0, 0, width, height);
-                    var img = new Image();
-                    img.src = canvas.toDataURL('image/jpeg'); //quality
-                    callback && callback(img);
-                }
-                _.loadImg(imgSrc, _toDataURL);
+                    var ctx = canvas.getContext("2d");
+                    ctx.drawImage(this, 0, 0, width, height);
+                    var newImg = new Image();
+                    newImg.src = canvas.toDataURL('image/jpeg', quality);
+                    _.loadImg(newImg, callback);
+                });
             },
             //反色
             reverse: function(imgSrc, callback) {
@@ -1603,10 +1618,12 @@
         });
         // [object HTMLDivElement] is Object
         _.isObject = function(o) {
-            if (_.isElement(o)) {
-                return true;
-            }
-            return _.type(o) === "object";
+            // if (_.isElement(o)) {
+            //     return true;
+            // }
+            // return _.type(o) === "object";
+
+            return _.isElement(o) ? true : _.type(o) === "object";
         };
         _.isEmpty = function(obj) {
             if (obj == null) return true;
@@ -1616,8 +1633,6 @@
                 if (_.has(obj, key)) return false;
             return true;
         };
-
-
         _.uniq = _.unique = function(array, isSorted, iterator, context) {
             if (_.isFunction(isSorted)) {
                 context = iterator;
@@ -2477,13 +2492,13 @@
 
             on: function(type, fn) {
                 // addEvent(type, this, fn.bind(this), false);
-                addEvent(type, this, fn, false);
+                addEvent(type, this, fn);
                 return this;
             },
             off: function(type, fn) {
                 // if (fn) {
                 // removeEvent(type, this, fn.bind(this), false)
-                removeEvent(type, this, fn, false)
+                removeEvent(type, this, fn)
                 // }
                 return this;
             },
@@ -2499,31 +2514,49 @@
                 _.isFunction(fn) && fn.call(this, this, 0);
                 // _.isFunction(fn) && fn.call(this, 0, this) // fn.bind(this)(0, this);
             },
-            css: function(opt) {  //todo
+            css: function(opt) { //todo
                 var len = arguments.length;
-                var needAPF=function(str){
-                       var reg=RegExp('[^'+['transition','animation','box-shadow','flex'].join('|')+']') ////,'@keyframes'
-                      return reg.test(str);
+                var needpre = function(str) {
+                    var reg = RegExp(['transform', 'transition', 'animation', 'box-shadow', 'flex'].join('|')) ////,'@keyframes'
+                    return reg.test(str);
                 }
                 var autoprefixer = function(key, val) {
                     var self = this;
-                    if (needAPF(key)) { 
+                    if (needpre(key)) {
                         ['-webkit-', '-moz-', '-o-', ''].forEach(function(t) {
                             this.style[t + key] = val;
                         })
                     } else {
                         this.style[key] = val;
                     }
-
                 }
+                var keys = ['font-size', 'line-height', 'border-radius', 'border-width', 'padding', 'margin'];
+                ['padding', 'margin', ''].forEach(function(pre) {
+                    keys = keys.concat(['top', 'left', 'bottom', 'right'].map(function(t) {
+                        return pre ? pre + '-' + t : t;
+                    }))
+                });
+                ['max', 'min', ''].forEach(function(pre) {
+                    keys = keys.concat(['width', 'height'].map(function(t) {
+                        return pre ? pre + '-' + t : t;
+                    }))
+                });
+
+                var autounit = function(key, val) {
+                    if (/^0$/.test(val)) {
+                        return val;
+                    }
+                    return keys.indexOf(key) >= 0 ? ("" + val).replace(/^\d+(\.\d+)?$/, function(match) {
+                        return match + "px";
+                    }) : val;
+                }
+
                 if (len == 1) {
                     if (_.isObject(opt)) {
                         for (key in opt) {
                             // css()
                             var val = opt[key];
-                            if (_.isNumber(val)) {
-                                val = val + "px";
-                            }
+                            val = autounit(key, val)
                             this.style[key] = val;
                             // autoprefixer.call(this, key, val);
                         }
@@ -2612,13 +2645,9 @@
                 } else if (_.isString(elem)) {
                     this.innerHTML = this.innerHTML + elem;
                 }
-
-
             },
             //tap事件
             onTap: function(handler) {
-                // toucher.tap(this, handler);
-
                 toucher({
                     el: this,
                     type: "tap",
@@ -2661,44 +2690,44 @@
                 // });
             },
             //清除事件
-            clear: function(rootId) {
-                // if (rootId) {
-                //     scroller.removeEvent(rootId)
-                // } else {
-                //     $(".container").children().each(function(index, item) {
-                //         scroller.removeEvent($(item)) //.attr("id")
-                //     });
-                // }
-            },
-            clearEvent: function() {
-                // elem.events=null;
-                this.events = null;
-                return this;
-            },
-            addEvent: function(fns, reset) {
-                var self = this;
-                if (_.isFunction(fns)) {
-                    self.events = self.events || [];
-                    self.events.push(fns)
-                } else if (_.isArray(fns)) {
-                    self.events = _.clone(fns) || [];
-                } else {
-                    self.events = [];
-                }
+            // clear: function(rootId) {
+            //     // if (rootId) {
+            //     //     scroller.removeEvent(rootId)
+            //     // } else {
+            //     //     $(".container").children().each(function(index, item) {
+            //     //         scroller.removeEvent($(item)) //.attr("id")
+            //     //     });
+            //     // }
+            // },
+            // clearEvent: function() {
+            //     // elem.events=null;
+            //     this.events = null;
+            //     return this;
+            // },
+            // addEvent: function(fns, reset) {
+            //     var self = this;
+            //     if (_.isFunction(fns)) {
+            //         self.events = self.events || [];
+            //         self.events.push(fns)
+            //     } else if (_.isArray(fns)) {
+            //         self.events = _.clone(fns) || [];
+            //     } else {
+            //         self.events = [];
+            //     }
 
-                var tapHandler = function(ev) {
-                    for (var i = 0; i < self.events.length; i++) {
-                        self.events[i] && _.isFunction(self.events[i]) && self.events[i].call(self, ev.target, ev);
-                    }
-                }
+            //     var tapHandler = function(ev) {
+            //         for (var i = 0; i < self.events.length; i++) {
+            //             self.events[i] && _.isFunction(self.events[i]) && self.events[i].call(self, ev.target, ev);
+            //         }
+            //     }
 
-                if (isSupportTouch) {
-                    self.onTap(tapHandler);
+            //     if (isSupportTouch) {
+            //         self.onTap(tapHandler);
 
-                } else {
-                    self.off("click").on("click", tapHandler);
-                }
-            }
+            //     } else {
+            //         self.off("click").on("click", tapHandler);
+            //     }
+            // }
         };
         ele_prototype.$ = ele_prototype.query;
 
@@ -2816,15 +2845,13 @@
 
         //  事件模块
         var addEvent = function(type, el, listener) {
-
             if (_.isFunction(listener)) {
                 if (window.addEventListener) {
                     el.addEventListener(type, listener, false);
                 } else {
                     el.attachEvent('on' + type, listener);
                 }
-
-                // storeEvent(type, el, listener);
+                //store events
                 if (!el.events) {
                     el.events = []
                 }
@@ -2833,20 +2860,16 @@
                     el: el,
                     listener: listener
                 }); //listener
-
             } else if (_.isArray(listener)) {
-
                 listener.forEach(function(t) {
                     addEvent(type, el, t);
-                })
+                });
             }
         };
 
         var removeEvent = function(type, el, listener) {
             if (!_.isElement(el)) return false;
-
             if (listener) {
-
                 if (window.removeEventListener) {
                     el.removeEventListener(type, listener, false);
                 } else {
@@ -2862,11 +2885,10 @@
                         el.events.splice(i, 1);
                     }
                 }
-
             } else {
                 el.events && el.events.forEach(function(t) {
                     removeEvent(t.type, t.el, t.listener)
-                })
+                });
             }
 
         };
@@ -3453,12 +3475,14 @@
         walker.prototype.init.prototype = walker.prototype;
 
 
-        //page log
-        var logger = window.logger = function(options) {
-            return new logger.prototype.init(options);
+        //调试
+        // var log = window.log = _.log = console.log.bind(console);
+        var debug = _.debug = function(options) {
+
+            return new debug.prototype.init(options);
         }
-        logger.prototype = {
-            constructor: logger,
+        debug.prototype = {
+            constructor: debug,
             init: function(options) {
                 var self = this;
                 var div = document.createElement("div");
@@ -3499,7 +3523,146 @@
             }
         }
 
-        logger.prototype.init.prototype = logger.prototype;
+        debug.prototype.init.prototype = debug.prototype;
+
+
+        //画图
+        var draw = _.draw = function(options) {
+            return new draw.prototype.init(options)
+        }
+
+        draw.prototype = {
+            constructor: draw,
+            init: function(options) {
+                this.canvas = document.createElement("canvas");
+                this.context = this.canvas.getContext("2d");
+                this.attr(options);
+                var color = options["background"] || options["background-color"];
+                var src = options["background-image"];
+                var size = options["background-size"];
+                var position = options["background-position"];
+                var repeat = options["background-repeat"];
+
+                this.background({
+                    color: color,
+                    src: src,
+                    size: size,
+                    position: position,
+                    repeat: repeat
+                })
+                return this.canvas;
+            },
+            attr: function(opt) {
+                for (key in opt) {
+
+                    //比率
+                    if ("ratio" == key) {
+                        // var screenHeight = screen.availHeight
+                        // var w = screen.availWidth
+                        var screen = {
+                            w: document.documentElement.clientWidth,
+                            h: document.documentElement.clientHeight
+                        }
+                        var w = screen.w,
+                            h = screen.h;
+
+                        switch (opt[key]) {
+                            case "fullscreen": //全屏
+
+                                break;
+                            default: //比率
+                                opt[key].replace(/(\d+):(\d+)/, function(match, x, y) {
+                                    h = w * y / x
+                                })
+                                break;
+                        }
+                        this.canvas.setAttribute('width', w);
+                        this.canvas.setAttribute('height', h);
+                    }
+
+                    if (["width", "height"].indexOf(key) >= 0) {
+                        this.canvas[key] = opt[key];
+                    }
+
+                }
+            },
+            background: function(opt) {
+                var canvas = this.canvas;
+                var ctx = this.context;
+                var src = opt.src,
+                    size = opt.size,
+                    position = opt.position,
+                    repeat = opt.repeat,
+                    color = opt.color;
+
+
+                if (color) {
+                    ctx.fillStyle = color;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+
+                src && _.loadImg(src, function(img) {
+                    var imgWidth = img.width,
+                        imgHeight = img.height,
+                        canvasWidth = canvas.width,
+                        canvasHeight = canvas.height;
+
+                    switch (size) {
+                        case "cover": //等比例缩放 盖住cover   auto原图 
+                            var zoom = _.max(canvasWidth / imgWidth, canvasHeight / imgHeight);
+                            var newImgWidth = imgWidth * zoom,
+                                newImgHeight = imgHeight * zoom;
+                            if (position == 'center') {
+                                var x = zoom <= 1 ? (canvasWidth - newImgWidth) / 2 : -(canvasWidth - newImgWidth) / 2,
+                                    y = zoom <= 1 ? (canvasHeight - newImgHeight) / 2 : -(canvasHeight - newImgHeight) / 2;
+                                ctx.drawImage(img, x, y, newImgWidth, newImgHeight);
+                            } else {
+                                ctx.drawImage(img, 0, 0, newImgWidth, newImgHeight);
+                            }
+                            break;
+                        case "contain": //等比例缩放 框内contain 
+                            var zoom = _.min(canvasWidth / imgWidth, canvasHeight / imgHeight);
+                            var newImgWidth = imgWidth * zoom,
+                                newImgHeight = imgHeight * zoom;
+                            if (position == 'center') {
+                                var x = (canvasWidth - newImgWidth) / 2,
+                                    y = (canvasHeight - newImgHeight) / 2;
+                                ctx.drawImage(img, x, y, newImgWidth, newImgHeight);
+                            } else {
+                                ctx.drawImage(img, 0, 0, newImgWidth, newImgHeight);
+                            }
+
+                            if (repeat == "repeat") {
+                                _.zipImg({
+                                    img: img,
+                                    zoom: zoom,
+                                    callback: function() {
+                                        var bg = ctx.createPattern(this, 'repeat');
+                                        ctx.fillStyle = bg;
+                                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                                        ctx.fill();
+                                    }
+                                })
+                            }
+                            break;
+                        case "stretch": //stretch 拉伸铺满
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            break;
+                        case "auto":
+                            ctx.drawImage(img, 0, 0);
+                            break;
+                        default:
+                            ctx.drawImage(img, 0, 0);
+                            break;
+                    }
+                })
+
+
+            }
+
+        }
+
+        draw.prototype.init.prototype = draw.prototype;
 
 
 

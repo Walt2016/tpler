@@ -1,73 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-	<title>move</title>
-	<script src="js/tpler.js"></script>
-	<style>
-		.box{
-			width: 100px;
-			height:100px;
-			background-color: #ccc;
-			position: absolute;
-			border-radius: 50%;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>move</title>
+    <script src="js/tpler.js"></script>
+    <link rel="shortcut icon" type="image/x-icon" href="data:image/gif;base64,YQ==">
+    <style>
+    html,
+    body {
+        margin: 0;
+        padding: 0
+    }
 
-		}
-		.flex{
-			display: -webkit-box;display: -ms-flexbox;display: flex;
+    .box {
+        width: 100px;
+        height: 100px;
+        background-color: #ccc;
+        position: absolute;
+        border-radius: 50%;
+    }
 
-		}
-		.trans {
-    -webkit-transition-property:all; 
-    /*// background-color;*/
-    -webkit-transition-duration: 0.3s;
-    -webkit-transition-timing-function: linner
-    /*ease;*/
-}
-/*.trans:hover {
-    background-color: #486AAA;
-    color: #fff;
-}*/
-
-	</style>
+    .flex {
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+    }
+    </style>
 </head>
+
 <body>
-	<div class="box trans"></div>
-	<script>
+    <div class="box trans"></div>
+    <script>
+    (function() {
+        var lastTime = 0;
+        var vendors = ['ms', 'moz', 'webkit', 'o'];
+        for (var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+            window.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
+            window.cancelAnimationFrame = window[vendors[x] + 'CancelAnimationFrame'] || window[vendors[x] + 'CancelRequestAnimationFrame'];
+        }
+        if (!window.requestAnimationFrame) window.requestAnimationFrame = function(callback, element) {
+            var currTime = new Date().getTime();
+            var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+            var id = window.setTimeout(function() {
+                callback(currTime + timeToCall);
+            }, timeToCall);
+            lastTime = currTime + timeToCall;
+            return id;
+        };
+        if (!window.cancelAnimationFrame) window.cancelAnimationFrame = function(id) {
+            clearTimeout(id);
+        };
+    }());
 
-		var translate=function(el,pos){
-			// transform: translate(50px,100px);
-            //-ms-transform: translate(50px,100px); /* IE 9 */
-            //-webkit-transform: translate(50px,100px); /* Safari and Chrome */
-            el.css({
-            	'transform': 'translate('+pos.x+'px,'+pos.y+'px)',
-            	'-ms-transform': 'translate('+pos.x+'px,'+pos.y+'px)',
-            	'-webkit-transform': 'translate('+pos.x+'px,'+pos.y+'px)',
-            	'transition-duration':'3s',
-            	'-webkit-transition-duration':'3s',
-            	'background-color':_.color()
-            })
-		}
-		
-		toucher({
-			el:document,
-			type:"touchstart",
-			callback:function(item,ev){
 
-				var pos=_.pos(ev);
-				var box=_.$(".box");
+    var h = screen.availHeight
+    var w = screen.availWidth
+    var c = document.createElement("canvas");
+    c.setAttribute('width', w);
+    c.setAttribute('height', h);
+    document.body.appendChild(c)
 
-				// pos.x=_.min(pos.x
-				// box.css({
-				// 	left:pos.x+"px",
-				// 	top:pos.y+"px"
-				// })
 
-				translate(box,pos)
+    var cxt = c.getContext("2d");
 
-			}
-		})
-	</script>
+    var _clear = function() {
+        cxt.fillStyle = "#dedede"; //#FF0000
+        cxt.fillRect(0, 0, c.width, c.height);
+    }
+
+
+    var _circle = function(x, y) {
+        cxt.fillStyle = _.color(); //"#FF0000";
+        cxt.beginPath();
+        cxt.arc(x, y, 5, 0, Math.PI * 2, true);
+        cxt.closePath();
+        cxt.fill();
+    }
+
+    var _line = function(x, y) {
+        cxt.beginPath();
+        cxt.moveTo(x, y);
+        cxt.lineTo(x + 10, y + 10)
+        cxt.closePath();
+        cxt.stroke();
+    }
+
+    var id;
+    var _movie = function() {
+        _clear();
+        var len = 100;
+        while (len--) {
+            var x = _.random(w);
+            var y = _.random(h);
+            _circle(x, y);
+            _line(x, y);
+        }
+        id = requestAnimationFrame(_movie)
+    }
+
+
+
+    var translate = function(el, pos) {
+        el.css({
+            'transform': 'translate(' + pos.x + 'px,' + pos.y + 'px)',
+            'transition-duration': '3s',
+            'background-color': _.color()
+        })
+    }
+
+    toucher([{
+        el: document,
+        type: "touchstart",
+        callback: function(item, ev) {
+
+            var pos = _.pos(ev);
+            var box = _.$(".box");
+
+            // pos.x=_.min(pos.x
+            // box.css({
+            //  left:pos.x+"px",
+            //  top:pos.y+"px"
+            // })
+
+            translate(box, pos);
+            _movie();
+
+        }
+    }, {
+        el: document,
+        type: "touchend",
+        callback: function() {
+            id && cancelAnimationFrame(id)
+        }
+    }])
+    </script>
 </body>
+
 </html>
