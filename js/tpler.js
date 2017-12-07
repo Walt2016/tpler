@@ -515,6 +515,9 @@
                     return str;
                 }
             },
+            between: function(min, max) {
+                return min + Math.round((max - min) * Math.random());
+            },
             autoid: function(ele, force) {
                 var _autoid = function(ele) {
                     if (_.isDocument(ele)) {
@@ -734,7 +737,7 @@
                 // return '#'+('00000'+(Math.random()*0x1000000<<0).toString(16)).slice(-6);
                 // var co="hsla("+Math.ceil(Math.random()*360)+",50%,50%,0.5)"
                 var co = "hsl(" + Math.ceil(Math.random() * 360) + ",50%,50%)";
-                console.log(co);
+                // console.log(co);
                 return co;
             },
             isHtml: function(tpl) {
@@ -1970,15 +1973,17 @@
 
             var watchStateChange = function() {
                 if (done) {
+                    invokeTimes = 0;
                     return;
                 }
-                if (invokeTimes > 5) { //最多调用5次，超时
+                if (invokeTimes >= 5) { //最多调用5次，超时
                     console.log("请求超时");
+                    invokeTimes = 0;
                     return;
                 }
                 invokeTimes++;
                 done = handleStateChange();
-                setTimeout(watchStateChange, 10);
+                setTimeout(watchStateChange, 100 * (invokeTimes + 1));
             };
 
             sendXmlHttpRequest();
@@ -3525,7 +3530,42 @@
 
         debug.prototype.init.prototype = debug.prototype;
 
+        //polyfill  requestAnimationFrame
+        (function() {
+            var lastTime = 0;
+            var vendors = ['ms', 'moz', 'webkit', 'o'];
+            for (var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+                window.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
+                window.cancelAnimationFrame = window[vendors[x] + 'CancelAnimationFrame'] || window[vendors[x] + 'CancelRequestAnimationFrame'];
+            }
+            if (!window.requestAnimationFrame) window.requestAnimationFrame = function(callback, element) {
+                var currTime = new Date().getTime();
+                var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+                var id = window.setTimeout(function() {
+                    callback(currTime + timeToCall);
+                }, timeToCall);
+                lastTime = currTime + timeToCall;
+                return id;
+            };
+            if (!window.cancelAnimationFrame) window.cancelAnimationFrame = function(id) {
+                clearTimeout(id);
+            };
+        }());
 
+        // (function() {
+        //     window.requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame;
+        //     if (!window.requestAnimationFrame) {
+        //         window.requestAnimationFrame = function(callback) {
+        //             var id = window.setTimeout(callback, 1000 / 60);
+        //             return id;
+        //         };
+        //     }
+        //     if (!window.cancelAnimationFrame) {
+        //         window.cancelAnimationFrame = function(id) {
+        //             clearTimeout(id);
+        //         };
+        //     }
+        // }());
         //画图
         var draw = _.draw = function(options) {
             return new draw.prototype.init(options)
@@ -3536,55 +3576,56 @@
             init: function(options) {
                 this.canvas = document.createElement("canvas");
                 this.context = this.canvas.getContext("2d");
-                this.attr(options);
-                var color = options["background"] || options["background-color"];
-                var src = options["background-image"];
-                var size = options["background-size"];
-                var position = options["background-position"];
-                var repeat = options["background-repeat"];
+                if (_.isObject(options)) {
+                    this.attr(options);
+                    var color = options["background"] || options["background-color"];
+                    var src = options["background-image"];
+                    var size = options["background-size"];
+                    var position = options["background-position"];
+                    var repeat = options["background-repeat"];
 
-                this.background({
-                    color: color,
-                    src: src,
-                    size: size,
-                    position: position,
-                    repeat: repeat
+                    this.background({
+                        color: color,
+                        src: src,
+                        size: size,
+                        position: position,
+                        repeat: repeat
+                    })
+                }
+                return this;
+            },
+            //比率
+            ratio: function(key) {
+                var screen = {
+                    w: document.documentElement.clientWidth,
+                    h: document.documentElement.clientHeight
+                }
+                var w = screen.w,
+                    h = screen.h;
+
+                key.replace(/(\d+):(\d+)/, function(match, x, y) {
+                    h = w * y / x
                 })
-                return this.canvas;
+
+                this.canvas.setAttribute('width', w);
+                this.canvas.setAttribute('height', h);
+                return this;
+
+            },
+            fullscreen: function() {
+                return this.ratio("fullscreen");
             },
             attr: function(opt) {
                 for (key in opt) {
-
                     //比率
                     if ("ratio" == key) {
-                        // var screenHeight = screen.availHeight
-                        // var w = screen.availWidth
-                        var screen = {
-                            w: document.documentElement.clientWidth,
-                            h: document.documentElement.clientHeight
-                        }
-                        var w = screen.w,
-                            h = screen.h;
-
-                        switch (opt[key]) {
-                            case "fullscreen": //全屏
-
-                                break;
-                            default: //比率
-                                opt[key].replace(/(\d+):(\d+)/, function(match, x, y) {
-                                    h = w * y / x
-                                })
-                                break;
-                        }
-                        this.canvas.setAttribute('width', w);
-                        this.canvas.setAttribute('height', h);
+                        this.ratio(opt[key])
                     }
-
                     if (["width", "height"].indexOf(key) >= 0) {
                         this.canvas[key] = opt[key];
                     }
-
                 }
+                return this;
             },
             background: function(opt) {
                 var canvas = this.canvas;
@@ -3656,13 +3697,361 @@
                             break;
                     }
                 })
+                return this;
+            },
+            clear: function(color) {
+                var canvas = this.canvas;
+                var ctx = this.context;
+                ctx.fillStyle = color || "#ffffff";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            },
+            circle: function(opt) {
+                var canvas = this.canvas;
+                var ctx = this.context;
+                var x = opt.x,
+                    y = opt.y,
+                    r = opt.r || 10,
+                    color = opt.color || _.color();
 
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2, true);
+                ctx.closePath();
+                ctx.fill();
+                return this;
+            },
+            //环绕  回旋 
+            surround: function(opt) {
+                var self = this;
+                var canvas = this.canvas;
+                var ctx = this.context;
+                var x = opt.x,
+                    y = opt.y,
+                    r = opt.r || 10,
+                    color = opt.color || _.color();
 
+                var shape = opt.shape || "circle"
+
+                var angle = 360
+                while (angle--) {
+                    // var r2=r* angle/360
+                    var opt2 = {
+                        x: x + r * self.sin(angle),
+                        y: y + r * self.cos(angle),
+                        r: r / 3
+                    }
+                    self[shape](opt2);
+                }
+
+                return this;
+            },
+            //线条
+            line: function(opt) {
+                var canvas = this.canvas;
+                var ctx = this.context;
+                var color = opt.color || _.color();
+                ctx.lineWidth = 3
+                ctx.beginPath();
+                this.moveTo(opt);
+                var p = this.point(opt);
+                this.lineTo(p);
+                ctx.strokeStyle = color;
+                ctx.closePath();
+                ctx.stroke();
+                return this;
+            },
+            //弧度
+            radian: function(angle) {
+                return angle * Math.PI / 180
+            },
+            //正玄
+            sin: function(angle) {
+                return Math.sin(angle * Math.PI / 180);
+            },
+            //余玄
+            cos: function(angle) {
+                return Math.cos(angle * Math.PI / 180);
+            },
+            //点
+            point: function(opt) {
+                var x = opt.x,
+                    y = opt.y,
+                    r = opt.r || 10;
+                var angle = _.isUndefined(opt.angle) ? _.random(360) : opt.angle;
+                var x2 = x + r * this.sin(angle);
+                var y2 = y + r * this.cos(angle);
+                return {
+                    x: x2,
+                    y: y2
+                }
+            },
+            //中点
+            middle: function(p1, p2) {
+                return {
+                    x: (p1.x + p2.x) / 2,
+                    y: (p1.y + p2.y) / 2,
+                }
+            },
+            // 距离
+            distance: function(p1, p2) {
+                return Math.pow(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2), 1 / 2)
+            },
+            moveTo: function(p) {
+                this.context.moveTo(p.x, p.y);
+            },
+            lineTo: function(p) {
+                this.context.lineTo(p.x, p.y)
+            },
+            // xy坐标 coordinate
+            xy: function() {
+                return {
+                    x: _.random(this.context.width),
+                    y: _.random(this.context.height)
+                }
+            },
+            //顶点(Vertex) 等边多边形   vertices  of  regular Polygon  
+            vertices: function(opt) {
+                var num = opt.num || 3;
+                var vs = [];
+                var angle = _.isUndefined(opt.angle) ? _.random(360) : opt.angle;
+                // r 作为心距
+                for (var i = 0; i < num; i++) {
+                    var p = this.point(_.extend({}, opt, {
+                        angle: i * 360 / num + angle
+                    }))
+                    vs.push(p);
+                }
+                return vs;
+            },
+            //内接多边形 顶点   center point of regular polygon
+            invertices: function(vs) {
+                if (this.distance(vs[0], vs[1]) < 10) {
+                    return false;
+                }
+                var vs2 = [];
+                var temp = vs.slice(0);
+                for (var i = 0; i < temp.length; i++) {
+                    var p1 = temp[0],
+                        p2 = temp[1];
+                    var p = this.middle(p1, p2);
+                    vs2.push(p);
+                    temp.push(temp.shift())
+                }
+                return vs2;
+            },
+            //x y r angle color  边数num
+            polygon: function(opt) {
+                var vs = this.vertices(opt);
+                return this.link(vs, opt);
+            },
+            //内切 多边形
+            inpolygon: function(opt) {
+                var self = this;
+                var vsList = [];
+                var vs = this.vertices(opt);
+                vsList.push(vs);
+                var _inpolygon = function(vs) {
+                    var vs2 = self.invertices.call(self, vs);
+                    if (vs2) {
+                        vsList.push(vs2);
+                        _inpolygon(vs2)
+                    }
+                }
+                _inpolygon(vs);
+
+                console.log("图形个数：" + vsList.length)
+                vsList.forEach(function(t) {
+                    self.link(t, opt)
+                })
+                return self
+            },
+            //花瓣
+            flower: function(opt) {
+
+                var self = this;
+                var vsList = [];
+                var vs = this.vertices(opt);
+                vsList.push(vs);
+
+                var level = 0;
+                var _flower = function(vs) {
+                    if (level > 4) {
+                        return false;
+                    }
+                    var r = opt.r / Math.pow(2, level++);
+                    var vs2 = self.vertices(_.extend({}, opt, { r: r }));
+                    vsList.push(vs2);
+                    vs.map(function(t, i) {
+                        var vs3 = [t, vs2[i == vs2.length - 1 ? 0 : i + 1]];
+                        vsList.push(vs3);
+                    });
+                    _flower(vs2);
+                }
+
+                _flower(vs);
+                console.log("图形个数：" + vsList.length)
+                vsList.forEach(function(t) {
+                    self.link(t, opt)
+                })
+                return self;
+
+            },
+
+            //谢尔宾斯基三角形
+            sierpinski: function(opt) {
+                var self = this;
+                var vsList = [];
+                var vs = this.vertices(opt);
+                vsList.push(vs);
+
+                //内切
+                var _intriangle = function(vs) {
+                    var vs2 = self.invertices.call(self, vs);
+                    if (vs2) {
+                        vsList.push(vs2);
+                        vs.map(function(t, i) {
+                            var vs3 = [t, vs2[i], vs2[i == 0 ? vs2.length - 1 : i - 1]]
+                            _intriangle(vs3)
+                        });
+                    }
+                }
+                _intriangle(vs);
+
+                //画图
+                console.log("图形个数：" + vsList.length)
+                vsList.forEach(function(t) {
+                    self.link(t, opt)
+                })
+                return self
+            },
+            //五角星
+            star: function(opt) {
+                var self = this;
+                var num = opt.num || 5; //num of edge
+                var angle = _.isUndefined(opt.angle) ? _.random(360) : opt.angle; //offset
+                var ratio = opt.ratio || (3 - 4 * Math.pow(self.sin(18), 2)) //正五角星2.61803
+                var vs = [];
+                for (var i = 0; i < num; i++) {
+                    var p1 = self.point(_.extend({}, opt, {
+                        angle: i * 360 / num + angle
+                    }))
+                    vs.push(p1);
+                    var p2 = self.point(_.extend({}, opt, {
+                        angle: i * 360 / num + angle + 180 / num,
+                        r: opt.r / ratio
+                    }))
+                    vs.push(p2);
+                }
+                this.link(vs, opt)
+                return this;
+            },
+            //连线
+            link: function(vs, opt) {
+                var self = this;
+                var ctx = this.context;
+                ctx.beginPath();
+                if (vs.length == 1) {
+                    console.log("点", vs)
+                } else if (vs.length == 2) {
+                    self.moveTo(vs[0]);
+                    self.lineTo(vs[1]);
+                } else {
+                    var temp = vs.slice(0);
+                    var startPos = temp.shift();
+                    self.moveTo(startPos)
+                    temp.push(startPos);
+                    temp.forEach(function(t) {
+                        self.lineTo(t)
+                    })
+                }
+                ctx.closePath();
+                var color, lineWidth;
+                if (opt) {
+                    color = opt.color;
+                    lineWidth = _.isUndefined(opt.lineWidth) ? opt.lineWidth : 0.5;
+                } else {
+                    color = _.color();
+                    lineWidth = 0.5;
+                }
+                ctx.lineWidth = lineWidth
+                ctx.strokeStyle = color;
+                ctx.stroke();
+                // ctx.fillStyle = _.color();
+                // ctx.fill()
+                return this;
+            },
+            //三角形
+            triangle: function(opt) {
+                var self = this;
+                var canvas = this.canvas;
+                var ctx = this.context;
+                var vs = []
+                var num = 3;
+                var angle = _.isUndefined(opt.angle) ? _.random(360) : opt.angle;
+                var r = opt.r || _.random(200);
+                //r 作为边长  
+                for (var i = 0; i < num; i++) {
+                    var p = vs.length == 0 ? opt || self.xy() : self.point(_.extend({}, vs[0], {
+                        r: r,
+                        angle: i * 180 / num + angle
+                    }));
+                    vs.push(p);
+                }
+
+                return this.link(vs);
             }
 
         }
 
         draw.prototype.init.prototype = draw.prototype;
+
+
+        //多线程 任务
+        var tasker = _.tasker = function(options) {
+            return new tasker.prototype.init(options);
+        }
+        tasker.prototype = {
+            constructor: tasker,
+            init: function(options) {
+                // this.name = options.name;
+                var file = options.file;
+                var data = this.data = options.data; //参数
+                var callback = options.callback;
+                if (typeof(Worker) !== "undefined") {
+                    if (typeof(this.w) == "undefined") {
+                        // if (data) {
+                        //     file += (file.indexOf("?") > -1 ? "&" : "?") + _.toQueryString(data);
+                        // }
+                        this.w = new Worker(file);
+                        // w.onmessage = function(event) {
+                        //     console.log(event.data)
+
+                        //     callback && callback(event)
+                        //     // _.$("link").attr("href", event.data)
+                        //     // document.getElementById("result").innerHTML = event.data;
+                        // };
+                    }
+                    this.w.addEventListener('message', function(e) {
+                        //e.data为从worker线程得到的数据
+                        console.log(event.data)
+                        callback && callback(event.data);
+                    });
+                }
+                return this;
+            },
+            open: function(name, cfg) {
+                this.w.postMessage({ name: name, act: "open", cfg: _.extend({}, this.data, cfg) });
+                console.log("task open: " + name);
+                return this;
+            },
+            close: function(name) {
+                this.w.postMessage({ name: name, act: "close" })
+                console.log("task close: " + name);
+                return this;
+                // this.w.terminate();
+            }
+        }
+        tasker.prototype.init.prototype = tasker.prototype;
 
 
 

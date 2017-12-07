@@ -18,53 +18,6 @@
 
 <body>
     <script>
-    (function() {
-        var lastTime = 0;
-        var vendors = ['ms', 'moz', 'webkit', 'o'];
-        for (var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
-            window.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
-            window.cancelAnimationFrame = window[vendors[x] + 'CancelAnimationFrame'] || window[vendors[x] + 'CancelRequestAnimationFrame'];
-        }
-        if (!window.requestAnimationFrame) window.requestAnimationFrame = function(callback, element) {
-            var currTime = new Date().getTime();
-            var timeToCall = Math.max(0, 16 - (currTime - lastTime));
-            var id = window.setTimeout(function() {
-                callback(currTime + timeToCall);
-            }, timeToCall);
-            lastTime = currTime + timeToCall;
-            return id;
-        };
-        if (!window.cancelAnimationFrame) window.cancelAnimationFrame = function(id) {
-            clearTimeout(id);
-        };
-    }());
-    // var _canvas = function(opt) {
-    //     var h = screen.availHeight
-    //     var w = screen.availWidth
-    //     var c = document.createElement("canvas");
-    //     if (opt == "fullscreen") {
-
-    //     } else if (/\d+:\d+/.test(opt)) { //比率
-
-
-    //         opt.replace(/(\d+):(\d+)/, function(match, x, y) {
-
-    //             h = w *  y/x
-
-    //         })
-
-    //     }
-
-    //     c.setAttribute('width', w);
-    //     c.setAttribute('height', h);
-
-    //     return c;
-
-
-    // }
-
-    // var canvas=_canvas("4:3")
-
     var canvas = _.draw({
         ratio: "4:3",
         background: "#ccc"
@@ -87,7 +40,11 @@
         context.moveTo(x, y);
         context.lineTo(lastX, lastY);
         context.strokeStyle = _.color();
+        context.closePath();
         context.stroke();
+
+        //         context.fillStyle = _.color();;   //填充颜色
+        // context.fill(); //填充
 
         x = lastX;
         y = lastY;

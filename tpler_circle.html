@@ -31,8 +31,28 @@
 </head>
 
 <body>
-    <div class="box trans"></div>
     <script>
+    (function() {
+        var lastTime = 0;
+        var vendors = ['ms', 'moz', 'webkit', 'o'];
+        for (var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+            window.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
+            window.cancelAnimationFrame = window[vendors[x] + 'CancelAnimationFrame'] || window[vendors[x] + 'CancelRequestAnimationFrame'];
+        }
+        if (!window.requestAnimationFrame) window.requestAnimationFrame = function(callback, element) {
+            var currTime = new Date().getTime();
+            var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+            var id = window.setTimeout(function() {
+                callback(currTime + timeToCall);
+            }, timeToCall);
+            lastTime = currTime + timeToCall;
+            return id;
+        };
+        if (!window.cancelAnimationFrame) window.cancelAnimationFrame = function(id) {
+            clearTimeout(id);
+        };
+    }());
+
 
     var draw = _.draw({
         ratio: "funllscreen"
@@ -48,19 +68,25 @@
         while (len--) {
             var x = _.random(c.width);
             var y = _.random(c.height);
-            draw.line({
+            // draw.line({
+            //     x: x,
+            //     y: y,
+            //     r: 20
+            // });
+
+            // [13, 11, 9, 7, 5, 3].forEach(function(t) {
+            //     draw.circle({
+            //         x: x,
+            //         y: y,
+            //         r: t
+            //     });
+            // })
+
+            draw.circle({
                 x: x,
                 y: y,
-                r: 20
+                r: _.between(1, 10)
             });
-
-            [13, 11, 9, 7, 5, 3].forEach(function(t) {
-                draw.circle({
-                    x: x,
-                    y: y,
-                    r: t
-                });
-            })
 
 
         }
@@ -68,24 +94,13 @@
     }
 
 
-
-    var translate = function(el, pos) {
-        el.css({
-            'transform': 'translate(' + pos.x + 'px,' + pos.y + 'px)',
-            '-webkit-transform': 'translate(' + pos.x + 'px,' + pos.y + 'px)',
-            'transition-duration': '3s',
-            '-webkit-transition-duration': '3s',
-            'background-color': _.color()
-        })
-    }
-
     toucher([{
             el: document,
             type: "touchstart",
             callback: function(item, ev) {
 
-                var pos = _.pos(ev);
-                var box = _.$(".box");
+                // var pos = _.pos(ev);
+                // var box = _.$(".box");
 
                 // pos.x=_.min(pos.x
                 // box.css({
@@ -93,7 +108,7 @@
                 //  top:pos.y+"px"
                 // })
 
-                translate(box, pos);
+                // translate(box, pos);
                 _movie();
 
                 ev.preventDefault();

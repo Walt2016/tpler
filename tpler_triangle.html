@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-    <title>move</title>
+    <title> Triangle</title>
     <script src="js/tpler.js"></script>
     <link rel="shortcut icon" type="image/x-icon" href="data:image/gif;base64,YQ==">
     <style>
@@ -31,70 +31,44 @@
 </head>
 
 <body>
-    <div class="box trans"></div>
     <script>
-
-    var draw = _.draw({
-        ratio: "funllscreen"
-    })
+    var draw = _.draw().fullscreen();
 
     var c = draw.canvas;
     document.body.appendChild(c)
 
     var id;
-    var _movie = function() {
+    var _movie = function(pos) {
         draw.clear("#dedede");
-        var len = 100;
-        while (len--) {
-            var x = _.random(c.width);
-            var y = _.random(c.height);
-            draw.line({
-                x: x,
-                y: y,
-                r: 20
-            });
 
-            [13, 11, 9, 7, 5, 3].forEach(function(t) {
-                draw.circle({
-                    x: x,
-                    y: y,
-                    r: t
-                });
-            })
+        // var len = 11;
+        var offsetAngle = _.random(60) ; //60
+        var len=360/offsetAngle
+        var r=150 ;//_.random(150);
+        for (var i = 0; i < len; i++) {
 
-
+            draw.triangle(_.extend({}, pos, {
+                angle : offsetAngle * i,
+                r : r
+            }))
         }
-        id = requestAnimationFrame(_movie)
+
+        // draw.triangle(_.extend({}, pos, {
+        //         angle : offsetAngle * i,
+        //         r : r
+        //     }))
+        // id = requestAnimationFrame(_movie)
     }
 
-
-
-    var translate = function(el, pos) {
-        el.css({
-            'transform': 'translate(' + pos.x + 'px,' + pos.y + 'px)',
-            '-webkit-transform': 'translate(' + pos.x + 'px,' + pos.y + 'px)',
-            'transition-duration': '3s',
-            '-webkit-transition-duration': '3s',
-            'background-color': _.color()
-        })
-    }
 
     toucher([{
             el: document,
             type: "touchstart",
             callback: function(item, ev) {
 
-                var pos = _.pos(ev);
-                var box = _.$(".box");
+                var pos = _.pos(ev)
 
-                // pos.x=_.min(pos.x
-                // box.css({
-                //  left:pos.x+"px",
-                //  top:pos.y+"px"
-                // })
-
-                translate(box, pos);
-                _movie();
+                _movie(pos);
 
                 ev.preventDefault();
 

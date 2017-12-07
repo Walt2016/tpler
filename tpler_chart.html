@@ -10,20 +10,7 @@
 
 <body>
     <script>
-    (function() {
-        window.requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame;
-        if (!window.requestAnimationFrame) {
-            window.requestAnimationFrame = function(callback) {
-                var id = window.setTimeout(callback, 1000 / 60);
-                return id;
-            };
-        }
-        if (!window.cancelAnimationFrame) {
-            window.cancelAnimationFrame = function(id) {
-                clearTimeout(id);
-            };
-        }
-    }());
+
     /**
      * 生成图表
      * @param {String} canvas 画布元素id
