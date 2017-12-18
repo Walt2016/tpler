@@ -39,14 +39,17 @@
     var c = draw.canvas;
     document.body.appendChild(c)
 
- 
+
     var id;
     var _movie = function(pos) {
         draw.clear("#dedede");
-        var num=_.between(3,10)
-        pos.num=num
-        pos.r=150
-        draw.polygon(pos)
+        var cfg = {
+            num: _.between(3, 10),
+            r: 150,
+            showVertices: true,
+            animate: true
+        }
+        draw.polygon(_.extend(pos, cfg))
         // id = requestAnimationFrame(_movie)
     }
 
@@ -56,7 +59,7 @@
             type: "touchstart",
             callback: function(item, ev) {
 
-                var pos=_.pos(ev)
+                var pos = _.pos(ev)
                 _movie(pos);
 
                 ev.preventDefault();

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>button</title>
+    <script src="js/tpler.js"></script>
+    <link rel="shortcut icon" type="image/x-icon" href="data:image/gif;base64,YQ==">
+    <style>
+    body {
+        margin: 0;
+        padding: 0
+    }
+
+    .btn {
+        width: 100px;
+        height: 40px;
+        font-size: 15px;
+        line-height: 40px;
+        background: #5DCBFF ; 
+        text-align: center;
+    }
+    /*.btn:hover,*/
+    .btn.active {
+        background: #cccccc;
+    }
+    </style>
+</head>
+
+<body>
+    <div class="btn">button</div>
+    <script>
+
+    	_.$(".btn").hover("active",function(ev){
+            console.log(this,ev)
+        })
+    	// toucher([{
+    	// 	el:".btn",
+    	// 	type:"touchstart",
+    	// 	callback:function(item,ev){
+    	// 		item.addClass("active")
+    	// 	}
+    	// },{
+    	// 	el:".btn",
+    	// 	type:"touchend",
+    	// 	callback:function(item,ev){
+    	// 		item.removeClass("active")
+    	// 	}
+    	// }])
+    </script>
+</body>
+
+</html>

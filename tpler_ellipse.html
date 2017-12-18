@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-    <title>surround</title>
+    <title>ellipse</title>
     <script src="js/tpler.js"></script>
     <link rel="shortcut icon" type="image/x-icon" href="data:image/gif;base64,YQ==">
     <style>
@@ -91,7 +91,7 @@
 
     var id;
 
-    var shapeArr = ["polygon", "star", "circle", 'inpolygon','line','ray'];
+    var shapeArr = ["polygon", "star", "circle", 'inpolygon'];
     var angleArr=["rotation",0,60,120,180];
 
     var shape = _.takeTurns(shapeArr);
@@ -103,21 +103,17 @@
     var _movie = function(pos) {
         draw.clear("#dedede");
         //pos,
-        var params=_.extend({}, {
-            num: num, //_.between(3, 10),
-            r: 120,
-            angle: angle,
-            // angle:"rotation",
-            interval:10, //间隔
-            shape: shape,
-            animate: true,
-            spiral:30  //螺旋
-         })
-        if(shape=="circle"){
-            params.interval=20;
-            params.color='rgba(255,255,255,0.5)'
-        }
-        draw.surround(params)
+        draw.ellipse(_.extend({}, {
+            // num: num, //_.between(3, 10),
+            // r: 120,
+            // angle: angle,
+            // // angle:"rotation",
+            // shape: shape,
+            // animate: true,
+            a:120,
+            b:60
+        }))
+        // id = requestAnimationFrame(_movie)
     }
 
 

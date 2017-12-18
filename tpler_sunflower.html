@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-    <title>surround</title>
+    <title>sunflower</title>
     <script src="js/tpler.js"></script>
     <link rel="shortcut icon" type="image/x-icon" href="data:image/gif;base64,YQ==">
     <style>
@@ -77,8 +77,8 @@
     <div class="container">
         <div class="screen"></div>
         <div class="panel">
-            <div class="ball shape">polygon</div>
-            <div class="ball angle">rotation</div>
+            <div class="ball interval">interval</div>
+            <div class="ball num">num</div>
             <div class="ball draw" id="draw">draw</div>
         </div>
     </div>
@@ -91,33 +91,35 @@
 
     var id;
 
-    var shapeArr = ["polygon", "star", "circle", 'inpolygon','line','ray'];
-    var angleArr=["rotation",0,60,120,180];
+    var shapeArr = ["polygon", "star", "circle", 'inpolygon'];
+    var angleArr=[0,60,120,180]; //"rotation",
+
+    var intervalArr=[5,10,20,30]; //"rotation",
 
     var shape = _.takeTurns(shapeArr);
     var angle=_.takeTurns(angleArr);
+    var interval=_.takeTurns(1,9);
     _.$(".shape").html(shape);
     _.$(".angle").html(angle);
-    var num = _.takeTurns(3, 10);
+    _.$(".interval").html(interval);
+    var num = _.takeTurns(10, 20);
+
+    _.$(".num").html(num);
     _.$("#draw").html("draw" + num)
     var _movie = function(pos) {
         draw.clear("#dedede");
         //pos,
-        var params=_.extend({}, {
+        draw.sunflower(_.extend({}, {
             num: num, //_.between(3, 10),
-            r: 120,
-            angle: angle,
+            r: 150,
+            // angle: angle,
             // angle:"rotation",
-            interval:10, //间隔
-            shape: shape,
-            animate: true,
-            spiral:30  //螺旋
-         })
-        if(shape=="circle"){
-            params.interval=20;
-            params.color='rgba(255,255,255,0.5)'
-        }
-        draw.surround(params)
+            interval:interval,
+            // shape: shape,
+            // animate: true
+
+        }))
+        // id = requestAnimationFrame(_movie)
     }
 
 
@@ -125,8 +127,8 @@
             el: "#draw",
             type: "touchstart",
             callback: function(item, ev) {
-                num = _.takeTurns(3, 10);
-                _.$("#draw").html("draw" + num)
+                // num = _.takeTurns(3, 10);
+                // _.$("#draw").html("draw" + num)
                 var pos = _.pos(ev)
                 _movie(pos);
                 ev.preventDefault();
@@ -142,7 +144,7 @@
             el: "#draw",
             type: "touchend",
             callback: function(item, ev) {
-                id && cancelAnimationFrame(id)
+                // id && cancelAnimationFrame(id)
                 ev.preventDefault();
             }
         }, {
@@ -154,11 +156,19 @@
             }
         }
         , {
-            el: ".angle",
+            el: ".num",
             type: "touchstart",
             callback: function() {
-                angle = _.takeTurns(angleArr);
-                _.$(".angle").html(angle);
+                num = _.takeTurns(10,20);
+                _.$(".num").html(num);
+            }
+        }
+        , {
+            el: ".interval",
+            type: "touchstart",
+            callback: function() {
+                interval = _.takeTurns(1,9);
+                _.$(".interval").html(interval);
             }
         }
     ])
