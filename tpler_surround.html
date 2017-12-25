@@ -77,6 +77,10 @@
     <div class="container">
         <div class="screen"></div>
         <div class="panel">
+           <!--  <div class="iptGroup">
+                <div class="text">spiral</div>
+                <div class="ipt">30</div>
+            </div> -->
             <div class="ball shape">polygon</div>
             <div class="ball angle">rotation</div>
             <div class="ball draw" id="draw">draw</div>
@@ -94,22 +98,23 @@
     var shapeArr = ["polygon", "star", "circle", 'inpolygon','line','ray'];
     var angleArr=["rotation",0,60,120,180];
 
-    var shape = _.takeTurns(shapeArr);
-    var angle=_.takeTurns(angleArr);
-    _.$(".shape").html(shape);
-    _.$(".angle").html(angle);
-    var num = _.takeTurns(3, 10);
-    _.$("#draw").html("draw" + num)
+    var shape = _.cycle(shapeArr);
+    var angle=_.cycle(angleArr);
+
+    _.$(".shape").html(shape.current());
+    _.$(".angle").html(angle.current());
+    var num = _.cycle(3, 10);
+    _.$("#draw").html("draw" + num.current())
     var _movie = function(pos) {
         draw.clear("#dedede");
         //pos,
         var params=_.extend({}, {
-            num: num, //_.between(3, 10),
+            num: num.next(), //_.between(3, 10),
             r: 120,
-            angle: angle,
+            angle: angle.next(),
             // angle:"rotation",
             interval:10, //间隔
-            shape: shape,
+            shape: shape.next(),
             animate: true,
             spiral:30  //螺旋
          })
@@ -125,8 +130,7 @@
             el: "#draw",
             type: "touchstart",
             callback: function(item, ev) {
-                num = _.takeTurns(3, 10);
-                _.$("#draw").html("draw" + num)
+                _.$("#draw").html("draw" + num.current())
                 var pos = _.pos(ev)
                 _movie(pos);
                 ev.preventDefault();
@@ -142,23 +146,20 @@
             el: "#draw",
             type: "touchend",
             callback: function(item, ev) {
-                id && cancelAnimationFrame(id)
                 ev.preventDefault();
             }
         }, {
             el: ".shape",
             type: "touchstart",
             callback: function() {
-                shape = _.takeTurns(shapeArr);
-                _.$(".shape").html(shape);
+                _.$(".shape").html(shape.current());
             }
         }
         , {
             el: ".angle",
             type: "touchstart",
             callback: function() {
-                angle = _.takeTurns(angleArr);
-                _.$(".angle").html(angle);
+                _.$(".angle").html(angle.current());
             }
         }
     ])

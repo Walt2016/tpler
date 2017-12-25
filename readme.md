@@ -81,12 +81,28 @@ html：
 3、事件模块  
 移动开发自动切换click到tap模式
 ```
+
 toucher({
     el: el,
     type: "touchstart",
     callback: function(item, ev) {
     }
 })
+
+
+toucher([{
+	el:".btn",
+	type:"touchstart",
+	callback:function(item,ev){
+		item.addClass("active")
+	}
+},{
+	el:".btn",
+	type:"touchend",
+	callback:function(item,ev){
+		item.removeClass("active")
+	}
+}])
 ```
 
 
@@ -103,5 +119,12 @@ var config={}
 var r=router(config)
 r.go("home")
 ```
+
+
+6、几何作图
+```
+ _.draw(opt)
+```
+
 
 联系qq22802768

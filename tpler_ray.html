@@ -96,21 +96,21 @@
 
     var intervalArr=[5,10,20,30]; //"rotation",
 
-    var shape = _.takeTurns(shapeArr);
-    var angle=_.takeTurns(angleArr);
-    var interval=_.takeTurns(intervalArr);
-    _.$(".shape").html(shape);
-    _.$(".angle").html(angle);
-    _.$(".interval").html(interval);
-    var num = _.takeTurns(1, 20);
+    var shape = _.cycle(shapeArr);
+    var angle=_.cycle(angleArr);
+    var interval=_.cycle(intervalArr);
+    _.$(".shape").html(shape.next());
+    _.$(".angle").html(angle.next());
+    _.$(".interval").html(interval.next());
+    var num = _.cycle(1, 20);
 
-    _.$(".num").html(num);
-    _.$("#draw").html("draw" + num)
+    _.$(".num").html(num.next());
+    _.$("#draw").html("draw" + num.next())
     var _movie = function(pos) {
         draw.clear("#dedede");
         //pos,
         draw.ray(_.extend({}, {
-            num: num, //_.between(3, 10),
+            num: num.current(), //_.between(3, 10),
             r: 150,
             // angle: angle,
             // angle:"rotation",
@@ -127,8 +127,6 @@
             el: "#draw",
             type: "touchstart",
             callback: function(item, ev) {
-                // num = _.takeTurns(3, 10);
-                // _.$("#draw").html("draw" + num)
                 var pos = _.pos(ev)
                 _movie(pos);
                 ev.preventDefault();
@@ -144,23 +142,20 @@
             el: "#draw",
             type: "touchend",
             callback: function(item, ev) {
-                id && cancelAnimationFrame(id)
                 ev.preventDefault();
             }
         }, {
             el: ".shape",
             type: "touchstart",
             callback: function() {
-                shape = _.takeTurns(shapeArr);
-                _.$(".shape").html(shape);
+                _.$(".shape").html(shape.ext());
             }
         }
         , {
             el: ".num",
             type: "touchstart",
             callback: function() {
-                num = _.takeTurns(1,20);
-                _.$(".num").html(num);
+                _.$(".num").html(num.next());
             }
         }
     ])

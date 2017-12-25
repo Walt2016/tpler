@@ -13,41 +13,201 @@
         padding: 0
     }
 
+    .container {
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-pack: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+        align-items: center;
+        -webkit-box-orient: vertical;
+        -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+        flex-direction: column;
+    }
+
     .btn {
         width: 100px;
         height: 40px;
         font-size: 15px;
         line-height: 40px;
-        background: #5DCBFF ; 
+        background: #5DCBFF;
         text-align: center;
+        border-bottom: 6px solid #ccc;
+        border-radius: 4px;
+        user-select: none;
     }
     /*.btn:hover,*/
+
     .btn.active {
-        background: #cccccc;
+        /*background: #cccccc;*/
+        border-bottom: none;
+        line-height: 46px;
+        height: 46px;
+        -moz-animation: redanimations 2s ease infinite;
+        -webkit-animation: redanimations 2s ease infinite;
+        -o-animation: redanimations 2s ease infinite;
+        -ms-animation: redanimations 2s ease infinite;
+        animation: redanimations 2s ease infinite
+    }
+
+
+    .ball {
+        width: 80px;
+        height: 80px;
+        background-color: #ccc;
+        border-radius: 50%;
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-pack: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+        align-items: center;
+        margin-right: 20px;
+        user-select: none;
+    }
+
+    .ball.hover {
+        background: #5DCBFF;
+        -moz-animation: redanimations 2s ease infinite;
+        -webkit-animation: redanimations 2s ease infinite;
+        -o-animation: redanimations 2s ease infinite;
+        -ms-animation: redanimations 2s ease infinite;
+        animation: redanimations 2s ease infinite
+    }
+
+
+    @-webkit-keyframes redanimations {
+        0% {
+            box-shadow: 0 0 10px 2px rgba(191, 2, 2, .8);
+        }
+        50% {
+            box-shadow: 0 0 10px 2px rgba(191, 2, 2, .3);
+        }
+        100% {
+            box-shadow: 0 0 10px 2px rgba(191, 2, 2, .8);
+        }
+    }
+
+    @-moz-keyframes redanimations {
+        /* Firefox */
+        0% {
+            box-shadow: 0 0 10px 2px rgba(191, 2, 2, .8);
+        }
+        50% {
+            box-shadow: 0 0 10px 2px rgba(191, 2, 2, .3);
+        }
+        100% {
+            box-shadow: 0 0 10px 2px rgba(191, 2, 2, .8);
+        }
+    }
+
+    @keyframes redanimations {
+        0% {
+            box-shadow: 0 0 10px 2px rgba(191, 2, 2, .8);
+        }
+        50% {
+            box-shadow: 0 0 10px 2px rgba(191, 2, 2, .3);
+        }
+        100% {
+            box-shadow: 0 0 10px 2px rgba(191, 2, 2, .8);
+        }
+    }
+
+    .tab {}
+
+    .tab-head {
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-align: center;
+        background: rgba(255, 255, 255, 1);
+        -webkit-box-orient: horizontal;
+        -webkit-box-direction: normal;
+        -ms-flex-direction: row;
+        flex-direction: row;
+        /*border-bottom: 4px solid #f0f0f0;*/
+    }
+
+    .tab-head-item {
+        color: #666;
+        min-width: 100px;
+        text-align: center;
+        font-size: 16px;
+        cursor: pointer;
+        user-select: none;
+        height:40px;
+        line-height: 40px;
+        border-bottom: 4px solid #f0f0f0;
+        border-radius: 4px;
+    }
+
+    .tab-head-item.hover{
+             -moz-animation: redanimations 2s ease infinite;
+        -webkit-animation: redanimations 2s ease infinite;
+        -o-animation: redanimations 2s ease infinite;
+        -ms-animation: redanimations 2s ease infinite;
+        animation: redanimations 2s ease infinite
+
+    }
+
+    .tab-head-item.active {
+        /*color: #f46b30;*/
+        color: #000;
+        border-bottom: 4px solid #ccc;
+        background: #5DCBFF
+
+   
+    }
+    .tab-body-item.hide{
+        display: none;
+    }
+    canvas{
+        position: absolute; border: none; top: 0px; left: 0px; padding: 0px; margin: 0px; height: 100%; width: 100%;
     }
     </style>
 </head>
 
 <body>
-    <div class="btn">button</div>
-    <script>
+    <div class="container">
+        <div class="btn">button</div>
+        <div class="ball">ball</div>
+        <div class="ball">ball</div>
+        <div class="tab">
+            <div class="tab-head">
+                <div class="tab-head-item active" target="panel_basic">basic基础</div>
+                <div class="tab-head-item" target="panel_in">in内切</div>
+            </div>
+            <div class="tab-body">
+                <div class="tab-body-item" id="panel_basic">
+                    r长度   角度angle 
+                </div>
+                <div class="tab-body-item hide" id="panel_in">
+                    动画animate
 
-    	_.$(".btn").hover("active",function(ev){
-            console.log(this,ev)
-        })
-    	// toucher([{
-    	// 	el:".btn",
-    	// 	type:"touchstart",
-    	// 	callback:function(item,ev){
-    	// 		item.addClass("active")
-    	// 	}
-    	// },{
-    	// 	el:".btn",
-    	// 	type:"touchend",
-    	// 	callback:function(item,ev){
-    	// 		item.removeClass("active")
-    	// 	}
-    	// }])
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    _.$(".btn,.ball").hover("hover", function(ev) {
+        console.log(this, ev)
+    })
+    //,.tab-head-item
+
+    _.$(".tab-head-item").tab("active", function(ev) {
+        console.log(this, ev)
+        
+
+
+    })
+
     </script>
 </body>
 
