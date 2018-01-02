@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>tpler</title>
+    <script src="js/tpler.js"></script>
+    <link rel="shortcut icon" type="image/x-icon" href="data:image/gif;base64,YQ==">
+    <style>
+    html,
+    body {
+        margin: 0;
+        padding: 0
+    }
+
+    [layout] {
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+    }
+
+    [flex],
+    .flex {
+        -webkit-box-flex: 1;
+        -ms-flex: 1;
+        flex: 1;
+    }
+
+
+    [layout="row"],
+    [row],
+    .row {
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-orient: horizontal;
+        -webkit-box-direction: normal;
+        -ms-flex-direction: row;
+        flex-direction: row;
+    }
+
+    [layout-wrap],
+    .row.wrap {
+        -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
+    }
+
+    [layout-nowrap],
+    .row.nowrap {
+        -ms-flex-wrap: nowrap;
+        flex-wrap: nowrap;
+    }
+
+    [layout="column"],
+    [layout="col"],
+    [column],
+    [col],
+    .column,
+    .col {
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-orient: vertical;
+        -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+        flex-direction: column;
+    }
+
+    [layout-align="start start"],
+    [layout-align="start center"],
+    [layout-align="start end"],
+    .row.start,
+    .col.start {
+        -webkit-box-pack: start;
+        -ms-flex-pack: start;
+        justify-content: flex-start;
+    }
+
+    [layout-align="center start"],
+    [layout-align="center center"],
+    [layout-align="center end"],
+    .row.center,
+    .col.center {
+        -webkit-box-pack: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+    }
+
+    [layout-align="end start"],
+    [layout-align="end center"],
+    [layout-align="end end"],
+    .row.end,
+    .col.end {
+        -webkit-box-pack: end;
+        -ms-flex-pack: end;
+        justify-content: flex-end;
+    }
+
+    [layout-align="space-between start"],
+    [layout-align="space-between center"],
+    [layout-align="space-between end"],
+    [layout-align="between start"],
+    [layout-align="between center"],
+    [layout-align="between end"],
+    .row.between {
+        -webkit-box-pack: justify;
+        -ms-flex-pack: justify;
+        justify-content: space-between;
+    }
+
+    [layout-align="space-arround start"],
+    [layout-align="space-arround center"],
+    [layout-align="space-arround end"],
+    [layout-align="arround start"],
+    [layout-align="arround center"],
+    [layout-align="arround end"],
+    .row.arround {
+        -webkit-box-pack: space-arround;
+        -ms-flex-pack: space-arround;
+        justify-content: space-arround;
+    }
+
+    [layout-align="start start"],
+    [layout-align="center start"],
+    [layout-align="end start"],
+    [layout-align="space-between start"],
+    [layout-align="space-arround start"],
+    [layout-align="between start"],
+    [layout-align="arround start"],
+    .row.start,
+    .col.start {
+        -webkit-box-align: start;
+        -ms-flex-align: start;
+        align-items: flex-start;
+    }
+
+    [layout-align="start center"],
+    [layout-align="center center"],
+    [layout-align="end center"],
+    [layout-align="space-between center"],
+    [layout-align="space-arround center"],
+    [layout-align="between center"],
+    [layout-align="arround center"],
+    .row.center,
+    .col.center {
+
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+        align-items: center;
+    }
+
+    [layout-align="start end"],
+    [layout-align="center end"],
+    [layout-align="end end"],
+    [layout-align="space-between end"],
+    [layout-align="space-arround end"],
+    [layout-align="between end"],
+    [layout-align="arround end"],
+    .row.end,
+    .col.end {
+        -webkit-box-align: end;
+        -ms-flex-align: end;
+        align-items: flex-end;
+    }
+
+
+
+    .ball {
+        width: 80px;
+        height: 80px;
+        background-color: #ccc;
+        border-radius: 50%;
+        margin-right: 20px;
+    }
+
+    .ball:last-child {
+        margin-right: 0px;
+    }
+
+
+    .panel {
+        width: 100%;
+        height: 50vh;
+    }
+
+    .tab-head {
+        background: rgba(255, 255, 255, 1);
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .tab-head-item {
+        color: #666;
+        min-width: 50px;
+        text-align: center;
+        font-size: 16px;
+        cursor: pointer;
+        user-select: none;
+        height: 40px;
+        line-height: 40px;
+        border-bottom: 1px solid #dcdcdc;
+        /*border-radius: 4px;*/
+    }
+
+    .tab-head-item.active {
+        color: #000;
+        /*border-bottom: 1px solid #ff6414;*/
+        background: #cecece
+    }
+
+    .tab-body-item.hide {
+        display: none;
+    }
+
+    .tab-body {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .tab-body-item {
+        font-size: 12px;
+        word-wrap: break-word;
+        margin-bottom: 62px;
+        /*  padding-left: 6px;
+        padding-right: 6px*/
+    }
+
+    .tab-body-item .header {
+        height: 22px;
+        background-color: #cecece;
+        line-height: 22px;
+        padding: 6px;
+    }
+
+    .tab-body-item .body {
+        border-bottom: 1px solid rgb(220, 220, 220);
+        margin-bottom: 20px;
+        min-height: 30px;
+        padding: 6px;
+    }
+
+    .toolbar {
+        background-color: #f8f8f8;
+        border-top: 1px solid #dcdcdc;
+        height: 49px;
+        font-size: 12px;
+        align-items: center;
+        min-height: 49px;
+    }
+
+    .fixedbottom {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 999;
+        max-width: 680px;
+        margin: 0 auto;
+    }
+
+
+
+    .btn-group {
+        margin-top: 7px;
+        margin-bottom: 7px;
+
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-flex: 1;
+        -webkit-flex: 1;
+        -ms-flex: 1;
+        flex: 1;
+    }
+
+    .btn-group .drawBtn {
+        background-color: #ff6414;
+        font-size: 15px;
+        /*width: 68px;*/
+        height: 32px;
+        line-height: 32px;
+        margin-left: 12px;
+        margin-top: 1px;
+        padding: 0;
+        border-color: #ff6414;
+        border-radius: 02px;
+        color: #fff;
+        font-weight: 500;
+        border: 1px solid #ff6414;
+        margin-right: 12px;
+        -webkit-user-select: none;
+        flex: 1;
+        text-align: center;
+    }
+
+    .propertyBtn {
+        /*background-image: url(../image/btn_reward.png);*/
+        background: #ff6414;
+        width: 36px;
+        height: 36px;
+        -webkit-background-size: 32px 32px;
+        background-size: 32px 32px;
+        background-position: center center;
+        background-repeat: no-repeat;
+        vertical-align: middle;
+        cursor: pointer;
+        z-index: 999;
+        margin-right: 10px;
+        margin-left: 10px;
+        -webkit-user-select: none;
+    }
+
+    .propertyBtn.active {
+        background: #5DCBFF;
+    }
+
+    .mt10 {
+        margin-top: 10px
+    }
+
+    .mt4 {
+        margin-top: 4px
+    }
+
+    .grid {
+        line-height: 40px;
+        font-size: 15px;
+        border: 1px solid #dcdcdc;
+    }
+
+    .grid .row {
+        border-bottom: 1px solid #dcdcdc;
+    }
+
+    .grid .row:last-child {
+        border-bottom: none
+    }
+
+    .grid .row .hd {
+        width: 100px;
+        height: 40px;
+        background-color: #f8f8f8;
+        padding-left: 4px;
+    }
+
+    .grid .row .td {
+        padding-left: 4px;
+        height: 40px;
+    }
+    </style>
+</head>
+
+<body>
+    <div class="container" layout="col" id="container">
+        <div class="screen"></div>
+        <div class="tab" layout="col">
+            <div class="tab-head" layout="row" layout-align="between center">
+                <div class="tab-head-item active" target="panel_surround" flex>环绕</div>
+                <div class="tab-head-item" target="panel_concentric" flex>同心</div>
+                <div class="tab-head-item" target="panel_flower" flex>花型</div>
+                <div class="tab-head-item" target="panel_inpolygon" flex>内切</div>
+                <div class="tab-head-item" target="panel_basic" flex>基础</div>
+            </div>
+            <div class="tab-body">
+                <div class="tab-body-item" id="panel_surround" template="_panel_surround_tpl">
+                </div>
+                <div class="tab-body-item hide" id="panel_concentric" template="_panel_concentric_tpl">
+                </div>
+                <div class="tab-body-item hide" id="panel_flower" template="_panel_flower_tpl">
+                </div>
+                <div class="tab-body-item hide" id="panel_inpolygon" template="_panel_flower_tpl">
+                </div>
+                <div class="tab-body-item hide" id="panel_basic" template="_panel_basic_tpl">
+                </div>
+            </div>
+        </div>
+        <div class="toolbar fixedbottom" style="height: auto;" id="btnSendBar" template="">
+            <div class="btn-group">
+                <div class="drawBtn" id="drawBtn" on="startMoive">画图</div>
+            </div>
+        </div>
+    </div>
+    <script type="text/template" id="_panel_surround_tpl">
+        <div class="grid mt4">
+            <div class="row">
+                <div class="hd">图形</div>
+                <div class="td flex" on="nextShape">{=shape}</div>
+            </div>
+            <div class="row">
+                <div class="hd">边数</div>
+                <div class="td flex" on="nextNum">{=num}</div>
+            </div>
+            <div class="row">
+                <div class="hd">半径</div>
+                <div class="td flex" on="nextR">{=r}</div>
+            </div>
+            <div class="row">
+                <div class="hd">角度</div>
+                <div class="td flex" on="nextAngle">{=angle}</div>
+            </div>
+            <div class="row">
+                <div class="hd">间隔</div>
+                <div class="td flex" on="nextInterval">{=interval}</div>
+            </div>
+            <div class="row">
+                <div class="hd">颜色</div>
+                <div class="td flex" on="nextColor">{=color}</div>
+            </div>
+            <div class="row">
+                <div class="hd">螺旋</div>
+                <div class="td flex" on="nextSpiral">{=spiral}</div>
+            </div>
+            <!--    <div class="row">
+                <div class="hd">动画</div>
+                <div class="td flex" on="toggleAnimate">{=animate}</div>
+            </div> -->
+        </div>
+    </script>
+    <script type="text/template" id="_panel_concentric_tpl">
+        <div class="grid mt4">
+            <div class="row">
+                <div class="hd">图形</div>
+                <div class="td flex" on="nextShape">{=shape}</div>
+            </div>
+            <div class="row">
+                <div class="hd">边数</div>
+                <div class="td flex" on="nextNum">{=num}</div>
+            </div>
+            <div class="row">
+                <div class="hd">半径</div>
+                <div class="td flex" on="nextR">{=r}</div>
+            </div>
+            <div class="row">
+                <div class="hd">角度</div>
+                <div class="td flex" on="nextAngle">{=angle}</div>
+            </div>
+            <div class="row">
+                <div class="hd">间隔</div>
+                <div class="td flex" on="nextInterval">{=interval}</div>
+            </div>
+            <div class="row">
+                <div class="hd">颜色</div>
+                <div class="td flex" on="nextColor">{=color}</div>
+            </div>
+            <!-- <div class="row">
+                <div class="hd">螺旋</div>
+                <div class="td flex" on="nextSpiral">{=spiral}</div>
+            </div> -->
+            <!--   <div class="row">
+                <div class="hd">动画</div>
+                <div class="td flex" on="toggleAnimate">{=animate}</div>
+            </div> -->
+        </div>
+
+        <script type="text/template" id="_panel_basic_tpl">
+        <div class="grid mt4">
+            <div class="row">
+                <div class="hd">图形</div>
+                <div class="td flex" on="nextShape">{=shape}</div>
+            </div>
+            <div class="row">
+                <div class="hd">边数</div>
+                <div class="td flex" on="nextNum">{=num}</div>
+            </div>
+            <div class="row">
+                <div class="hd">半径</div>
+                <div class="td flex" on="nextR">{=r}</div>
+            </div>
+            <div class="row">
+                <div class="hd">角度</div>
+                <div class="td flex" on="nextAngle">{=angle}</div>
+            </div>
+            <div class="row">
+                <div class="hd">颜色</div>
+                <div class="td flex" on="nextColor">{=color}</div>
+            </div>
+        </div>
+    </script>
+     <script type="text/template" id="_panel_flower_tpl">
+        <div class="grid mt4">
+            <div class="row">
+                <div class="hd">边数</div>
+                <div class="td flex" on="nextNum">{=num}</div>
+            </div>
+            <div class="row">
+                <div class="hd">半径</div>
+                <div class="td flex" on="nextR">{=r}</div>
+            </div>
+            <div class="row">
+                <div class="hd">角度</div>
+                <div class="td flex" on="nextAngle">{=angle}</div>
+            </div>
+            <div class="row">
+                <div class="hd">颜色</div>
+                <div class="td flex" on="nextColor">{=color}</div>
+            </div>
+        </div>
+    </script>
+    <script>
+    window.onload = function() {
+
+
+        var shape = _.cycle(["polygon", "star", "circle", 'inpolygon', 'flower','sunflower','sierpinski','line', 'triangle', 'square', 'ray', 'ellipse']);
+        var angle = _.cycle(["rotation", 0, 60, 120, 180]);
+        var num = _.cycle(3, 10); //_.between(3, 10),
+        var interval = _.cycle([1, 5,6, 10, 20, 30,36, 60,72, 90,108, 120, 180]);
+        var spiral = _.cycle([0, 10, 20, 30, 40, 50, 100]);
+        var r = _.cycle([120, 200, 300]);
+        var animate = true;
+        var color;
+
+        var data = function() {
+            var params = _.extend({}, {
+                num: num.val(),
+                r: r.val(),
+                angle: angle.val(),
+                color: color || _.color(),
+                // angle:"rotation",
+                interval: interval.val(), //间隔
+                shape: shape.val(),
+                animate: animate,
+                spiral: spiral.val() //螺旋
+            })
+            if (shape == "circle") {
+                params.interval = 20;
+                params.color = 'rgba(255,255,255,0.5)'
+            }
+            return params;
+        }
+
+        var draw = _.draw({
+            ratio: "1:1",
+            background: "#dedede",
+            callback: function(result) {
+
+                // if (result) {
+                //     _.$(".grid").appendChild('<div class="row">图形个数' + result.mun + '</div>')
+                // }
+            }
+        })
+        var movie = "surround";
+
+        tpler({
+            el: ".container",
+            data: data(),
+            methods: {
+                nextShape: function(item, ev) {
+                    item.html(shape.next())
+                    if(_.size(item.closest("#panel_basic"))==1){
+                        movie = shape.val();
+                    }
+                },
+                nextColor: function(item, ev) {
+                    item.html(color = _.color())
+                },
+                nextR: function(item, ev) {
+                    item.html(r.next());
+                },
+                nextNum: function(item, ev) {
+                    item.html(num.next())
+                },
+                nextAngle: function(item, ev) {
+                    item.html(angle.next())
+                },
+                nextInterval: function(item, ev) {
+                    item.html(interval.next())
+                },
+                toggleAnimate: function(item, ev) {
+                    item.html(animate = !animate)
+                },
+                nextSpiral: function(item, ev) {
+                    item.html(spiral.next())
+                },
+                startMoive: function(item, ev) {
+                    // var pos = _.pos(ev)
+
+                    draw.clear("#dedede");
+                    // draw.surround(data())
+                    draw[movie] && draw[movie](data());
+                }
+            },
+            callback: function() {
+
+                _.$(".screen").appendChild(draw.canvas)
+
+                _.$(".tab-head-item").tab("active", function(ev) {
+                    console.log(this, ev)
+                    movie = this.attr("target").replace("panel_", "")
+                    if (movie == "basic") {
+                        movie = shape.val();
+                    }
+                })
+
+
+            }
+        })
+    }
+    </script>
+</body>
+
+</html>/

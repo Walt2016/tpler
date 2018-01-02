@@ -48,17 +48,49 @@
             }
         }();
 
+        // Save bytes in the minified (but not gzipped) version:
+        var ArrayProto = Array.prototype,
+            ObjProto = Object.prototype;
+        // Create quick reference variables for speed access to core prototypes.
+        var push = ArrayProto.push,
+            slice = ArrayProto.slice,
+            concat = ArrayProto.concat,
+            toString = ObjProto.toString,
+            hasOwnProperty = ObjProto.hasOwnProperty;
 
-        var _extends = Object.assign || function(target) {
+        // All **ECMAScript 5** native function implementations that we hope to use
+        // are declared here.
+        var nativeForEach = ArrayProto.forEach,
+            nativeMap = ArrayProto.map,
+            nativeFilter = ArrayProto.filter,
+            nativeSome = ArrayProto.some,
+            nativeEvery = ArrayProto.every,
+            nativeIndexOf = ArrayProto.indexOf;
+
+
+        // var extend = Object.assign || function(target) {
+        //     for (var i = 1; i < arguments.length; i++) {
+        //         var source = arguments[i];
+        //         for (var key in source) {
+        //             if (Object.prototype.hasOwnProperty.call(source, key)) { //不检查原型链中存在属性，只有对象本身的的属性。
+        //                 target[key] = source[key];
+        //             }
+        //         }
+        //     }
+        //     return target;
+        // };
+
+
+        var extend = function(obj) {
             for (var i = 1; i < arguments.length; i++) {
                 var source = arguments[i];
-                for (var key in source) {
-                    if (Object.prototype.hasOwnProperty.call(source, key)) {
-                        target[key] = source[key];
+                if (source) {
+                    for (var prop in source) {
+                        obj[prop] = source[prop];
                     }
                 }
             }
-            return target;
+            return obj;
         };
 
         var _createClass = function() {
@@ -101,6 +133,7 @@
                 os.ios = true;
                 os.version = ios[2].replace(/_/g, '.');
                 os.ios7 = /^7/.test(os.version);
+                os.ios11 = /^11/.test(os.version);
                 if (ios[1] === 'iPad') {
                     os.ipad = true;
                 } else if (ios[1] === 'iPhone') {
@@ -131,7 +164,7 @@
 
         var weixin = UA.toLowerCase().match(/MicroMessenger/i) == "micromessenger";
 
-        var envt = {
+        var envt = extend(env, {
             inBrowser: inBrowser,
             UA: UA,
             isIE: isIE,
@@ -141,27 +174,10 @@
             isIOS: isIOS,
             isChrome: isChrome,
             weixin: weixin
-        };
+        });
 
 
-        // Save bytes in the minified (but not gzipped) version:
-        var ArrayProto = Array.prototype,
-            ObjProto = Object.prototype;
-        // Create quick reference variables for speed access to core prototypes.
-        var push = ArrayProto.push,
-            slice = ArrayProto.slice,
-            concat = ArrayProto.concat,
-            toString = ObjProto.toString,
-            hasOwnProperty = ObjProto.hasOwnProperty;
 
-        // All **ECMAScript 5** native function implementations that we hope to use
-        // are declared here.
-        var nativeForEach = ArrayProto.forEach,
-            nativeMap = ArrayProto.map,
-            nativeFilter = ArrayProto.filter,
-            nativeSome = ArrayProto.some,
-            nativeEvery = ArrayProto.every,
-            nativeIndexOf = ArrayProto.indexOf;
 
 
         function TimeCom(dateValue) {
@@ -187,6 +203,7 @@
                 x: document.documentElement.clientWidth,
                 y: document.documentElement.clientHeight
             },
+            extend: extend,
 
             // screenX:function(){
             //     return document.documentElement.clientWidth;
@@ -367,6 +384,9 @@
             //位置信息 支持事件 和Element
             pos: function(e, offset) {
                 function Postion(x, y, el) {
+                    if (_.isDocument(el)) {
+                        el = document.doctype ? window.document.documentElement : document.body;
+                    }
                     this.x = x;
                     this.y = y;
                     this.time = +new Date();
@@ -410,7 +430,7 @@
                 } else if (_.isTouchEvent(e) || _.isMouseEvent(e)) { //事件
                     var ev = e,
                         x, y,
-                        el = ev.currentTarget;
+                        el = ev.currentTarget; //(一般为parent /document)  ev.target; //
                     var _touches = ev.touches && ev.touches.length > 0 ? ev.touches : ev.changedTouches;
                     if (!_touches || _touches.length === 0) {
                         x = ev.clientX;
@@ -419,7 +439,7 @@
                         var pos = _touches[0]; //第一个手指
                         x = pos.pageX;
                         y = pos.pageY;
-
+                        // el = pos.target;
                         // if (_touches.length > 1) {  //多个手指
                         //     var ps = []
                         //     _touches.forEach(function(t) {
@@ -696,39 +716,38 @@
                 } else if (_.isNumber(obj)) {
                     str = obj;
                 } else if (_.isDocument(obj)) {
-                    str = "#document"
+                    str = "#document";
                 } else if (_.isElement(obj)) {
                     str = obj.tagName.toLowerCase();
                     str += obj.id ? "#" + obj.id : "";
                     str += obj.className ? "." + obj.className.replace(/\s+/g, ".") : "";
                 } else if (_.isFunction(obj)) {
                     if (obj.prototype) {
-                        str = "function " + obj.prototype.constructor.name + "(){}"
+                        str = "function " + obj.prototype.constructor.name + "(){}";
                     } else {
-                        str = "function(){}"
+                        str = "function(){}";
                     }
-
                 } else if (_.isArray(obj)) {
                     obj.forEach(function(t) {
-                        sb.push(_.stringify(t))
+                        sb.push(_.stringify(t));
                     })
                     str = "[" + sb.join(",") + "]";
-                } else if (_.isObject(obj)) {
-                    for (k in obj) {
-                        sb.push("\"" + k + "\":");
-                        v = obj[k];
+                    // } else if (_.isObject(obj)) {
+                    //     for (k in obj) {
+                    //         sb.push("\"" + k + "\":");
+                    //         v = obj[k];
 
-                        if (_.isArray(v)) {
-                            v.forEach(function(t) {
-                                sb.push(_.stringify(t))
-                            })
-                        } else {
-                            sb.push(_.stringify(v))
-                        }
-                        sb.push(",")
-                    }
-                    sb.pop();
-                    str = "{" + sb.join("") + "}";
+                    //         if (_.isArray(v)) {
+                    //             v.forEach(function(t) {
+                    //                 sb.push(_.stringify(t));
+                    //             })
+                    //         } else {
+                    //             sb.push(_.stringify(v));
+                    //         }
+                    //         sb.push(",");
+                    //     }
+                    //     sb.pop();
+                    //     str = "{" + sb.join("") + "}";
                 } else if (_.isMouseEvent(obj)) {
                     str = "MouseEvent";
                     str += "(" + _.stringify(obj.target) + ")"
@@ -736,7 +755,23 @@
                     str = "TouchEvent";
                     str += "(" + _.stringify(obj.target) + ")"
                 } else if (_.isNull(obj)) {
-                    str += "null"
+                    str += "null";
+                } else if (typeof obj == "object") { //isObject _.isScreen
+                    for (k in obj) {
+                        sb.push("\"" + k + "\":");
+                        v = obj[k];
+
+                        if (_.isArray(v)) {
+                            v.forEach(function(t) {
+                                sb.push(_.stringify(t));
+                            })
+                        } else {
+                            sb.push(_.stringify(v));
+                        }
+                        sb.push(",");
+                    }
+                    sb.pop();
+                    str = "{" + sb.join("") + "}";
                 } else {
                     str = "unknowtype";
                 }
@@ -745,17 +780,31 @@
             //符合格式的json字符串
             toJSONString: function(json) {
                 if (_.isObject(json)) {
-                    return JSON.stringify(json)
+                    return JSON.stringify(json);
                 } else {
-                    return json
+                    return json;
                 }
             },
             color: function() { //随机颜色
-                // return '#'+('00000'+(Math.random()*0x1000000<<0).toString(16)).slice(-6);
-                // var co="hsla("+Math.ceil(Math.random()*360)+",50%,50%,0.5)"
-                var co = "hsl(" + Math.ceil(Math.random() * 360) + ",50%,50%)";
-                // console.log(co);
-                return co;
+                return this.hsl();
+            },
+            rgb: function() {
+                return '#' + ('00000' + (Math.random() * 0x1000000 << 0).toString(16)).slice(-6);
+                //   return '#' + (function (color) {
+                //     return (color += '0123456789abcdef'[Math.floor(Math.random() * 16)]) && (color.length == 6) ? color : arguments.callee(color);
+                // })('');
+            },
+            hsl: function() {
+                return "hsl(" + Math.ceil(Math.random() * 360) + ",50%,50%)";
+                // "hsla("+Math.ceil(Math.random()*360)+",50%,50%,0.5)"
+            },
+            rgba: function() {
+                var c = [];
+                for (var i = 0; i < 3; i++) {
+                    c.push(Math.round(255 * Math.random()));
+                }
+                c.push(Math.random().toFixed(1));
+                return "rgba(" + c.join(",") + ")";
             },
             isHtml: function(tpl) {
                 // return /<\S*?>/.test(tpl);
@@ -1543,16 +1592,18 @@
                 if (ta == []) return 0;
                 return Math.min.apply(Math, ta);
             },
-            extend: function(obj) {
-                _.each(slice.call(arguments, 1), function(source) {
-                    if (source) {
-                        for (var prop in source) {
-                            obj[prop] = source[prop];
-                        }
-                    }
-                });
-                return obj;
-            },
+
+
+            // function(obj) {
+            //     _.each(slice.call(arguments, 1), function(source) {
+            //         if (source) {
+            //             for (var prop in source) {
+            //                 obj[prop] = source[prop];
+            //             }
+            //         }
+            //     });
+            //     return obj;
+            // },
 
             // define: function(obj, key) {
             //     Object.defineProperty(obj, key, {
@@ -1668,10 +1719,10 @@
 
 
         //去掉'Element' 'Object'，需单独处理
-        //增加NodeList Arguments Window touchevent MouseEvent
+        //增加NodeList Arguments Window touchevent MouseEvent Screen
         ['Null', 'Undefined', 'Array', 'String', 'Number',
             'Boolean', 'Function', 'RegExp', 'NaN', 'Infinite',
-            'NodeList', 'Arguments', 'Window', 'TouchEvent', "MouseEvent"
+            'NodeList', 'Arguments', 'Window', 'TouchEvent', "MouseEvent", "Screen"
         ].forEach(function(t) {
             _['is' + t] = function(o) {
                 return _.type(o) === t.toLowerCase();
@@ -2198,6 +2249,34 @@
             return [];
         }
 
+        // An internal function to generate lookup iterators.
+        var lookupIterator = function(value) {
+            if (value == null) return _.identity;
+            if (_.isFunction(value)) return value;
+            return _.property(value);
+        };
+
+
+        // Sort the object's values by a criterion produced by an iterator.
+        _.sortBy = function(obj, iterator, context) {
+            iterator = lookupIterator(iterator);
+            return _.pluck(_.map(obj, function(value, index, list) {
+                return {
+                    value: value,
+                    index: index,
+                    criteria: iterator.call(context, value, index, list)
+                };
+            }).sort(function(left, right) {
+                var a = left.criteria;
+                var b = right.criteria;
+                if (a !== b) {
+                    if (a > b || a === void 0) return 1;
+                    if (a < b || b === void 0) return -1;
+                }
+                return left.index - right.index;
+            }), 'value');
+        };
+
 
 
         //原型扩展
@@ -2595,10 +2674,29 @@
                 return this;
             },
             width: function() {
+                var len = arguments.length;
+                if (len == 1) {
+                    this.css({ width: arguments[0] })
+                }
                 return this.offsetWidth;
             },
             height: function() {
+                var len = arguments.length;
+                if (len == 1) {
+                    this.css({ height: arguments[0] })
+                }
                 return this.offsetHeight;
+            },
+            pos:function(p){
+                var len = arguments.length;
+                if (len == 1) {
+                   return  this.css({ 
+                        position:"absolute",
+                        top:p.y,
+                    left:p.x  })
+
+                }
+                return _.pos.call(this,this)
             },
             outerWidth: function() {
                 return _.max(this.scrollWidth, this.offsetWidth, this.clientWidth) + Number(this.style.marginLeft) + Number(this.style.marginRight);
@@ -2719,7 +2817,7 @@
             }
         };
 
-        ['hide', 'show', 'isHide', 'active', 'passive', 'pos'].forEach(function(t) {
+        ['hide', 'show', 'isHide', 'active', 'passive'].forEach(function(t) { //, 'pos'
             ele_prototype[t] = function() {
                 return _[t] && _[t].call(this, this);
             }
@@ -3532,28 +3630,36 @@
                 var len = args.length;
                 this.index = -1;
                 this.arr = [];
-                if (len == 1) {
-                    if (_.isArray(args[0])) {
-                        this.arr = args[0];
 
-                    } else if (_.isObject(args[0])) {
-                        for (var key in args[0]) {
-                            var obj = {}
-                            obj[key] = args[0][key]
-                            this.arr.push(obj);
-                        }
+                if (_.isArray(args[0])) {
+                    this.arr = args[0];
+
+                } else if (_.isObject(args[0])) {
+                    for (var key in args[0]) {
+                        var obj = {}
+                        obj[key] = args[0][key]
+                        this.arr.push(obj);
                     }
-                } else if (len == 2) {
-                    var start = args[0],
-                        end = args[1];
-                    for (var i = start; i <= end; i++) {
-                        this.arr.push(i);
+                }
+                if (len == 2) {
+                    if (_.isNumber(args[0])) {
+                        var start = args[0],
+                            end = args[1];
+                        for (var i = start; i <= end; i++) {
+                            this.arr.push(i);
+                        }
+                    } else {
+                        this.index = args[1]
                     }
                 }
                 this.length = this.arr.length;
             },
             next: function() {
                 this.index = this.index >= this.arr.length - 1 ? 0 : this.index + 1;
+                return this.arr[this.index];
+            },
+            prev: function() {
+                this.index = this.index <= 0 ? this.arr.length - 1 : this.index - 1;
                 return this.arr[this.index];
             },
             current: function() {
@@ -3625,6 +3731,8 @@
                     var size = options["background-size"];
                     var position = options["background-position"];
                     var repeat = options["background-repeat"];
+
+                    // this.background
 
                     this.background({
                         color: color,
@@ -3773,6 +3881,174 @@
                     }
                 }
             },
+            //运动小球
+            ball: function(opt) {
+                var self = this;
+                var canvas = this.canvas;
+                var ctx = this.context;
+                opt = this.default(opt);
+                var x = opt.x,
+                    y = opt.y,
+                    r = opt.r,
+                    color = opt.color;
+                ctx.fillStyle = opt.color;
+                var link = opt.link;
+                var spped = opt.speed || 3;
+                var identifier = opt.identifier;
+
+                var num = opt.num || 1;
+                var Ball = function(id) {
+                    this.id = id;
+                    this.x = x;
+                    this.y = y;
+                    this.r = r;
+                    this.color = _.color(); // _.rgba();
+                    // speed: 15,
+                    this.vx = (Math.random() * 2 - 1) * spped;
+                    this.vy = (Math.random() * 2 - 1) * spped;
+
+                    //     //         var speed = 5; //速度
+                    //     // var xunits = Math.cos(radians) * speed; //x坐标增量
+                    //     // var yunits = Math.sin(radians) * speed;  //y坐标增量
+
+                    //     //         速度公式： V=V0+at
+                    //     // 位移公式: x=V0t+1/2at^2
+                }
+
+                Ball.prototype = {
+                    fill: function(text) {
+                        ctx.fillStyle = this.color;
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
+                        ctx.closePath();
+                        ctx.fill();
+
+                        // var text = opt.text;
+                        if (identifier) {
+                            text = text || this.id;
+                            if (!_.isUndefined(text)) { //measureText
+                                ctx.fillStyle = "#000";
+                                ctx.font = "12px Verdana";
+                                ctx.fillText(text, this.x - 4, this.y + 5);
+                            }
+                        }
+                        return this;
+                    },
+                    strok: function(text) {
+                        ctx.strokeStyle = this.color;
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
+                        ctx.closePath();
+                        ctx.stroke();
+                        text = text || this.id;
+                        if (!_.isUndefined(text)) {
+                            ctx.fillStyle = "#000";
+                            ctx.font = "12px Verdana";
+                            ctx.fillText(text, this.x - 4, this.y + 5);
+                        }
+                        return this;
+                    },
+                    move: function() {
+                        this.x += this.vx;
+                        this.y += this.vy;
+                        if (this.x < this.r) { //碰到左边的边界
+                            this.x = this.r;
+                            this.vx = -this.vx;
+                        } else if (this.y < this.r) {
+                            this.y = this.r;
+                            this.vy = -this.vy;
+                        } else if (this.x > canvas.width - this.r) {
+                            this.x = canvas.width - this.r;
+                            this.vx = -this.vx;
+                        } else if (this.y > canvas.height - this.r) {
+                            this.y = canvas.height - this.r;
+                            this.vy = -this.vy;
+                        }
+                        return this;
+                    },
+                    movie: function() {
+                        self.clear();
+                        this.move().fill();
+                        requestAnimationFrame(this.movie.bind(this));
+                    },
+                    //遇见 撞到collide
+                    meet: function(b) {
+                        //距离
+                        var d = self.distance.call(self, this, b);
+                        if (d <= this.r + b.r) {
+                            console.log("撞到了")
+                            return true;
+                        }
+                    }
+                }
+
+                var BallsManger = function() {
+                    return new BallsManger.prototype.init();
+                }
+
+                BallsManger.prototype = {
+                    constructor: BallsManger,
+                    init: function() {
+                        this.balls = [];
+
+                        for (var i = 0; i < num; i++) {
+                            this.balls.push(new Ball(i));
+                        }
+                        this.movie();
+                    },
+                    movie: function() {
+                        self.clear();
+                        var vsList = [];
+                        var balls = this.balls;
+                        var len = balls.length;
+
+
+                        balls.forEach(function(t, i) {
+                            t.move().fill();
+                            if (link) {
+                                for (var j = i; j < len - 1; j++) {
+                                    var vs = [t, balls[j + 1]];
+                                    vsList.push(vs);
+
+                                    if (t.meet(balls[j + 1])) {
+                                        console.log("反弹")
+                                    }
+
+                                    //距离
+                                    // var d = self.distance.apply(self, vs);
+                                    // if (d < vs[0].r + vs[1].r) {
+                                    //     console.log("撞到了" + [i, j + 1]);
+                                    //     //反弹 能量相互
+                                    //     // var tmp = vs.slice(0);
+                                    //     // t.vx = tmp[1].vx * -1;
+                                    //     // t.vy = tmp[1].vy * -1;
+                                    //     // balls[j + 1].vx = tmp[0].vx * -1;
+                                    //     // balls[j + 1].vy = tmp[0].vy * -1;
+                                    // }
+                                }
+                            }
+                        })
+
+                        if (link) {
+                            self.drawVerticesGroup(vsList);
+                        }
+
+
+
+
+                        this.id = requestAnimationFrame(this.movie.bind(this));
+
+                    },
+                    stop: function() {
+                        this.id && cancelAnimationFrame(this.id);
+                    }
+
+                }
+                BallsManger.prototype.init.prototype = BallsManger.prototype;
+                // var bm=BallsManger()
+                // bm.movie();
+                return BallsManger();
+            },
             circle: function(opt) {
                 var canvas = this.canvas;
                 var ctx = this.context;
@@ -3807,9 +4083,11 @@
                 opt = this.default(opt);
                 var x = opt.x,
                     y = opt.y,
-                    a = opt.a,
-                    b = opt.b;
+                    r = opt.r,
+                    a = opt.a || 2 * r,
+                    b = opt.b || r;
                 var color = opt.color;
+                var fill = opt.fill;
                 ctx.save();
                 ctx.lineWidth = 0.5
                 ctx.strokeStyle = color;
@@ -3824,6 +4102,11 @@
                 ctx.arc(x / ratioX, y / ratioY, r, 0, 2 * Math.PI);
                 ctx.closePath();
                 ctx.stroke();
+                //填充
+                if (fill) {
+                    ctx.fillStyle = color;
+                    ctx.fill()
+                }
                 ctx.restore();
             },
             //螺旋
@@ -4015,58 +4298,100 @@
                 var spiral = opt.spiral; //螺旋
 
                 var sr = opt.sr; //环绕半径
-
-                var angle = 360
-                if (spiral) {
-                    angle = 360 * spiral
+                if(_.isUndefined(sr)){
+                    sr=r;
+                    r=r/3;
                 }
-                if (opt.animate) {
-                    var _surround = function() {
-                        if (angle <= 0) {
-                            return false;
-                        }
-                        if (rotation) { //自转
-                            opt.angle = angle
-                        }
+                var clockwise = opt.clockwise; //顺时针逆时针
+                var sAngle, eAngle;
 
-                        // angle--
-                        angle = angle - interval
-
+                if (clockwise) {
+                    sAngle = 360;
+                    eAngle = 0;
+                    if (spiral) {
+                        sAngle = sAngle * spiral;
+                    }
+                } else {
+                    sAngle = 0;
+                    eAngle = 360
+                    if (spiral) {
+                        eAngle = eAngle * spiral;
+                    }
+                }
+                var angle = sAngle;
+                var _surround = function() {
+                    if (r < 5) {
+                        return
+                    }
+                    if (clockwise) {
+                        if (angle <= eAngle) {
+                            return;
+                        }
+                        angle -= interval;
                         if (spiral) { //回旋
                             r = r * angle / 360 / spiral;
                             // r=r*0.9
-                            if (r < 5) {
-                                return
-                            }
                         }
-
-                        var opt2 = {
-                            x: x + r * self.sin(angle),
-                            y: y + r * self.cos(angle),
-                            r: r / 3,
-                            color: color
+                    } else {
+                        if (angle >= eAngle) {
+                            return;
                         }
-                        self[shape](_.extend({}, opt, opt2));
+                        angle += interval;
+                        if (spiral) { //回旋
+                            r = r * (eAngle - angle) / 360 / spiral;
+                            // r=r*0.9
+                            // if (r < 5) {
+                            //     return
+                            // }
+                        }
+                    }
 
+                    if (rotation) { //自转
+                        opt.angle = angle
+                    }
+
+                    // if (spiral) { //回旋
+                    //     r = r * angle / 360 / spiral;
+                    //     // r=r*0.9
+                    //     // if (r < 5) {
+                    //     //     return
+                    //     // }
+                    // }
+
+                    var opt2 = {
+                        x: x + sr * self.sin(angle),
+                        y: y + sr * self.cos(angle),
+                        r: r,
+                        color: color
+                    }
+                    self[shape](_.extend({}, opt, opt2));
+
+                    if (opt.animate) {
                         setTimeout(function() {
                             _surround();
                         }, 5)
-                    }
-
-                    _surround();
-
-                } else {
-                    while (angle--) {
-                        // var r2=r* angle/360
-                        var opt2 = {
-                            x: x + r * self.sin(angle),
-                            y: y + r * self.cos(angle),
-                            r: r / 3,
-                            color: color
-                        }
-                        self[shape](opt2);
+                    } else {
+                        _surround();
                     }
                 }
+
+                _surround();
+                // if (opt.animate) {
+
+
+                // } else {
+                //     while (angle--) {
+                //         // var r2=r* angle/360
+                //         var opt2 = {
+                //             x: x + r * self.sin(angle),
+                //             y: y + r * self.cos(angle),
+                //             r: r / 3,
+                //             color: color
+                //         }
+                //         // self[shape](opt2);
+                //         self[shape](_.extend({}, opt, opt2));
+                //     }
+                // }
 
 
                 return this;
@@ -4316,7 +4641,6 @@
                 opt.num = 2;
                 return this.polygon(opt);
             },
-
             //三角形
             triangle: function(opt) {
                 opt.num = 3;
@@ -4558,32 +4882,54 @@
         scroller.prototype = {
             constructor: scroller,
             init: function(options) {
+                var self = this;
+
                 if (options) {
-                    var self = this;
+
+                    var _scroll = function() {
+                        toucher({
+                            el: self.el, //document
+                            type: "scroll",
+                            callback: function() {
+                                self.onScroll && self.onScroll.call(self.el);
+                            }
+                        })
+                    }
+
                     // this=_.extend(this,opetions)
+                    // self.root=document.doctype ? window.document.documentElement : document.body
+                    self.root = document.body;
                     if (_.isObject(options)) {
-                        self.el = options.el ? _.query(options.el) : document.doctype ? window.document.documentElement : document.body;
-                        self.isRoot = ["HTMLHtmlElement", "HTMLBodyElement"].map(function(t) {
-                            return t.toLowerCase();
-                        }).indexOf(_.type(self.el)) >= 0 ? true : false;
+                        self.el = options.el ? _.query(options.el) : self.root;
                         self.onTop = options.onTop;
                         self.onBottom = options.onBottom;
                         self.onScroll = options.onScroll;
-
-                        if (self.onScroll) {
-                            toucher({
-                                el: self.el, //document
-                                type: "scroll",
-                                callback: function() {
-                                    self.onScroll && self.onScroll.call(self.el);
-                                }
-                            })
-                        }
-
                     } else if (_.isString(options)) {
                         self.el = _.query(options);
+                    } else if (_.isFunction(options)) {
+                        self.el = self.root;
+                        self.onScroll = options;
                     }
+                    self.onScroll && _scroll();
+                } else {
+                    self.el = self.root;
                 }
+                self.isRoot = ["HTMLHtmlElement", "HTMLBodyElement", 'htmldocument'].map(function(t) {
+                    return t.toLowerCase();
+                }).indexOf(_.type(self.el)) >= 0 ? true : false;
+
+                if (self.isRoot) {
+                    self.scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+                } else {
+                    self.scrollTop = self.el.scrollTop
+                }
+
+
+            },
+            toView: function(el) {
+                el = _.query(el) || this.el;
+                el.scrollIntoView(); //只有此方法不会导致button的灵魂出窍
+                //scroolTop=scrollHeight 和 scrollTo(0,h) //会导致 button失效，位置不对
             },
             atTop: function() { //到顶 reach the top
                 return this.el.scrollTop == 0;
@@ -4595,55 +4941,105 @@
                     return this.el.scrollTop + this.el.clientHeight == this.el.scrollHeight;
                 }
             },
+
             toTop: function(callback) {
+                // if (this.isRoot) {
+                //     window.scrollTo(0, 0);
+                // } else {
+                //     this.el.scrollTop = 0;
+                // }
                 this.el.scrollTop = 0;
                 callback && callback.call(this.el);
             },
             toBottom: function(callback) {
-                if (this.isRoot) {
-                    this.el.scrollTop = this.el.offsetHeight - this.el.clientHeight;
-                } else {
-                    this.el.scrollTop = this.el.scrollHeight - this.el.clientHeight;
-                }
+                var self = this;
+                // if (this.isRoot) {
+                //     this.el.scrollTop = this.el.scrollHeight;
+                //     // window.scrollTo(0, this.el.offsetHeight);
+                //     // this.el.scrollTop = this.el.offsetHeight - this.el.clientHeight;
+                //     // window.scrollTo(0, this.el.offsetHeight);
+
+                //     // if (_.evnt.isSafari) {
+                //     //     height -= 40;
+                //     // }
+                //     // var height = window.document.documentElement.offsetHeight
+
+                //     //document.body.scrollTop = document.body.scrollHeight
+
+                //     // var _toBottom = function() {
+                //     //     self.timer && clearTimeout(self.timer);
+                //     //     self.el.scrollTop = self.el.scrollHeight;
+                //     //     self.timer = setTimeout(function() {
+                //     //         _toBottom()
+                //     //     }, 100)
+                //     // }
+                //     // _toBottom();
+
+                // } else {
+                //     this.el.scrollTop = this.el.scrollHeight - this.el.clientHeight;
+                // }
+
+                this.el.scrollTop = this.el.scrollHeight;
                 callback && callback.call(this.el);
             },
-            scrollpage: function(direction) {
+            scrollpage: function(direction, distance) { //方向  距离
                 var self = this;
+                var step = distance || 10;
                 self.timer && clearTimeout(self.timer);
-                if ("up" == direction) {
-                    if (self.atTop.call(self)) {
-                        self.onTop && self.onTop();
-                        return;
-                    }
-                    if (self.isRoot) {
-                        window.scrollBy(0, -4);
-                    } else {
-                        this.el.scrollTop -= 4;
-                    }
+                self.srollerTimer && clearTimeout(self.srollerTimer);
+                switch (direction) {
+                    case "up":
+                        // if (!distance && self.atTop.call(self)) { //这个判断不准确 safari弹出键盘中
+                        //     self.onTop && self.onTop();
+                        //     return;
+                        // }
+                        // if (self.isRoot) {
+                        //     // window.scrollTo(0, -1 * step);
+                        //     window.scrollBy(0, -1 * step);
+                        // } else {
+                        //     self.el.scrollTop -= step;
+                        // }
+                        self.el.scrollTop -= step;
+                        break;
+                    case "down":
+                        // if (!distance && self.atBottom.call(self)) {
+                        //     self.onBottom && self.onBottom();
+                        //     return
+                        // }
+                        // if (self.isRoot) {
+                        //     // window.scrollTo(0, step);
+                        //     window.scrollBy(0, step);
+                        //     //fixed按钮 灵魂出窍的问题，导致无法点击
+                        //     // self.el.scrollTop=self.el.scrollTop;
+                        //     // self.srollerTimer=setTimeout(function(){
+                        //     //     self.el.scrollTop=self.el.scrollTop;
+                        //     // },400)
 
-                } else {
-                    if (self.atBottom.call(self)) {
-                        self.onBottom && self.onBottom();
-                        return
-                    }
-                    if (self.isRoot) {
-                        window.scrollBy(0, 4);
-                    } else {
-                        this.el.scrollTop += 4;
-                    }
+                        // } else {
+                        //     self.el.scrollTop += step;
+                        // }
+                        self.el.scrollTop += step;
+                        break;
                 }
-                self.timer = setTimeout(function() {
-                    self.scrollpage.call(self, direction)
-                }, 10);
+                if (!distance) {
+                    self.timer = setTimeout(function() {
+                        self.scrollpage.call(self, direction)
+                    }, 17);
+                }
             },
-            up: function() {
-                this.scrollpage.call(this, "up");
+            to: function(x, y) {
+                window.scrollTo(x, y);
             },
-            down: function() {
-                this.scrollpage.call(this, "down");
+            up: function(distance) {
+                this.scrollpage.call(this, "up", distance);
+            },
+            down: function(distance) {
+                this.scrollpage.call(this, "down", distance);
             },
             stop: function() {
                 this.timer && clearTimeout(this.timer);
+
+                // this.interval && clearInterval(this.interval);
             }
         }
         scroller.prototype.init.prototype = scroller.prototype;
@@ -5448,15 +5844,12 @@
 
             var type;
             _.each(StandardDirectives, function(fn, key) {
-
                 if (key == _drag) {
                     type = _drag;
                 } else {
                     type = _tap;
                 }
-
                 if (_on != key) {
-
                     var customHandler = function(item, ev) {
                         var method = self.methods["_on_" + key];
                         if (method && _.isFunction(method)) {
@@ -5477,7 +5870,6 @@
                         clear: true,
                         listener: fn
                     });
-
                 }
             });
 
@@ -5486,9 +5878,7 @@
                 var name = this.attr(_model),
                     v = _.query(this).val();
                 template.prototype[name] = v
-
                 var _result = _.clone(template.prototype);
-
                 Object.defineProperty(template.prototype, name, {
                     set: function(newVal) { //监控数据被修改
                         var oldVal = _result[name];
@@ -5528,6 +5918,7 @@
                 var self = this,
                     args = slice.call(arguments),
                     len = args.length;
+                self.methods = {};
 
                 switch (len) {
                     case 0:
@@ -5649,18 +6040,12 @@
 
 
                 customFilters = _.extend({}, StandardFilters, self.filters);
-
                 StandardDirectives = _.extend({}, StandardDirectives, self.directives);
-
-
-                self = _.extend({ methods: {} }, self)
-
+                // self = _.extend({ methods: {} }, self)
                 _.each(self.directives, function(fn, key) {
                     self.methods["_on_" + key] = fn;
                 })
                 options = _.extend({}, options, { el: self.el, methods: self.methods });
-
-
                 //before render
                 _.isFunction(self.before) && self.before.call(self, self.data);
                 var el = self.el;
@@ -5677,8 +6062,6 @@
                     options.act = "";
                     el = options.el = cloneEl;
                 }
-
-
                 if (_.isElement(el)) {
                     self.parser.call(options, el);
                 } else if (_.isArray(el) && _.size(el) > 0) {
@@ -5715,7 +6098,6 @@
             },
             parser: function(el) {
                 var self = this;
-
                 if (self.template || _.hasAttr(el, _template) || _.hasAttr(el, _group)) {
                     parseEl.call(self);
                 } else {
@@ -5729,7 +6111,6 @@
                     }
                 }
             },
-
             //同步数据 [model]
             apply: function(key, value) {
                 var self = this;
@@ -5756,9 +6137,7 @@
         //继承工具
         template.prototype = _.extend({}, template.prototype, _);
         template.prototype.init.prototype = template.prototype;
-
         //兼容 underscore
         if (!window._) { window._ = _; }
-
         return template;
     }));

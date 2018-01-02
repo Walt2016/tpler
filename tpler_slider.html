@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>ball</title>
+    <script src="js/tpler.js"></script>
+    <link rel="shortcut icon" type="image/x-icon" href="data:image/gif;base64,YQ==">
+    <style>
+    body {
+        margin: 0;
+        padding: 0
+    }
+    </style>
+</head>
+
+<body>
+    <div class="screen"></div>
+    <script>
+    var draw = _.draw({
+        ratio: "1:1",
+        background: "#dedede"
+    })
+    _.$(".screen").appendChild(draw.canvas)
+    // var ball = draw.ball({ num: 5 }) //
+    // ball.movie()
+
+    </script>
+</body>
+
+</html>

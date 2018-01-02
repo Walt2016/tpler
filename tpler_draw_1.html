@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>draw</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,minimal-ui">
+    <script src="js/tpler.js"></script>
+    <link rel="shortcut icon" type="image/x-icon" href="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+    <link rel="shortcut icon" type="image/x-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII=">
+    <link rel="shortcut icon" type="image/x-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII=">
+    <style>
+    body {
+        background-repeat: repeat;
+    }
+
+    .box {
+        width: 200px;
+        height: 100px
+    }
+
+    .cover {
+        background-image: url('image/1.jpg');
+        /*background-size: 200px 100px;*/
+        background-size: cover;
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-color: #ccc;
+        /*background-attachment: fixed;*/
+    }
+    </style>
+</head>
+
+<body>
+    shape形状
+beeline直线
+curve曲线
+ellipse椭圆
+circle圆形
+semicircle半圆
+sector扇形
+triangle三角形
+a right triangle直角三角形
+isosceles triangle等腰三角形
+trapezoid梯形
+rhombus菱形
+rectangle长方形、矩形
+square正方形
+polygon多边形
+a regular polygon正多边形
+cone圆锥
+sphere球体
+pyramid三角锥体
+cube正方体
+cylinder圆柱体
+ring环形
+gear wheel齿轮形
+tube管状
+edge边
+side侧面
+A box has a top,a bottom,and four sides.
+corner角
+A square has four corners.
+angle角,角度
+obtuse angle钝角
+acute angle锐角
+right angle直角
+circumference圆周,周长
+center圆心
+diameter直径
+radius半径
+height高度
+depth深度
+width宽度
+    <div class="box cover"></div>
+    <script>
+
+
+    //等比例缩放  cover contain
+
+    var demo = [{
+            width: 100,
+            height: 100,
+            background: 'rgba(200,200,200,0.5)'
+        },
+        {
+            'background-image': 'image/1.jpg', //"url('image/1.jpg')"
+            'background-size': 'cover'
+        },
+        {
+            width: 200,
+            height: 100,
+            'background-image': 'image/1.jpg', //"url('image/1.jpg')"
+            'background-size': 'cover',
+            'background-position': 'center',
+            'background-color': '#ccc'
+        },
+        {
+            width: 120,
+            height: 400,
+            'background-image': 'image/1.jpg',
+            'background-size': 'contain',
+            'background-position': 'center',
+            'background-color': '#ccc',
+            'background-repeat': 'repeat' /* 图片的平铺方式 repeat repeat-x repeat-y no-repeat */
+        }
+
+    ]
+
+
+    document.body.appendChild(_.draw(demo[2]))
+    </script>
+</body>
+
+</html>
