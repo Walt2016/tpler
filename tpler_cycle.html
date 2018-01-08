@@ -12,6 +12,17 @@
 <body>
     <script>
     _.debug()
+    var c=_.cycle(1);
+    var len=3
+    console.log(c.val());
+    while(len--){
+        console.log(c.next());
+    }
+    console.log(c.val());
+    console.log(c);
+    console.log("<br>")
+    
+
     var c = _.cycle(1, 5);
     console.log(c.next());
     for (var i = 0; i < c.length; i++) {

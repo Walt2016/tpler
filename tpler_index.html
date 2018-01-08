@@ -4,8 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-    <title>tpler</title>
+    <title>几何图形</title>
     <script src="js/tpler.js"></script>
+    <link rel="stylesheet" href="css/layout.css">
     <link rel="shortcut icon" type="image/x-icon" href="data:image/gif;base64,YQ==">
     <style>
     html,
@@ -13,176 +14,10 @@
         margin: 0;
         padding: 0
     }
-
-    [layout] {
-        display: -webkit-box;
-        display: -ms-flexbox;
-        display: flex;
+    /*  .tab{
+        background-color: rgba(0,0,0,0.1);
     }
-
-    [flex],
-    .flex {
-        -webkit-box-flex: 1;
-        -ms-flex: 1;
-        flex: 1;
-    }
-
-
-    [layout="row"],
-    [row],
-    .row {
-        display: -webkit-box;
-        display: -ms-flexbox;
-        display: flex;
-        -webkit-box-orient: horizontal;
-        -webkit-box-direction: normal;
-        -ms-flex-direction: row;
-        flex-direction: row;
-    }
-
-    [layout-wrap],
-    .row.wrap {
-        -ms-flex-wrap: wrap;
-        flex-wrap: wrap;
-    }
-
-    [layout-nowrap],
-    .row.nowrap {
-        -ms-flex-wrap: nowrap;
-        flex-wrap: nowrap;
-    }
-
-    [layout="column"],
-    [layout="col"],
-    [column],
-    [col],
-    .column,
-    .col {
-        display: -webkit-box;
-        display: -ms-flexbox;
-        display: flex;
-        -webkit-box-orient: vertical;
-        -webkit-box-direction: normal;
-        -ms-flex-direction: column;
-        flex-direction: column;
-    }
-
-    [layout-align="start start"],
-    [layout-align="start center"],
-    [layout-align="start end"],
-    .row.start,
-    .col.start {
-        -webkit-box-pack: start;
-        -ms-flex-pack: start;
-        justify-content: flex-start;
-    }
-
-    [layout-align="center start"],
-    [layout-align="center center"],
-    [layout-align="center end"],
-    .row.center,
-    .col.center {
-        -webkit-box-pack: center;
-        -ms-flex-pack: center;
-        justify-content: center;
-    }
-
-    [layout-align="end start"],
-    [layout-align="end center"],
-    [layout-align="end end"],
-    .row.end,
-    .col.end {
-        -webkit-box-pack: end;
-        -ms-flex-pack: end;
-        justify-content: flex-end;
-    }
-
-    [layout-align="space-between start"],
-    [layout-align="space-between center"],
-    [layout-align="space-between end"],
-    [layout-align="between start"],
-    [layout-align="between center"],
-    [layout-align="between end"],
-    .row.between {
-        -webkit-box-pack: justify;
-        -ms-flex-pack: justify;
-        justify-content: space-between;
-    }
-
-    [layout-align="space-arround start"],
-    [layout-align="space-arround center"],
-    [layout-align="space-arround end"],
-    [layout-align="arround start"],
-    [layout-align="arround center"],
-    [layout-align="arround end"],
-    .row.arround {
-        -webkit-box-pack: space-arround;
-        -ms-flex-pack: space-arround;
-        justify-content: space-arround;
-    }
-
-    [layout-align="start start"],
-    [layout-align="center start"],
-    [layout-align="end start"],
-    [layout-align="space-between start"],
-    [layout-align="space-arround start"],
-    [layout-align="between start"],
-    [layout-align="arround start"],
-    .row.start,
-    .col.start {
-        -webkit-box-align: start;
-        -ms-flex-align: start;
-        align-items: flex-start;
-    }
-
-    [layout-align="start center"],
-    [layout-align="center center"],
-    [layout-align="end center"],
-    [layout-align="space-between center"],
-    [layout-align="space-arround center"],
-    [layout-align="between center"],
-    [layout-align="arround center"],
-    .row.center,
-    .col.center {
-
-        -webkit-box-align: center;
-        -ms-flex-align: center;
-        align-items: center;
-    }
-
-    [layout-align="start end"],
-    [layout-align="center end"],
-    [layout-align="end end"],
-    [layout-align="space-between end"],
-    [layout-align="space-arround end"],
-    [layout-align="between end"],
-    [layout-align="arround end"],
-    .row.end,
-    .col.end {
-        -webkit-box-align: end;
-        -ms-flex-align: end;
-        align-items: flex-end;
-    }
-
-
-
-    .ball {
-        width: 80px;
-        height: 80px;
-        background-color: #ccc;
-        border-radius: 50%;
-        margin-right: 20px;
-    }
-
-    .ball:last-child {
-        margin-right: 0px;
-    }
-
-
-    .panel {
-        width: 100%;
-        height: 50vh;
-    }
+*/
 
     .tab-head {
         background: rgba(255, 255, 255, 1);
@@ -200,12 +35,10 @@
         height: 40px;
         line-height: 40px;
         border-bottom: 1px solid #dcdcdc;
-        /*border-radius: 4px;*/
     }
 
     .tab-head-item.active {
         color: #000;
-        /*border-bottom: 1px solid #ff6414;*/
         background: #cecece
     }
 
@@ -228,8 +61,6 @@
         font-size: 12px;
         word-wrap: break-word;
         margin-bottom: 62px;
-        /*  padding-left: 6px;
-        padding-right: 6px*/
     }
 
     .tab-body-item .header {
@@ -265,8 +96,6 @@
         margin: 0 auto;
     }
 
-
-
     .btn-group {
         margin-top: 7px;
         margin-bottom: 7px;
@@ -281,47 +110,41 @@
         flex: 1;
     }
 
-    .btn-group .drawBtn {
-        background-color: #ff6414;
+    .btn-group .btn {
         font-size: 15px;
-        /*width: 68px;*/
         height: 32px;
         line-height: 32px;
+        -webkit-user-select: none;
+        -webkit-box-flex: 1;
+        -webkit-flex: 1;
+        -ms-flex: 1;
+        flex: 1;
+        text-align: center;
+    }
+
+    .btn-group .drawBtn {
+        background-color: #ff6414;
         margin-left: 12px;
         margin-top: 1px;
         padding: 0;
         border-color: #ff6414;
-        border-radius: 02px;
+        border-radius: 2px;
         color: #fff;
         font-weight: 500;
         border: 1px solid #ff6414;
         margin-right: 12px;
-        -webkit-user-select: none;
-        flex: 1;
-        text-align: center;
-        width: 98%
+
+
+        -webkit-box-flex: 3;
+        -ms-flex-positive: 3;
+        flex-grow: 3
     }
 
-    .propertyBtn {
-        /*background-image: url(../image/btn_reward.png);*/
-        background: #ff6414;
-        width: 36px;
-        height: 36px;
-        -webkit-background-size: 32px 32px;
-        background-size: 32px 32px;
-        background-position: center center;
-        background-repeat: no-repeat;
-        vertical-align: middle;
-        cursor: pointer;
-        z-index: 999;
-        margin-right: 10px;
-        margin-left: 10px;
-        -webkit-user-select: none;
+    .configBtn {
+        color: #666;
+        /*border: 1px solid #ff6414;*/
     }
 
-    .propertyBtn.active {
-        background: #5DCBFF;
-    }
 
     .mt10 {
         margin-top: 10px
@@ -329,6 +152,10 @@
 
     .mt4 {
         margin-top: 4px
+    }
+
+    .ml4 {
+        margin-left: 4px;
     }
 
     .grid {
@@ -352,16 +179,18 @@
     .grid .row .hd {
         width: 100px;
         height: 40px;
-        background-color: #f8f8f8;
+        /*background-color: #f8f8f8;*/
         padding-left: 4px;
         border-right: 1px solid #dcdcdc;
         position: relative;
+        background-color: rgba(248, 248, 248, 0.5);
     }
 
     .grid .row .td {
         padding-left: 4px;
         height: 40px;
         position: relative;
+        /*background-color: rgba(255,255,255,0.6);*/
     }
 
     .rightArrow {
@@ -378,6 +207,22 @@
         border-right-color: #cecece;
     }
 
+    .upArrow {
+        width: 0px;
+        height: 0px;
+        border: 8px solid transparent;
+        border-bottom-color: #cecece;
+        margin-bottom: 8px;
+    }
+
+    .downArrow {
+        width: 0px;
+        height: 0px;
+        border: 8px solid transparent;
+        border-top-color: #cecece;
+        margin-top: 8px;
+    }
+
     .colorblock {
         width: 20px;
         height: 10px;
@@ -386,7 +231,7 @@
         top: 15px;
     }
 
-    .groupSwitch {
+    .switchBtn {
         width: 40px;
         height: 20px;
         border: 1px solid #666;
@@ -396,7 +241,7 @@
         right: 10px;
     }
 
-    .groupSwitch.on {
+    .switchBtn.on {
         background-image: -webkit-linear-gradient(left, #dedede, #dedede 50%, #ff6414 50%, #ff6414);
     }
 
@@ -407,38 +252,88 @@
     .abs {
         position: absolute;
     }
+
+    #configPanel.hide {
+        display: none;
+    }
+
+    #configPanel {
+        position: absolute;
+        bottom: 50px;
+        left: 0;
+        right: 0;
+        /*top:0;*/
+        height: 440px;
+        /*background-color: rgba(0,0,0,0.1);*/
+    }
+
+    #configPanel.center {
+        position: fixed;
+        z-index: 2000;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    #configPanel .scroll {
+        max-height: 400px;
+        height: 400px;
+    }
+
+    .frame {
+        padding: 14px;
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    .tab {
+        /*background: #fff;*/
+        background-color: rgba(255, 255, 255, 0.8)
+    }
+
+    #stopBtn.hide {
+        display: none;
+    }
     </style>
 </head>
 
 <body>
     <div class="container" layout="col" id="container">
         <div class="screen"></div>
-        <div class="tab" layout="col">
-            <div class="tab-head" layout="row" layout-align="between center">
-                <div class="tab-head-item active" target="panel_geometry" flex>几何</div>
-                <div class="tab-head-item" target="panel_ball" flex>运动</div>
-            </div>
-            <div class="tab-body scroll">
-                <div class="tab-body-item" id="panel_geometry" template="_panel_geometry_tpl">
+        <div class="frame" id="configPanel">
+            <div class="tab hide" layout="col">
+                <div class="tab-head" layout="row" layout-align="between center">
+                    <div class="tab-head-item active" target="panel_basic" flex>基础</div>
+                    <div class="tab-head-item" target="panel_group" flex>组合</div>
+                    <div class="tab-head-item" target="panel_move" flex>运动</div>
                 </div>
-                <div class="tab-body-item hide" id="panel_ball" template="_panel_ball_tpl">
+                <div class="tab-body scroll">
+                    <div class="tab-body-item" id="panel_basic" template="_panel_basic_tpl">
+                    </div>
+                    <div class="tab-body-item hide" id="panel_group" template="_panel_group_tpl">
+                    </div>
+                    <div class="tab-body-item hide" id="panel_move" template="_panel_move_tpl">
+                    </div>
                 </div>
             </div>
         </div>
         <div class="toolbar fixedbottom " style="height: auto;" id="btnSendBar" template="">
             <div class="btn-group ">
-                <div class="drawBtn " id="drawBtn" on="startMoive">画图</div>
+                <div class="btn configBtn row center" id="configBtn" on="configHandle">设置
+                    <div class="icon upArrow ml4"></div>
+                </div>
+                <div class="btn stopBtn hide" id="stopBtn" on="stopMoive">停止</div>
+                <div class="btn drawBtn " id="drawBtn" on="startMoive">画图</div>
             </div>
         </div>
     </div>
-    <script type="text/template" id="_panel_geometry_tpl">
+    <script type="text/template" id="_panel_basic_tpl">
         <div class="grid mt4">
             <div class="row head">
                 <div class="hd flex">基础图形</div>
             </div>
             <div class="row">
                 <div class="hd">图形</div>
-                <div class="td flex" on="nextShape">{=shape}</div>
+                <div class="td flex" on="nextShape">{=shape|shape}</div>
             </div>
             <div class="row">
                 <div class="hd">边数</div>
@@ -456,18 +351,48 @@
                 <div class="hd">颜色</div>
                 <div class="td flex" on="nextColor">{=color|color}</div>
             </div>
+            <!--   <div class="row">
+                <div class="hd">填充颜色</div>
+                <div class="td flex" on="nextColor">{=fillColor|color}</div>
+            </div> -->
             <div class="row">
                 <div class="hd">填色</div>
-                <div class="td flex" on="toggleFill">{=fill}</div>
+                <div class="td flex" on="nextFill">{=fill|toggle}</div>
+            </div>
+            <div class="row">
+                <div class="hd">闭合</div>
+                <div class="td flex" on="nextClosed">{=closed|toggle}</div>
+            </div>
+            <div class="row">
+                <div class="hd">显示顶点</div>
+                <div class="td flex" on="nextShowVertices">{=showVertices|toggle}</div>
+            </div>
+            <div class="row">
+                <div class="hd">离心率</div>
+                <div class="td flex" on="nextE">{=e}</div>
+            </div>
+            <div class="row">
+                <div class="hd">螺线类型</div>
+                <div class="td flex" on="nextSpiralType">{=spiralType|spiralType}</div>
+            </div>
+            <div class="row">
+                <div class="hd">匝数</div>
+                <div class="td flex" on="nextTurns">{=turns}</div>
+            </div>
+            <div class="row">
+                <div class="hd">ab轴比率</div>
+                <div class="td flex" on="nextAbRatio">{=abRatio|abRatio}</div>
             </div>
         </div>
+    </script>
+    <script type="text/template" id="_panel_group_tpl">
         <div class="grid mt4">
             <div class="row head">
-                <div class="hd flex">组合
-                    <div class="groupSwitch {=groupSwitch}" on="toggleGroupSwitch"></div>
+                <div class="hd flex">组合开关
+                    <div class="switchBtn {=groupSwitch}" on="nextGroupSwitch"></div>
                 </div>
             </div>
-            <div class="body">
+            <div class="body {=groupSwitch}">
                 <div class="row">
                     <div class="hd">组合形式</div>
                     <div class="td flex" on="nextGroup">{=group|group}</div>
@@ -490,54 +415,110 @@
                 </div>
                 <div class="row">
                     <div class="hd">动画</div>
-                    <div class="td flex" on="toggleAnimate">{=animate}</div>
+                    <div class="td flex" on="nextAnimate">{=animate|toggle}</div>
                 </div>
                 <div class="row">
                     <div class="hd">间隔</div>
                     <div class="td flex" on="nextInterval">{=interval}</div>
                 </div>
+                <div class="row">
+                    <div class="hd">多彩</div>
+                    <div class="td flex" on="nextColorful">{=colorful|toggle}</div>
+                </div>
             </div>
         </div>
     </script>
-    <script type="text/template" id="_panel_ball_tpl">
+    <script type="text/template" id="_panel_move_tpl">
         <div class="grid mt4">
-            <div class="row">
-                <div class="hd">数量</div>
-                <div class="td flex" on="nextNum">{=num}</div>
+            <div class="row head">
+                <div class="hd flex">运动开关
+                    <div class="switchBtn {=moveSwitch}" on="nextMoveSwitch"></div>
+                </div>
             </div>
-            <div class="row">
-                <div class="hd">半径</div>
-                <div class="td flex" on="nextR">{=r}</div>
-            </div>
-            <div class="row">
-                <div class="hd">速度</div>
-                <div class="td flex" on="nextSpeed">{=speed}</div>
-            </div>
-            <div class="row">
-                <div class="hd">连接线</div>
-                <div class="td flex" on="toggleLink">{=link}</div>
-            </div>
-            <div class="row">
-                <div class="hd">编号</div>
-                <div class="td flex" on="toggleIdentifier">{=identifier}</div>
-            </div>
-            <!--  <div class="row">
-                <div class="hd">角度</div>
-                <div class="td flex" on="nextAngle">{=angle}</div>
-            </div>-->
-            <div class="row">
-                <div class="hd">颜色</div>
-                <div class="td flex" on="nextColor">{=color|color}</div>
+            <div class="body {=moveSwitch}">
+                <div class="row">
+                    <div class="hd">运动方式</div>
+                    <div class="td flex" on="nextMoveMode">{=moveMode|moveMode}</div>
+                </div>
+                <div class="row">
+                    <div class="hd">数量</div>
+                    <div class="td flex" on="nextMovenum">{=movenum}</div>
+                </div>
+                <!-- <div class="row">
+                    <div class="hd">半径</div>
+                    <div class="td flex" on="nextR">{=r}</div>
+                </div> -->
+                <div class="row">
+                    <div class="hd">速度</div>
+                    <div class="td flex" on="nextSpeed">{=speed}</div>
+                </div>
+                <div class="row">
+                    <div class="hd">反弹</div>
+                    <div class="td flex" on="nextBounce">{=bounce|toggle}</div>
+                </div>
+                <div class="row">
+                    <div class="hd">连接线</div>
+                    <div class="td flex" on="nextLink">{=link|toggle}</div>
+                </div>
+                <div class="row">
+                    <div class="hd">编号</div>
+                    <div class="td flex" on="nextIdentifier">{=identifier}</div>
+                </div>
+                <div class="row">
+                    <div class="hd">颜色</div>
+                    <div class="td flex" on="nextColor">{=color|color}</div>
+                </div>
+                <div class="row">
+                    <div class="hd">多彩</div>
+                    <div class="td flex" on="nextMoveColorful">{=moveColorful|toggle}</div>
+                </div>
             </div>
         </div>
     </script>
     <script>
     window.onload = function() {
-        var co = {
-            shape: _.cycle(["polygon", "star", "circle", 'inpolygon', 'flower', 'sunflower', 'sierpinski', 'line', 'triangle', 'square', 'ray', 'ellipse']),
+
+        // var opt={
+        //     shape:{
+        //         name:{
+        //             value:[{ key: "polygon", txt: "多边形" },{ key: "star", txt: "星形" }],
+        //             type:"cycle",
+        //             index:1
+        //         },
+        //         r:{
+        //             value:[],
+        //             type:"cycle"
+        //         }
+
+        //     },
+        //     group:{
+
+        //     },
+        //     move:{
+
+        //     }
+        // }
+
+        var opt = {
+            shape: _.cycle([
+                { key: "polygon", txt: "多边形" },
+                { key: "star", txt: "星形" },
+                { key: "circle", txt: "圆形" },
+                { key: 'inpolygon', txt: "内切多边形" },
+                { key: 'flower', txt: "花" },
+                { key: 'sunflower', txt: "太阳花" },
+                { key: 'sierpinski', txt: "谢尔宾斯基" },
+                { key: 'line', txt: "线条" },
+                { key: 'triangle', txt: "三角形" },
+                { key: 'square', txt: '正方形' },
+                { key: 'ray', txt: '射线' },
+                { key: 'ellipse', txt: '椭圆' },
+                { key: 'diamond', txt: '菱形' },
+                { key: 'cross', txt: '交叉线' }
+            ]),
             angle: _.cycle(["rotation", 0, 60, 120, 180]),
-            num: _.cycle([3, 4, 5, 6, 7, 8, 9, 10, 20, 30]),
-            interval: _.cycle([1, 2, 3, 4, 5, 6, 10, 20, 30, 36, 60, 72, 90, 108, 120, 180], 3),
+            num: _.cycle([3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 100]),
+            interval: _.cycle([0, 1, 2, 3, 4, 5, 6, 10, 20, 30, 36, 60, 72, 90, 108, 120, 180], 10),
             spiral: _.cycle([0, 10, 20, 30, 40, 50, 100]),
             r: _.cycle([5, 10, 30, 40, 60, 80, 120, 200, 300], 2),
             sr: _.cycle([30, 60, 120, 200, 300], 2),
@@ -548,44 +529,88 @@
             }, {
                 key: "concentric",
                 txt: "同心"
+            }, {
+                key: "mirrorShape",
+                txt: "镜像"
+            }, {
+                key: "inpolygon",
+                txt: "内切多边形"
+            }, {
+                key: "excircle",
+                txt: "外切圆"
+            }, {
+                key: "repeat",
+                txt: "平铺"
             }]),
             clockwise: _.cycle([{
-                key: true,
-                txt: "顺时针"
-            }, {
-                key: false,
-                txt: "逆时针"
-            }])
+                    key: true,
+                    txt: "顺时针"
+                },
+                {
+                    key: false,
+                    txt: "逆时针"
+                }
+            ]),
+            e: _.cycle([0.5, 0.6, 0.7, 0.8, 0.9, 0.99, 1, 1.01, 1.1, 1.2, 1.3, [0.5, 2],
+                [0.1, 5, 2]
+            ], 6),
+            turns: _.cycle([1, 2, 3, 4, 5, 10, 20]),
+            closed: true,
+            movenum: _.cycle([1, 2, 3, 4, 5, 10, 20]),
+            animate: true,
+            link: false,
+            identifier: true,
+            fill: false,
+            showVertices: false,
+            bounce: true,
+            colorful: true,
+            moveColorful: true,
+            groupSwitch: "on",
+            moveSwitch: "off",
+            spiralType: _.cycle([{ key: "constantvelocity", txt: "匀速" }, { key: "acceleration", txt: "加速" }]),
+            abRatio: _.cycle([0.3, 0.5, 1, 2, 3, 4, 5], 2),
+            moveMode: _.cycle([{ key: "move", txt: "自由移动" }, { key: "rotation", txt: "旋转" }])
         }
-
-        var animate = true;
         var color;
-        var link = true;
-        var identifier = true;
-        var fill = false;
-        var groupSwitch = "on";
-
-
+        var lineColor, fillColor;
 
         var data = function() {
+            // var p={};
+            // for(var key in opt){
+            //     p[key]=opt
+            // }
             var params = _.extend({}, {
-                num: co.num.val(),
-                r: co.r.val(),
-                angle: co.angle.val(),
+                num: opt.num.val(),
+                r: opt.r.val(),
+                angle: opt.angle.val(),
                 color: color || _.rgba(), //_.color(),
                 // angle:"rotation",
-                interval: co.interval.val(), //间隔
-                shape: co.shape.val(),
-                animate: animate,
-                spiral: co.spiral.val(), //螺旋
-                clockwise: co.clockwise.val().key,
-                link: link,
-                speed: co.speed.val(),
-                identifier: identifier,
-                fill: fill,
-                sr: co.sr.val(),
-                groupSwitch: groupSwitch,
-                group: co.group.val()
+                interval: opt.interval.val(), //间隔
+                shape: opt.shape.val().key,
+                animate: opt.animate,
+                spiral: opt.spiral.val(), //螺旋
+                clockwise: opt.clockwise.val().key,
+                link: opt.link,
+                speed: opt.speed.val(),
+                identifier: opt.identifier,
+                fill: opt.fill,
+                sr: opt.sr.val(),
+                groupSwitch: opt.groupSwitch,
+                group: opt.group.val().key,
+                e: opt.e.val(),
+                turns: opt.turns.val(),
+                closed: opt.closed,
+                showVertices: opt.showVertices,
+                movenum: opt.movenum.val(),
+                bounce: opt.bounce,
+                colorful: opt.colorful,
+                moveSwitch: opt.moveSwitch,
+                moveColorful: opt.moveColorful,
+                lineColor: opt.lineColor,
+                fillColor: opt.fillColor,
+                spiralType: opt.spiralType.val().key,
+                abRatio: opt.abRatio.val(),
+                moveMode: opt.moveMode.val().key
             })
             return params;
         }
@@ -601,8 +626,8 @@
             }
         })
 
-        var movie = "geometry";
-        var ball;
+        var movie = "basic";
+        var move;
 
         var next = function(item, ev) {
             var cycleObj = this;
@@ -613,7 +638,6 @@
             var h = iPos.height;
             var offset = ePos.x - iPos.x;
             var div = document.createElement("div")
-            var txt;
             if (offset > w / 2) {
                 var val = cycleObj.next();
                 item.html(_.isObject(val) ? val.txt : val);
@@ -630,107 +654,145 @@
                 div.remove()
             }, 200)
 
+
+
         }
+        //开关
+        var _switch = function(item) {
+            var val;
+            var bd = item.closest(".grid").query(".body")
+            if (item.hasClass('on')) {
+                val = "off";
+                [item, bd].removeClass("on").addClass("off");
+            } else {
+                val = "on";
+                [item, bd].removeClass("off").addClass("on");
+            }
+            return val;
+        }
+        //自定义过滤器
+        var txtFilters = {
+            toggle: function(val) {
+                return val == true ? "是" : "否"
+            }
+        }
+        //自定义方法
         var nextMethods = function() {
             var ms = {};
             var _uc = function(word) {
                 return word.substring(0, 1).toUpperCase() + word.substring(1);
             }
-            for (var key in co) {
-                var fn = co[key];
-                // console.log(key,fn)
-                ms["next" + _uc(key)] = (function(item, ev) {
-                    next.call(this, item, ev);
-                }).bind(fn);
+            var params = {};
+            for (var key in opt) {
+                var fn = opt[key];
+                if (_.isBoolean(fn)) {
+                    ms["next" + _uc(key)] = (function(item, ev) {
+                        item.html(txtFilters.toggle(opt[this] = !opt[this]))
+                    }).bind(key);
+                    params[key] = fn;
+                } else if (_.isString(fn)) {
+
+                    ms["next" + _uc(key)] = (function(item, ev) {
+                        opt[this] = _switch(item)
+
+                        if (this == "moveSwitch") {
+                            if (opt[this] == "on") {
+                                _.show("#stopBtn")
+                            } else {
+                                _.hide("#stopBtn")
+                            }
+                        } else {
+                            _.hide("#stopBtn")
+                        }
+                    }).bind(key);
+
+                    params[key] = fn;
+
+                } else {
+
+                    if (fn.val().txt) {
+                        txtFilters[key] = (function(val) {
+                            return this.val().txt;
+                        }).bind(fn)
+                    }
+
+                    ms["next" + _uc(key)] = (function(item, ev) {
+                        next.call(this, item, ev);
+                    }).bind(fn);
+
+                    params[key] = fn.val().key ? fn.val().key : fn.val();
+
+                }
+
             }
+            console.log(params)
             return ms;
         }
 
         var methods = nextMethods();
 
+
         tpler({
             el: ".container",
             data: data(),
-            filters: {
+            filters: _.extend({
                 color: function(val) {
                     return val + '<div class="colorblock" style="background-color:' + val + '"></div>'
                 },
-                group: function(val) {
-                    return val.txt;
-                },
-                clockwise: function(val) {
-                    return co.clockwise.val().txt;
-                }
-            },
+            }, txtFilters),
             methods: _.extend({
                 nextColor: function(item, ev) {
-                    color = _.rgba()
+                    color = _.hsl()
                     item.html(this.filters.color(color))
                 },
-                toggleAnimate: function(item, ev) {
-                    item.html(animate = !animate)
-                },
-                toggleFill: function(item, ev) {
-                    item.html(fill = !fill)
-                },
-                toggleLink: function(item, ev) {
-                    item.html(link = !link)
-                },
-                toggleIdentifier: function(item, ev) {
-                    item.html(identifier = !identifier)
-                },
-                toggleGroupSwitch: function(item, ev) { //组合开关
-                    var bd = item.closest(".grid").query(".body")
-                    if (item.hasClass('on')) {
-                        groupSwitch = "off";
-                        [item, bd].removeClass("on").addClass("off");
-
-                    } else {
-                        groupSwitch = "on";
-                        [item, bd].removeClass("off").addClass("on");
-                    }
+                nextFillColor: function(item, ev) {
+                    fillColor = _.rgba()
+                    item.html(this.filters.color(fillColor))
                 },
                 startMoive: function(item, ev) {
+                    _.hide("#configPanel");
+                    var icon = _.$("#configBtn .icon");
+                    icon.removeClass("downArrow").addClass("upArrow")
+
                     var pos = {};
                     if (item.id != "drawBtn") {
                         pos = _.pos(ev)
                     }
                     draw.clear("#dedede");
                     var opt = _.extend(data(), pos);
-                    // if (movie == "geometry") {
 
-                    // }
-                    ball && ball.stop();
-                    if (movie == "ball") {
-                        ball = draw[movie].call(draw, opt);
+                    move && move.stop();
+                    if (opt.moveSwitch == "on") {
+                        _.show("#stopBtn");
+                        move = draw.move(opt);
                     } else {
-                        if (groupSwitch == "off") {
-                            movie = co.shape.val();
-                        } else {
-                            movie = co.group.val().key;
-                        }
-                        draw[movie] && draw[movie](opt);
-
+                        _.hide("#stopBtn");
+                        draw.group(opt);
                     }
+                },
+                stopMoive: function(item, ev) {
+                    move && move.stop();
 
-
-
+                },
+                configHandle: function(item, ev) {
+                    var configPanel = _.$("#configPanel");
+                    var icon = _.$("#configBtn .icon");
+                    if (configPanel.hasClass("hide")) {
+                        configPanel.removeClass("hide");
+                        icon.removeClass("upArrow").addClass("downArrow")
+                    } else {
+                        configPanel.addClass("hide");
+                        icon.removeClass("downArrow").addClass("upArrow")
+                    }
                 }
             }, methods),
             callback: function() {
                 var self = this;
-
                 _.$(".screen").appendChild(draw.canvas)
-
                 _.$(".tab-head-item").tab("active", function(ev) {
-                    console.log(this, ev)
-                    movie = this.attr("target").replace("panel_", "")
-                    // if (movie == "basic") {
-                    //     movie = shape.val();
-                    // }
+                    // console.log(this, ev)
+                    // movie = this.attr("target").replace("panel_", "")
                 })
-
-
                 toucher({
                     el: draw.canvas,
                     type: "touchstart",
@@ -738,12 +800,10 @@
                         self.methods.startMoive(item, ev);
                     }
                 })
-
-
             }
         })
     }
     </script>
 </body>
 
-</html>/
+</html>
