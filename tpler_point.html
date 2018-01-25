@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>optJson</title>
+    <link rel="shortcut icon" type="image/x-icon" href="data:image/gif;base64,YQ==">
+    <script src="js/tpler.js"></script>
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/console.css">
+</head>
+
+<body>
+    <script>
+    _.debug()
+
+    console.log("---ra----")
+    var opt = { x: 0, y: 0, r: 100, a: 0 }
+    var p = _.point(opt);
+    console.log(p)
+
+    console.log(p.middle())
+    console.log(p.mirror())
+
+    console.log(p.rotate(90))
+
+    console.log(p.translate(90, 10))
+
+    console.log("---xy----")
+
+    var p = _.point(opt, "xy");
+    console.log(p)
+
+    console.log(p.middle())
+    console.log(p.mirror())
+    console.log(p.rotate(90))
+
+    console.log(p.translate(90, 10))
+
+
+    var draw = _.draw({ ratio: "1:1" })
+    document.body.appendChild(draw.canvas)
+    var opt = {
+        shape: ["regularPolygon", "circle"], //"regularPolygon|circle", //regularPolygon
+        num: 3,
+        r: 30,
+        a: 0
+    }
+
+    var setup = function() {
+        if (opt.a > 360) {
+            return;
+        }
+        opt.a += 10;
+        draw.clear();
+        // _.shape(draw, opt)
+        draw.shape(opt);
+        setTimeout(setup, 500);
+    }
+
+    // setup();
+
+    var opt = [{
+            shape: "regularPolygon",
+            num: 3,
+            r: 40,
+            a:0
+        },
+        {
+            shape: "regularPolygon",
+            num: 5,
+            r: 60,
+            a:0
+        },
+        {
+            shape: "circle",
+            num: 3,
+            r: 45
+        }
+    ]
+
+
+    var setup2 = function() {
+    	// console.log(opt[0])
+        if (opt[0].a > 360) {
+            return;
+        }
+        opt[0].a += 10;
+        draw.shape(opt);
+        setTimeout(setup2, 500);
+    }
+
+    setup2();
+    </script>
+</body>
+
+</html>

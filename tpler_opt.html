@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>optJson</title>
+    <link rel="shortcut icon" type="image/x-icon" href="data:image/gif;base64,YQ==">
+    <script src="js/tpler.js"></script>
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/console.css">
+    <style>
+    html,
+    body {
+        margin: 0;
+        padding: 0
+    }
+
+    .tab-head {
+        background: rgba(255, 255, 255, 1);
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .tab-head-item {
+        color: #666;
+        min-width: 50px;
+        text-align: center;
+        font-size: 16px;
+        cursor: pointer;
+        user-select: none;
+        height: 40px;
+        line-height: 40px;
+        border-bottom: 1px solid #dcdcdc;
+    }
+
+    .tab-head-item.active {
+        color: #000;
+        background: #cecece
+    }
+
+    .tab-body-item.hide {
+        display: none;
+    }
+
+    .tab-body {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .scroll {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .tab-body-item {
+        font-size: 12px;
+        word-wrap: break-word;
+        margin-bottom: 62px;
+    }
+
+    .tab-body-item .header {
+        height: 22px;
+        background-color: #cecece;
+        line-height: 22px;
+        padding: 6px;
+    }
+
+    .tab-body-item .body {
+        border-bottom: 1px solid rgb(220, 220, 220);
+        margin-bottom: 20px;
+        min-height: 30px;
+        padding: 6px;
+    }
+
+
+
+
+    .mt10 {
+        margin-top: 10px
+    }
+
+    .mt4 {
+        margin-top: 4px
+    }
+
+    .ml4 {
+        margin-left: 4px;
+    }
+
+    .grid {
+        line-height: 40px;
+        font-size: 15px;
+        border: 1px solid #dcdcdc;
+    }
+
+    .grid .body.off {
+        display: none;
+    }
+
+    .grid .row {
+        border-bottom: 1px solid #dcdcdc;
+    }
+
+    .grid .row:last-child {
+        border-bottom: none
+    }
+
+    .grid .row .hd {
+        width: 100px;
+        height: 40px;
+        padding-left: 4px;
+        border-right: 1px solid #dcdcdc;
+        position: relative;
+        background-color: rgba(248, 248, 248, 0.5);
+    }
+
+    .grid .row .hd:last-child {
+        border-right: none
+    }
+
+    .grid .row .td {
+        padding-left: 4px;
+        height: 40px;
+        position: relative;
+    }
+
+    .hide {
+        display: none
+    }
+
+    .fixedbottom {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 999;
+        max-width: 680px;
+        margin: 0 auto;
+    }
+
+    .btn {
+        font-size: 15px;
+        height: 32px;
+        line-height: 32px;
+        -webkit-user-select: none;
+        -webkit-box-flex: 1;
+        -webkit-flex: 1;
+        -ms-flex: 1;
+        flex: 1;
+        text-align: center;
+        background: rgba(0, 0, 0, 0.2)
+    }
+
+    .scroll {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <div id="configPanel">
+            <div class="tab" layout="col">
+                <div class="tab-head" layout="row" layout-align="between center" template="_tab-head-item_tpl" data="tabs">
+                </div>
+                <div class="tab-body scroll" template="_tab-body-item_tpl" data="tabs">
+                </div>
+            </div>
+        </div>
+        <div class="fixedbottom" template="_btn_tpl">
+        </div>
+    </div>
+    <script type="text/template" id="_btn_tpl">
+        <div class="btn" on="startHandler">start</div>
+    </script>
+    <script type="text/template" id="_tab-head-item_tpl">
+        <div class="tab-head-item" target="panel_{=key}" flex>{=key}</div>
+    </script>
+    <script type="text/template" id="_tab-body-item_tpl">
+        <div class="tab-body-item hide" id="panel_{=key}">
+            <div class="grid mt4">
+                <div class="row head">
+                    <div class="hd flex">{=key}</div>
+                </div>
+                {=items|tabItem}
+            </div>
+        </div>
+    </script>
+    <script type="text/template" id="_tab-body-item-row_tpl">
+        <div class="row">
+            <div class="hd">{=key}</div>
+            <div class="td flex" on="{=method}">{=value}</div>
+        </div>
+    </script>
+    <script>
+    var optJson = {
+        shape: {
+            shape: {
+                value: [{ key: "polygon", txt: "多边形" },
+                    { key: "star", txt: "星形" },
+                    { key: "circle", txt: "圆形" },
+                    { key: 'inpolygon', txt: "内切多边形" },
+                    { key: 'flower', txt: "花" },
+                    { key: 'sunflower', txt: "太阳花" },
+                    { key: 'sierpinski', txt: "谢尔宾斯基" },
+                    { key: 'line', txt: "线条" },
+                    { key: 'triangle', txt: "三角形" },
+                    { key: 'square', txt: '正方形' },
+                    { key: 'ray', txt: '射线' },
+                    { key: 'ellipse', txt: '椭圆' },
+                    { key: 'diamond', txt: '菱形' },
+                    { key: 'cross', txt: '交叉线' },
+                    { key: 'ring', txt: '环形' }
+                ],
+                type: "cycle",
+                index: 0
+            },
+            a: {
+                value: [0, 60, 120, 180],
+                type: "cycle",
+                index: 0
+            },
+            num: {
+                value: [3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 100],
+                type: "cycle",
+                index: 0
+            },
+            r: {
+                value: [5, 10, 30, 40, 60, 80, 120, 200, 300],
+                type: "cycle",
+                index: 2
+            },
+            rRatio: {
+                value: [0.5, 0.6, 0.7, 0.8, 0.9, 0.99, 1, 1.01, 1.1, 1.2, 1.3, [0.5, 2],
+                    [0.1, 5, 2]
+                ],
+                type: "cycle",
+                index: 6
+            },
+            rRatioType: {
+                value: [{
+                    key: "cv",
+                    txt: "匀速"
+                }, {
+                    key: "ac",
+                    txt: "加速"
+                }]
+            },
+            randomShape: false,
+            randomNum: false,
+            randomR: false,
+            randomColor: false,
+            randomA: false,
+            showVertices: false,
+            verticesIdentifier: false,
+            lineWidth: {
+                value: [0.5, 1, 2, 3, 4, 5, 10, 20],
+                type: "cycle",
+                index: 1
+            },
+            closed: true,
+            fill: false,
+            color: {
+                value: "rgba",
+                type: "color"
+            }
+
+        },
+        group: {
+            groupSwitch: "on",
+            group: {
+                value: [{
+                    key: "surround",
+                    txt: "环绕"
+                }, {
+                    key: "concentric",
+                    txt: "同心"
+                }, {
+                    key: "mirror",
+                    txt: "镜像"
+                }, {
+                    key: "inpolygon",
+                    txt: "内切多边形"
+                }, {
+                    key: "excircle",
+                    txt: "外切圆"
+                }, {
+                    key: "repeat",
+                    txt: "平铺"
+                }, { key: 'ring', txt: '环形' }],
+                type: "cycle",
+                index: 0
+            },
+            clockwise: {
+                value: [{
+                        key: true,
+                        txt: "顺时针"
+                    },
+                    {
+                        key: false,
+                        txt: "逆时针"
+                    }
+                ],
+                type: "cycle",
+                index: 0
+            },
+            rotation: true,
+            interval: {
+                value: [0, 1, 2, 3, 4, 5, 6, 10, 20, 30, 36, 60, 72, 90, 108, 120, 180],
+                type: "cycle",
+                index: 10
+            },
+            animate: true,
+            colorful: true,
+
+        },
+        move: {
+            moveSwitch: "off",
+            moveMode: {
+                value: [{ key: "move", txt: "自由移动" }, { key: "rotation", txt: "旋转" }],
+                type: "cycle",
+                index: 0
+            },
+            speed: {
+                value: [1, 2, 3, 5, 10, 30, 60, 120],
+                type: "cycle",
+                index: 0
+            },
+            movenum: {
+                value: [1, 2, 3, 4, 5, 10, 20],
+                type: "cycle",
+                index: 0
+            },
+            link: false,
+            bounce: true,
+            colorful: true, //moveColorful: true,
+
+
+        }
+    }
+
+    // _.ajax("data/opt.json",function(result){
+    //     var optJson=_.json(result)
+    //      console.log(optJson)
+    // })
+
+    // _.debug();
+
+    var _createOptCycle = function(optJson) {
+        var optCycle = { data: {}, methods: {}, filters: {} };
+        var _uc = function(word) {
+            return word.substring(0, 1).toUpperCase() + word.substring(1);
+        }
+
+        for (var k in optJson) {
+            var o = optJson[k];
+            if (_.isObject(o)) {
+                optCycle.data[k] = {};
+                for (var x in o) {
+                    var val = o[x];
+                    if (_.isBoolean(val)) {
+                        optCycle.data[k][x] = val;
+
+                        optCycle.methods["next" + _uc(k) + _uc(x)] = (function(item, ev) { //callback
+                            var k = this[0],
+                                x = this[1];
+                            optCycle.data[k][x] = !optCycle.data[k][x];
+                            // callback && callback(optCycle.data[k][x]);
+
+                            item && item.html(optCycle.data[k][x]);
+                            // console.log(optCycle.data[k][x])
+                        }).bind([k, x])
+
+                    } else if (_.isObject(val)) {
+                        var type = val.type
+                        if (["cycle", "color"].indexOf(type) >= 0) {
+                            var c;
+                            switch (type) {
+                                case "cycle":
+                                    c = _.cycle(val.value, val.index || 0)
+                                    break;
+                                case "color":
+                                    var colorArr = [];
+                                    var len = 10;
+                                    while (len-- > 0) colorArr.push(_.color())
+                                    c = _.cycle(colorArr, 0)
+                                    break;
+                            }
+                            optCycle.data[k][x] = c;
+                            optCycle.methods["next" + _uc(k) + _uc(x)] = (function(item, ev) { //callback
+                                this.next();
+                                // callback && callback(this.val());
+                                item && item.html(this.val().txt ? this.val().txt : this.val());
+                                console.log(this.val())
+                            }).bind(c);
+                            if (c.val().txt) {
+                                optCycle.filters[x] = (function(val) {
+                                    return this.val().txt;
+                                }).bind(c);
+                            }
+                        }
+                    } else if (_.isString(val)) {
+                        optCycle.data[k][x] = val;
+                    }
+                }
+            }
+        }
+        optCycle.init = function() {
+            var opt = {};
+            for (var k in optCycle.data) {
+                var o = optCycle.data[k];
+                if (_.isObject(o)) {
+                    opt[k] = {};
+                    for (var x in o) {
+                        var val = o[x];
+                        if (_.isBoolean(val)) {
+                            opt[k][x] = val;
+                        } else if (_.isObject(val)) {
+                            opt[k][x] = val.val().key ? val.val().key : val.val();
+                        } else if (_.isString(val)) {
+                            opt[k][x] = val;
+                        }
+                    }
+                }
+            }
+            return opt;
+        }
+
+        optCycle.view = function() {
+            var data = optCycle.init();
+            var viewData = { tabs: [] };
+            for (var k in data) {
+                var tab = { key: k, items: [] }
+                viewData.tabs.push(tab)
+                var o = data[k]
+                if (_.isObject(o)) {
+                    for (var x in o) {
+                        tab.items.push({ key: x, value: o[x], method: "next" + _uc(k) + _uc(x) })
+                    }
+                }
+            }
+            return viewData
+        }
+        return optCycle;
+    }
+
+
+    var c = _createOptCycle(optJson);
+    console.log(c)
+    // var data = c.init()
+
+    // console.log(data)
+
+    // c.methods.nextGroupGroup()
+    // c.methods.nextGroupInterval()
+    // c.methods.nextGroupInterval()
+    // c.methods.nextGroupAnimate()
+
+
+    tpler({
+        el: "#container",
+        filters: _.extend({
+                tabItem: function(val) {
+                    return _.parseTpl({
+                        template: "_tab-body-item-row_tpl",
+                        data: val,
+                    })
+                }
+            },
+            c.filters
+        ),
+        methods: _.extend({
+            startHandler: function() {
+                console.log(c.init())
+            }
+        }, c.methods),
+        data: c.view(),
+        callback: function() {
+            _.$(".tab-head-item").tab("active", function(ev) {
+
+                // console.log(ev)
+            })
+
+            _.$(".tab-head-item").first().active()
+            _.$(".tab-body-item").first().show()
+
+
+
+
+
+        }
+    })
+    </script>
+</body>
+
+</html>

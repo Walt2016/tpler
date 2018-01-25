@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>播放器</title>
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="shortcut icon" type="image/x-icon" href="data:image/gif;base64,YQ==">
+    <script src="js/tpler.min.js"></script>
+    <link rel="stylesheet" href="//g.alicdn.com/de/prismplayer/2.4.0/skins/default/aliplayer-min.css" />
+    <script type="text/javascript" src="//g.alicdn.com/de/prismplayer/2.4.0/aliplayer-min.js"></script>
+    <style>
+    html,
+    body {
+        margin: 0;
+        padding: 0
+    }
+
+    .tab-head {
+        background: rgba(255, 255, 255, 1);
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .tab-head-item {
+        color: #666;
+        min-width: 50px;
+        text-align: center;
+        font-size: 16px;
+        cursor: pointer;
+        user-select: none;
+        height: 40px;
+        line-height: 40px;
+        border-bottom: 1px solid #dcdcdc;
+    }
+
+    .tab-head-item.active {
+        color: #000;
+        background: #cecece
+    }
+
+    .tab-body-item.hide {
+        display: none;
+    }
+
+    .tab-body {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .scroll {
+        max-height: 300px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .tab-body-item {
+        font-size: 12px;
+        word-wrap: break-word;
+        margin-bottom: 62px;
+    }
+
+    .tab-body-item .header {
+        height: 22px;
+        background-color: #cecece;
+        line-height: 22px;
+        padding: 6px;
+    }
+
+    .tab-body-item .body {
+        border-bottom: 1px solid rgb(220, 220, 220);
+        margin-bottom: 20px;
+        min-height: 30px;
+        padding: 6px;
+    }
+
+    .toolbar {
+        background-color: #f8f8f8;
+        border-top: 1px solid #dcdcdc;
+        height: 49px;
+        font-size: 12px;
+        align-items: center;
+        min-height: 49px;
+    }
+
+    .fixedbottom {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 999;
+        max-width: 680px;
+        margin: 0 auto;
+    }
+
+    .btn-group {
+        margin-top: 7px;
+        margin-bottom: 7px;
+
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-flex: 1;
+        -webkit-flex: 1;
+        -ms-flex: 1;
+        flex: 1;
+    }
+
+    .btn-group .drawBtn {
+        background-color: #ff6414;
+        font-size: 15px;
+        /*width: 68px;*/
+        height: 32px;
+        line-height: 32px;
+        margin-left: 12px;
+        margin-top: 1px;
+        padding: 0;
+        border-color: #ff6414;
+        border-radius: 02px;
+        color: #fff;
+        font-weight: 500;
+        border: 1px solid #ff6414;
+        margin-right: 12px;
+        -webkit-user-select: none;
+        flex: 1;
+        text-align: center;
+        width: 98%
+    }
+
+
+    .mt10 {
+        margin-top: 10px
+    }
+
+    .mt4 {
+        margin-top: 4px
+    }
+
+    .grid {
+        line-height: 40px;
+        font-size: 15px;
+        border: 1px solid #dcdcdc;
+    }
+
+    .grid .body.off {
+        display: none;
+    }
+
+    .grid .row {
+        border-bottom: 1px solid #dcdcdc;
+    }
+
+    .grid .row:last-child {
+        border-bottom: none
+    }
+
+    .grid .row .hd {
+        width: 100px;
+        height: 40px;
+        background-color: #f8f8f8;
+        padding-left: 4px;
+        border-right: 1px solid #dcdcdc;
+        position: relative;
+    }
+
+    .grid .row .td {
+        padding-left: 4px;
+        height: 40px;
+        position: relative;
+    }
+
+    .grid .rol .hd{
+        background-color: #f8f8f8;
+        padding-left: 4px;
+        border-bottom: 1px solid #dcdcdc;
+    }
+
+    .rightArrow {
+        width: 0px;
+        height: 0px;
+        border: 10px solid transparent;
+        border-left-color: #cecece;
+    }
+
+    .leftArrow {
+        width: 0px;
+        height: 0px;
+        border: 10px solid transparent;
+        border-right-color: #cecece;
+    }
+
+    .colorblock {
+        width: 20px;
+        height: 10px;
+        position: absolute;
+        right: 10px;
+        top: 15px;
+    }
+
+    .switchBtn {
+        width: 40px;
+        height: 20px;
+        border: 1px solid #666;
+        background-image: -webkit-linear-gradient(right, #dedede, #dedede 50%, #cccccc 50%, #cccccc);
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+
+    .switchBtn.on {
+        background-image: -webkit-linear-gradient(left, #dedede, #dedede 50%, #ff6414 50%, #ff6414);
+    }
+
+    .rlt {
+        position: relative;
+    }
+
+    .abs {
+        position: absolute;
+    }
+
+    .screen {
+        background-color: rgb(55, 58, 63);
+        font-size: 12px;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100vw;
+        max-width: 680px;
+        min-width: 300px;
+    }
+
+    .screen43 {
+        height: 75vw;
+        max-height: 510px;
+        min-height: 145px;
+        max-height: 100vh;
+    }
+
+    .fullscreen {
+        width: 100vw;
+        height: 100vh;
+    }
+    .mh300{
+        min-height: 300px;
+    }
+    .container{
+        max-width: 680px;
+        margin: 0 auto;
+    }
+    </style>
+</head>
+
+<body>
+    <div class="container" layout="col" id="container">
+        <div class="screen screen43 mh300">
+            <div class="prism-player" id="J_prismPlayer" style="position: absolute"></div>
+        </div>
+        <div class="tab " layout="col">
+            <div class="tab-head" layout="row" layout-align="between center">
+                <div class="tab-head-item active" target="panel_summary" flex>简介</div>
+                <div class="tab-head-item" target="panel_ball" flex>相关</div>
+            </div>
+            <div class="tab-body scroll">
+                <div class="tab-body-item" id="panel_summary" template="_panel_summary_tpl">
+                </div>
+                <div class="tab-body-item hide" id="panel_ball" template="_panel_ball_tpl">
+                </div>
+            </div>
+        </div>
+       <!--  <div class="toolbar fixedbottom hide" style="height: auto;" id="btnSendBar" template="">
+            <div class="btn-group ">
+                <div class="drawBtn " id="drawBtn" on="startMoive">播放</div>
+            </div>
+        </div> -->
+    </div>
+    <script type="text/template" id="_panel_summary_tpl">
+        <div class="grid mt4">
+            <div class="row head">
+                <div class="hd flex">简介</div>
+            </div>
+            <div class="rol">
+                <div class="hd">研究院定位</div>
+                <div class="td flex">联讯证券研究院定位于为公募基金、保险公司、资产管理公司、私募等专业机构客户及公司内部提供统一或量身定制的高质量研究分析、投资咨询服务。</div>
+            </div>
+            <div class="rol">
+                <div class="hd">覆盖范围</div>
+                <div class="td flex">研究分析覆盖行业公司、策略、宏观、固定收益、衍生品和金融工程等领域，涉及从宏观到微观、从货币市场到资本市场、从上市公司到非上市公司、从行业到个股、从国内到国际等广阔范围。</div>
+            </div>
+        </div>
+    </script>
+    <script type="text/template" id="_panel_ball_tpl">
+        <div class="grid mt4">
+            <div class="row">
+                <div class="hd">数量</div>
+                <div class="td flex" on="nextNum">{=num}</div>
+            </div>
+        </div>
+    </script>
+    <script>
+    var player = new Aliplayer({
+        id: 'J_prismPlayer',
+        width: '100%',
+        height:'300px',
+        autoplay: false,
+        //支持播放地址播放,此播放优先级最高
+        source: 'https://testlive.comein.cn/live/conf5123.m3u8',
+        isLive:true,
+        //播放方式二：点播用户推荐
+        // vid: '1e067a2831b641db90d570b6480fbc40',
+        // playauth: '',
+        cover: 'https://testimage.comein.cn/comein-files/img/2018-01-03/4043baac-3e9d-415c-b099-ddced50b2a5d/4043baac-3e9d-415c-b099-ddced50b2a5d.jpg',
+        //播放方式三：仅MTS用户使用
+        // vid: '1e067a2831b641db90d570b6480fbc40',
+        // accId: '',
+        // accSecret: '',
+        // stsToken: '',
+        // domainRegion: '',
+        // authInfo: ''
+    }, function(player) {
+        console.log('播放器创建好了。')
+    });
+
+    tpler({
+        el: "#container",
+        data: {},
+        callback: function(item, ev) {
+            _.$(".tab-head-item").tab("active", function(ev) {
+                console.log(this, ev)
+            })
+        }
+
+    })
+    </script>
+</body>
+
+</html>

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-    <title>几何图形</title>
+    <title>optJson</title>
     <link rel="shortcut icon" type="image/x-icon" href="data:image/gif;base64,YQ==">
     <script src="js/tpler.js"></script>
     <link rel="stylesheet" href="css/layout.css">
@@ -139,8 +139,7 @@
         max-width: 680px;
         margin: 0 auto;
     }
-
-    .btn-group {
+    .btn-group{
         border-top: 1px solid #ccc;
     }
 
@@ -155,17 +154,11 @@
         flex: 1;
         text-align: center;
         /*background: rgba(0, 0, 0, 0.2)*/
-        margin: 1px;
-        border-right: 1px dashed #dedede;
+        margin: 2px;
+        border-right:1px solid #ccc;
     }
-
-    .btn:last-child {
-        border-right: none;
-    }
-
-    .btn.w100 {
-        width: 100px;
-        max-width: 100px;
+    .btn:last-child{
+        border-right:none;
     }
 
     .scroll {
@@ -224,44 +217,17 @@
         right: 10px;
         top: 15px;
     }
-
-    .switchBody.off {
+    .switchBody.off{
         display: none;
     }
-
-    .switchBtn.none {
+    .switchBtn.none{
         display: none;
-    }
-
-    #startBtn {
-        background-color: #ccc
-    }
-
-    #configPanel.hide {
-        display: none;
-    }
-
-    #configPanel {
-        position: absolute;
-        top:0;
-        left: 0;
-        right: 0;
-    }
-
-    #configPanel.center {
-        position: fixed;
-        z-index: 2000;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        width: 95%
     }
     </style>
 </head>
 
 <body>
     <div id="container">
-        <div class="screen"></div>
         <div id="configPanel" class="hide">
             <div class="tab" layout="col">
                 <div class="tab-head" layout="row" layout-align="between center" template="_tab-head-item_tpl" data="tabs">
@@ -274,11 +240,9 @@
         </div>
     </div>
     <script type="text/template" id="_btn_tpl">
-        <div class="btn row center w100" on="configHandler" id="configBtn">设置
-            <div class="icon upArrow ml4"></div>
-        </div>
-        <div class="btn hide w100" on="stopHandler" id="stopBtn">停止</div>
-        <div class="btn" on="startHandler" id="startBtn">画图</div>
+        <div class="btn row center" on="configHandler">设置<div class="icon upArrow ml4"></div></div>
+        <div class="btn" on="stopHandler">停止</div>
+        <div class="btn" on="startHandler">开始</div>
     </script>
     <script type="text/template" id="_tab-head-item_tpl">
         <div class="tab-head-item" target="panel_{=key}" flex>{=text}</div>
@@ -332,7 +296,7 @@
             return word.substring(0, 1).toUpperCase() + word.substring(1);
         }
         //开关
-        var _switch = function(item, k) {
+        var _switch = function(item) {
             var val;
             var bd = item.closest(".tab-body-item").query(".switchBody")
             if (item.hasClass('on')) {
@@ -341,13 +305,6 @@
             } else {
                 val = "on";
                 [item, bd].removeClass("off").addClass("on");
-            }
-            if (k == "motion") {
-                if (val == "on") {
-                    _.show("#stopBtn");
-                } else {
-                    _.hide("#stopBtn");
-                }
             }
             return val;
         }
@@ -364,7 +321,7 @@
                 var w = iPos.width;
                 var h = iPos.height;
                 var div2 = document.createElement("div")
-                var background = "rgba(0,0,0,0.1)"; //_.rgba().replace(/,[^,]*?\)/, ",0.1)"); //rgba(0,0,0,0.1)
+                var background = "rgba(0,0,0,0.1)" ;//_.rgba().replace(/,[^,]*?\)/, ",0.1)"); //rgba(0,0,0,0.1)
                 div2.css({ width: w, height: h, top: 0, left: 0, position: "absolute", background: background })
                 item.appendChild(div2)
                 setTimeout(function() {
@@ -379,7 +336,7 @@
                     x = this[1];
                 var c = optCycle.data[k][x];
                 if (_.isString(c)) {
-                    optCycle.data[k][x] = _switch(item, k);
+                    optCycle.data[k][x] = _switch(item);
                 } else if (_.isObject(c)) {
 
 
@@ -390,7 +347,7 @@
                     var offset = ePos.x - iPos.x;
                     var div2 = document.createElement("div")
                     var div = document.createElement("div")
-                    var background = "rgba(0,0,0,0.1)"; // _.rgba().replace(/,[^,]*?\)/, ",0.1)"); //
+                    var background ="rgba(0,0,0,0.1)"; // _.rgba().replace(/,[^,]*?\)/, ",0.1)"); //
                     if (offset > w / 2) {
                         c.next();
                         div2.css({ width: w / 2, height: h, top: 0, left: w / 2, position: "absolute", background: background })
@@ -540,7 +497,7 @@
             var data = optCycle.data; //optCycle.init();
             var _viewData = { tabs: [] };
             for (var k in data) {
-                var tab = { key: k, items: [], random: [], switch: "none" };
+                var tab = { key: k, items: [], random: [] ,switch:"none"};
                 _viewData.tabs.push(tab);
                 var o = data[k];
                 if (_.isObject(o)) {
@@ -626,7 +583,7 @@
 
 
 
-    _.ajax("data/opt.json?v=5", function(result) {
+    _.ajax("data/opt.json?v=2", function(result) {
         var optJson = _.json(result)
         console.log(optJson)
 
@@ -634,13 +591,6 @@
         console.log(c)
         console.log(c.init())
         console.log(c.viewData())
-
-        var draw = _.draw({
-            ratio: "1:1",
-            background: "#dedede",
-            callback: function(result) {}
-        })
-        var motion;
 
         tpler({
             el: "#container",
@@ -655,7 +605,7 @@
                 c.filters
             ),
             methods: _.extend({
-                configHandler: function(item, ev) {
+                configHandler:function(item,ev){
 
                     var configPanel = _.$("#configPanel");
                     // configPanel.css({ "width": (_.screen.x - 28) + "px", "height": (_.screen.y - 128) + "px" })
@@ -670,37 +620,11 @@
                     }
 
                 },
-                stopHandler: function(item,ev) {
-                    motion && motion.stop();
+                stopHandler:function(){
+
                 },
-                startHandler: function(item,ev) {
-                    _.hide("#configPanel");
-                    var icon = _.$("#configBtn .icon");
-                    icon.removeClass("downArrow").addClass("upArrow")
+                startHandler: function() {
                     console.log(c.init())
-
-
-                   
-                    draw.clear("#dedede");
-                    var opt=c.init()
-
-                    if (item.id != "startBtn") {
-                       var pos = _.pos(ev)
-                        opt.shape = _.extend(opt.shape, {x:pos.x,y:pos.y});
-                    }
-                     
-
-                    motion && motion.stop();
-                    if (opt.motion.switch == "on") {
-                        _.show("#stopBtn");
-                        motion = draw.motion(opt);
-                    } else {
-                        _.hide("#stopBtn");
-                        draw.group(opt);
-                    }
-
-                    // _.hide("#stopBtn");
-                        // draw.group(opt);
                 }
             }, c.methods),
             data: c.viewData(),
@@ -711,18 +635,6 @@
                 _.$(".tab-head-item").first().active()
                 _.$(".tab-body-item").first().show()
                 _.$(".tab").css({ height: (_.screen.y - 30) + "px" })
-
-                _.$(".screen").appendChild(draw.canvas)
-                var self=this;
-                toucher({
-                    el: draw.canvas,
-                    type: "touchstart",
-                    callback: function(item, ev) {
-                        self.methods.startHandler(item, ev);
-                    }
-                })
-
-
             }
         })
     })

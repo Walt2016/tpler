@@ -4,24 +4,42 @@
 	<meta charset="UTF-8">
 	<title>tpler test</title>
 	 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,minimal-ui">
-	<script src="js/custom/tpler.js"></script>
+	<script src="js/tpler.js"></script>
 </head>
 <body>
 <script>
-_.ajax("index.html",function(result){
+	_.debug();
 
-	result=_.getBody(result)
+	var arr=[1,2,3,'a','b']
 
-	// console.log(result)
+	arr.forEach(function(t,i){
 
-	result.replace(/<script.*?playback.*?>([\s\S]*?)<\/script>/g,function(match,text){
-		 // console.log(text)
-		 text.replace(/{=(.*?)}/g,function(m,tag){
-		 	console.log(tag)
-		 })
+		setTimeout(function(){
+			console.log(t,i)
+		},500*i)
+		
 	})
 
-})
+	for(var i=0 ;i<arr.length;i++){
+		var t=arr[i]
+		setTimeout(function(){
+			console.log(t,i)
+		},500*i)
+	}
+// _.ajax("index.html",function(result){
+
+// 	result=_.getBody(result)
+
+// 	// console.log(result)
+
+// 	result.replace(/<script.*?playback.*?>([\s\S]*?)<\/script>/g,function(match,text){
+// 		 // console.log(text)
+// 		 text.replace(/{=(.*?)}/g,function(m,tag){
+// 		 	console.log(tag)
+// 		 })
+// 	})
+
+// })
 	
 </script>
 	
