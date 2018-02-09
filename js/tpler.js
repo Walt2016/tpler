@@ -3,13 +3,19 @@
 (function(root, factory) {
     if (typeof define === "function" && define.amd) {
         define('tpler', [], factory);
+    } else if (typeof module === 'object' && module.exports) {
+        module.exports = factory();
     } else {
-        root.tpler = factory();
+        if (root) {
+            root.tpler = factory();
+        } else {
+            const _ = factory();
+        }
     }
 }(this,
     function() {
         //模板标签  ([^|]+?[\|(string|file|image|time)]?     /{=([\s\S]+?)}/g; 
-        var reg_tpl_tag = /{=(.*?)(?:\|(.*?))?}/g
+        var reg_tpl_tag = /{=(.*?)(?:\|(.*?))?}/g;
         var reg_operation_symbol = /[\+|\-|\*|\/|\(|\)]+/g; //支持 加减乘除括号  operation symbol
         var rootEl, $index = 1,
             $length = 1,
@@ -32,43 +38,22 @@
             LOOP = "loop",
             MODEL = "model", //双向绑定模型
             TAP = "tap",
+            LONGTAP = "longtap",
             DRAG = "drag",
             ON = "on", //绑定事件
             BIND = "bind"; //单向绑定
 
-
-        var isSupportTouch = "ontouchend" in document ? true : false; // window.Touch? true : false;
-
-        var supportTouch = function() {
+        var isSupportTouch = (function() {
             try {
                 document.createEvent("TouchEvent");
                 return true;
             } catch (e) {
                 return false;
             }
-        }();
-
-        // Save bytes in the minified (but not gzipped) version:
-        var ArrayProto = Array.prototype,
-            ObjProto = Object.prototype;
-        // Create quick reference variables for speed access to core prototypes.
-        var push = ArrayProto.push,
-            slice = ArrayProto.slice,
-            concat = ArrayProto.concat,
-            toString = ObjProto.toString,
-            hasOwnProperty = ObjProto.hasOwnProperty;
-
-        // All **ECMAScript 5** native function implementations that we hope to use
-        // are declared here.
-        var nativeForEach = ArrayProto.forEach,
-            nativeMap = ArrayProto.map,
-            nativeFilter = ArrayProto.filter,
-            nativeSome = ArrayProto.some,
-            nativeEvery = ArrayProto.every,
-            nativeIndexOf = ArrayProto.indexOf;
+        })();
 
         var extend = function(obj) {
-            var args = slice.call(arguments),
+            var args = Array.prototype.slice.call(arguments),
                 len = args.length;
             for (var i = 1; i < len; i++) {
                 var source = args[i];
@@ -83,7 +68,7 @@
 
         //=extendMe  Object.assign
         var extendMe = function(obj) {
-            var args = slice.call(arguments),
+            var args = Array.prototype.slice.call(arguments),
                 len = args.length;
             for (var i = 1; i < len; i++) {
                 var source = args[i];
@@ -115,15 +100,13 @@
         }();
 
 
-        // Browser environment sniffing
-
-        // function isIE() {
-        //     return !!window.ActiveXObject;
-        // }
-        //ua
+        var inBrowser = typeof window !== 'undefined';
         var env = (function() {
-            var os = {},
-                ua = navigator.userAgent,
+            var os = {};
+            if (!inBrowser) {
+                return os;
+            }
+            var ua = navigator.userAgent,
                 android = ua.match(/(Android)[\s\/]+([\d\.]+)/),
                 ios = ua.match(/(iPad|iPhone|iPod)\s+OS\s([\d_\.]+)/),
                 wp = ua.match(/(Windows\s+Phone)\s([\d\.]+)/),
@@ -157,7 +140,7 @@
         })();
 
 
-        var inBrowser = typeof window !== 'undefined';
+
         var UA = inBrowser && window.navigator.userAgent.toLowerCase();
         var isIE = UA && /msie|trident/.test(UA);
         var isIE9 = UA && UA.indexOf('msie 9.0') > 0;
@@ -166,7 +149,7 @@
         var isIOS = UA && /iphone|ipad|ipod|ios/.test(UA);
         var isChrome = UA && /chrome\/\d+/.test(UA) && !isEdge;
 
-        var weixin = UA.toLowerCase().match(/MicroMessenger/i) == "micromessenger";
+        var weixin = UA && UA.toLowerCase().match(/MicroMessenger/i) == "micromessenger";
 
         var envt = extend(env, {
             inBrowser: inBrowser,
@@ -198,16 +181,13 @@
             this.week = newCom.getDay();
         }
 
-
-
-        //工具  一大部分继承underscore  + jquery
         var _ = {
             envt: envt,
             extend: extend,
             extendMe: extendMe,
             screen: {
-                x: document.documentElement.clientWidth,
-                y: document.documentElement.clientHeight
+                x: inBrowser ? document.documentElement.clientWidth : 100,
+                y: inBrowser ? document.documentElement.clientHeight : 100
             },
 
             toDate: function(str) {
@@ -299,6 +279,22 @@
                 return (result);
 
             },
+            timeFormat: function(time) {
+                if (typeof time !== 'number' || time < 0) {
+                    return time;
+                }
+                var hour = parseInt(time / 3600);
+                time = time % 3600;
+                var minute = parseInt(time / 60);
+                time = time % 60;
+                // 这里秒钟也取整
+                var second = parseInt(time);
+
+                return ([hour, minute, second]).map(function(n) {
+                    n = n.toString();
+                    return n[1] ? n : '0' + n;
+                }).join(':');
+            },
             //一年中的第几周
             week: function(dateStr) {
                 var totalDays = 0;
@@ -364,7 +360,7 @@
                     console.log("fn {" + fn.name + "} _run " + times + " times ,last: " + (t2 - t1) + "ms")
                     return t2 - t1;
                 }
-                var args = slice.call(arguments),
+                var args = Array.prototype.slice.call(arguments),
                     last = args.pop(),
                     times = 10000;
                 if (_.isNumber(last)) {
@@ -375,6 +371,28 @@
                 for (var i = 0; i < args.length; i++) {
                     args[i] && _run.call(this, args[i], i, times);
                 }
+            },
+            //数组相等
+            //对象相等
+            equal: function(a, b) {
+                if (a === b) {
+                    return true;
+                } else if (_.isArray(a) && _.isArray(b)) {
+                    return a.toString() == b.toString();
+                } else if (_.isObject(a) && _.isObject(b)) {
+                    if (Object.keys(a).length != Object.keys(b).length) {
+                        return false
+                    }
+                    for (var k in a) {
+                        if (!_.equal(a[k], b[k])) {
+                            return false
+                        }
+                    }
+                    return true;
+                } else if (_.type(a) == _.type(b)) {
+                    return a == b;
+                }
+                return false;
             },
             //位置信息 支持事件 和Element
             pos: function(e, offset) {
@@ -461,7 +479,6 @@
                     type: "drag"
                 })
             },
-
             //url信息
             parseUrl: function(url) {
                 var params = {},
@@ -575,7 +592,7 @@
             //找不到 返回  []，与 closest addclass removeclass等统一[] ，方便链式写
             //找到数组 [el]，长度为1的时，返回 el  ，方便 siblings链式
             query: function(selector) {
-                var args = slice.call(arguments),
+                var args = Array.prototype.slice.call(arguments),
                     len = args.length;
                 if (len > 1) {
                     selector = args.join(",")
@@ -629,7 +646,7 @@
 
                 try {
                     var eles = document.querySelectorAll(selector),
-                        args = slice.call(eles),
+                        args = Array.prototype.slice.call(eles),
                         len = args.length;
 
                     if (len == 0) {
@@ -653,11 +670,11 @@
 
             // filters
             //JavaScript对象
-            //代替JSON.parse() 和   $.parseJSON 必须遵从格式完好
-            // 格式完好"，指字符串必须符合严格的JSON格式，属性名称必须加双引号、字符串值也必须用双引号。
+            //JSON.parse() 和   $.parseJSON 必须遵从格式完好
+            // 字符串必须符合严格的JSON格式，属性名称必须加双引号、字符串值也必须用双引号。
             //JSON标准不允许字符串中出现"控制字符"，例如：一个Tab或换行符。正确写法应该如下(使用两个反斜杠，以免被JS解析器直接转义\t或\n)：
             //格式不完好的json字符串处理 "{id:1}"
-            //不必符合严格的JSON格式，例如：属性名称必须加双引号、字符串值也必须用双引号。
+            //不必符合严格的JSON格式
             //非标准格式json
             json: function(str) {
                 if (_.isEmpty(str)) {
@@ -697,6 +714,55 @@
                 // }
 
             },
+            //首字母大写
+            capitalize: function(word) {
+                var args = Array.prototype.slice.call(arguments),
+                    len = args.length;
+                if (len > 1) {
+                    return _.capitalize.call(this, args);
+                }
+                if (_.isArray(word)) {
+                    var arr = [];
+                    word.forEach(function(t) {
+                        arr.push(_.capitalize(t));
+                    })
+                    return arr;
+                }
+                return word.substring(0, 1).toUpperCase() + word.substring(1);
+            },
+            //驼峰命名
+            camelCase: function(word) {
+                var args = Array.prototype.slice.call(arguments),
+                    len = args.length;
+                if (len > 1) {
+                    return args[0] + _.capitalize(args.slice(1)).join("");
+                }
+                if (_.isArray(word)) {
+                    return word[0] + _.capitalize(word.slice(1)).join("");
+                }
+                return args[0];
+            },
+            //复制到剪贴板 只绑定click事件
+            copy: function(ele, showUI) {
+                const range = document.createRange();
+                range.selectNode(ele);
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0) selection.removeAllRanges();
+                selection.addRange(range);
+                // document.execCommand('copy'); //ios系统无效
+                try {
+                    if (document.execCommand('copy', showUI || false, null)) {
+                        console.log("copy ok")
+                        //success info
+                    } else {
+                        //fail info
+                        console.log("copy fail")
+                    }
+                } catch (err) {
+                    //fail info
+                    console.log("unable to copy")
+                }
+            },
             //代替 JSON.stringify()
             stringify: function(obj, ownProperty) {
                 var sb = [],
@@ -735,9 +801,8 @@
                     str += "(" + _.stringify(obj.target) + ")"
                 } else if (_.isNull(obj)) {
                     str += "null";
-                } else if (typeof obj == "object") { //isObject _.isScreen
+                } else if (typeof obj == "object") {
                     for (k in obj) {
-                        // if(ownProperty){
                         if (Object.prototype.hasOwnProperty.call(obj, k)) {
                             sb.push("\"" + k + "\":");
                             v = obj[k];
@@ -750,7 +815,6 @@
                             }
                             sb.push(",");
                         }
-                        // }
                     }
                     sb.pop();
                     str = "{" + sb.join("") + "}";
@@ -769,13 +833,15 @@
                     return json;
                 }
             },
-            color: function() { //随机颜色
-                return this.hsl();
+            //随机颜色
+            color: function() {
+                // return this.hsl();
+                return this.rgba();
             },
             rgb: function() {
                 return '#' + ('00000' + (Math.random() * 0x1000000 << 0).toString(16)).slice(-6);
             },
-            hsl: function() {
+            hsl: function() { //微信小程序不支持hsl
                 return "hsl(" + Math.ceil(Math.random() * 360) + ",50%,50%)";
             },
             hsla: function() {
@@ -788,8 +854,6 @@
                 return "rgba(" + c.join(",") + ")";
             },
             isHtml: function(tpl) {
-                // return /<\S*?>/.test(tpl);
-                // return /<^>*?>/.test(tpl);
                 return /<(\S*?) [^>]*>.*?<\/\1>|<.*?\/?>/.test(tpl);
             },
             enHtml: function(tpl) {
@@ -1063,7 +1127,7 @@
             },
             addClass: function(cls) {
                 var elem = this;
-                var clsArr = slice.call(arguments);
+                var clsArr = Array.prototype.slice.call(arguments);
                 if (clsArr.length == 1 && cls) {
                     clsArr = cls.split(" ");
                 }
@@ -1098,7 +1162,7 @@
             },
             removeClass: function(cls) {
                 var elem = this;
-                var clsArr = slice.call(arguments);
+                var clsArr = Array.prototype.slice.call(arguments);
                 if (clsArr.length == 1 && cls) {
                     clsArr = cls.split(" ");
                 }
@@ -1179,7 +1243,7 @@
             },
             //数组切割
             slice: function(arr, size) {
-                var args = slice.call(arguments),
+                var args = Array.prototype.slice.call(arguments),
                     len = args.length;
                 if (len == 2 && _.isArray(arr) && _.isNumber(size)) {
                     var result = [];
@@ -1277,7 +1341,7 @@
                     return 'null';
                 }
                 // handle DOM elements
-                var s = toString.call(o);
+                var s = Object.prototype.toString.call(o);
                 var t = s.match(/\[object (.*?)\]/)[1].toLowerCase();
                 // handle NaN and Infinity
                 if (t === 'number') {
@@ -1502,7 +1566,7 @@
 
             each: function(obj, iterator, context) {
                 if (obj == null) return obj;
-                if (nativeForEach && obj.forEach === nativeForEach) {
+                if (Array.prototype.forEach && obj.forEach === Array.prototype.forEach) {
                     obj.forEach(iterator, context);
                 } else if (obj.length === +obj.length) {
                     for (var i = 0, length = obj.length; i < length; i++) {
@@ -1523,7 +1587,7 @@
                 });
                 var result = false;
                 if (obj == null) return result;
-                if (nativeSome && obj.some === nativeSome) return obj.some(predicate, context);
+                if (Array.prototype.some && obj.some === Array.prototype.some) return obj.some(predicate, context);
                 _.each(obj, function(value, index, list) {
                     if (result || (result = predicate.call(context, value, index, list))) return {};
                 });
@@ -1532,7 +1596,7 @@
             contains: function(obj, target) {
                 if (obj == null) return false;
                 if (obj == target) return true; //
-                if (nativeIndexOf && obj.indexOf === nativeIndexOf) return obj.indexOf(target) != -1;
+                if (Array.prototype.indexOf && obj.indexOf === Array.prototype.indexOf) return obj.indexOf(target) != -1;
                 return _.any(obj, function(value) {
                     return value === target;
                 });
@@ -1544,14 +1608,14 @@
             filter: function(obj, predicate, context) {
                 var results = [];
                 if (obj == null) return results;
-                if (nativeFilter && obj.filter === nativeFilter) return obj.filter(predicate, context);
+                if (Array.prototype.filter && obj.filter === Array.prototype.filter) return obj.filter(predicate, context);
                 _.each(obj, function(value, index, list) {
                     if (predicate.call(context, value, index, list)) results.push(value);
                 });
                 return results;
             },
             max: function(array) {
-                var args = slice.call(arguments),
+                var args = Array.prototype.slice.call(arguments),
                     len = args.length;
                 if (len > 1) {
                     array = args;
@@ -1570,7 +1634,7 @@
                 return Math.max.apply(Math, ta);
             },
             min: function(array) {
-                var args = slice.call(arguments),
+                var args = Array.prototype.slice.call(arguments),
                     len = args.length;
                 if (len > 1) {
                     array = args;
@@ -1612,33 +1676,6 @@
             //     })
             // },
 
-            //扩展原型  函数  extend prototype
-            extproto: function(obj) {
-                _.each(slice.call(arguments, 1), function(source) {
-                    if (source) {
-                        for (var prop in source) {
-                            if (_.isObject(source[prop])) {
-                                Object.defineProperty(obj, prop, source[prop]);
-                            } else if (_.isFunction(source[prop])) {
-                                if (!obj.hasOwnProperty(prop)) {
-                                    obj[prop] = source[prop];
-                                    //禁止被for in 枚举
-                                    var descriptor = Object.getOwnPropertyDescriptor(obj, prop);
-                                    descriptor.enumerable = false;
-                                    Object.defineProperty(obj, prop, descriptor);
-                                } else {
-                                    console.log(obj, "obj hasOwnProperty " + prop)
-                                }
-                            } else {
-                                if (!obj.hasOwnProperty(prop)) {
-                                    obj[prop] = source[prop];
-                                }
-                            }
-                        }
-                    }
-                });
-                return obj;
-            },
             clone: function(obj) {
                 if (!_.isObject(obj)) return obj;
                 return _.isArray(obj) ? obj.slice() : _.extend({}, obj);
@@ -1674,7 +1711,7 @@
             { "key": "fadeinleft", "reverse": "fadeoutright", "type": "animate" }
         ].forEach(function(t) {
             _[t.key] = function() {
-                var elem = slice.call(arguments);
+                var elem = Array.prototype.slice.call(arguments);
                 if (t.type == "animate") {
                     _.removeClass.call(elem, t.reverse, "hide")
                 }
@@ -1682,7 +1719,7 @@
             };
 
             _[t.reverse] = function() {
-                var elem = slice.call(arguments);
+                var elem = Array.prototype.slice.call(arguments);
                 if (t.type == "animate") {
                     _.addClass.call(elem, t.reverse);
                     return _.removeClass.call(elem, t.key, "hide");
@@ -1749,7 +1786,7 @@
             predicate || (predicate = _.identity);
             var result = true;
             if (obj == null) return result;
-            if (nativeEvery && obj.every === nativeEvery) return obj.every(predicate, context);
+            if (Array.prototype.every && obj.every === Array.prototype.every) return obj.every(predicate, context);
             _.each(obj, function(value, index, list) {
                 if (!(result = result && predicate.call(context, value, index, list))) return breaker;
             });
@@ -1757,7 +1794,7 @@
         };
 
         _.intersection = function(array) {
-            var rest = slice.call(arguments, 1);
+            var rest = Array.prototype.slice.call(arguments, 1);
             return _.filter(_.uniq(array), function(item) {
                 return _.every(rest, function(other) {
                     return _.contains(other, item);
@@ -1766,18 +1803,18 @@
         };
 
         _.difference = function(array) {
-            var rest = concat.apply(ArrayProto, slice.call(arguments, 1));
+            var rest = Array.prototype.concat.apply(Array.prototype, Array.prototype.slice.call(arguments, 1));
             return _.filter(array, function(value) {
                 return !_.contains(rest, value);
             });
         };
         _.without = function(array) {
-            return _.difference(array, slice.call(arguments, 1));
+            return _.difference(array, Array.prototype.slice.call(arguments, 1));
         };
         _.map = _.collect = function(obj, iterator, context) {
             var results = [];
             if (obj == null) return results;
-            if (nativeMap && obj.map === nativeMap) return obj.map(iterator, context);
+            if (Array.prototype.map && obj.map === Array.prototype.map) return obj.map(iterator, context);
             _.each(obj, function(value, index, list) {
                 results.push(iterator.call(context, value, index, list));
             });
@@ -1807,11 +1844,11 @@
         // Internal implementation of a recursive `flatten` function.
         var flatten = function(input, shallow, output) {
             if (shallow && _.every(input, _.isArray)) {
-                return concat.apply(output, input);
+                return Array.prototype.concat.apply(output, input);
             }
             _.each(input, function(value) {
                 if (_.isArray(value) || _.isArguments(value)) {
-                    shallow ? push.apply(output, value) : flatten(value, shallow, output);
+                    shallow ? Array.prototype.push.apply(output, value) : flatten(value, shallow, output);
                 } else {
                     output.push(value);
                 }
@@ -1937,7 +1974,7 @@
             };
 
 
-            var args = slice.call(arguments),
+            var args = Array.prototype.slice.call(arguments),
                 len = args.length;
             if (len >= 2) {
                 if (_.isFunction(args[1])) {
@@ -1971,7 +2008,7 @@
                         xmlHttp = false;
                     }
                 }
-                if (!xmlHttp && typeof XMLHttpRequest != "udefined") {
+                if (!xmlHttp && typeof XMLHttpRequest != "undefined") {
                     xmlHttp = new XMLHttpRequest();
                 }
             }
@@ -2223,7 +2260,7 @@
         _.selectorMatches = function(el, selector) {
             var p = Element.prototype;
             var f = p.matches || p.webkitMatchesSelector || p.mozMatchesSelector || p.msMatchesSelector ||
-                function(s) { return [].slice.call(document.querySelectorAll(s)).indexOf(this) !== -1; };
+                function(s) { return Array.prototype.slice.call(document.querySelectorAll(s)).indexOf(this) !== -1; };
             return f.call(el, selector);
         }
 
@@ -2267,9 +2304,10 @@
         };
 
 
+        var _prototype = {}
 
         //原型扩展
-        var obj_prototype = {
+        _prototype.obj = {
             //四则运算
             cmd: function(str) { //在object 原型上扩展，会被in 枚举
                 if (!_.isString(str)) {
@@ -2301,7 +2339,7 @@
         };
 
         //浮点运算
-        var num_prototype = {
+        _prototype.num = {
             isEqual: function(number, digits) {
                 digits = digits == undefined ? 10 : digits; // 默认精度为10
                 return this.toFixed(digits) === number.toFixed(digits);
@@ -2432,7 +2470,7 @@
         };
 
         //原型
-        var str_prototype = {
+        _prototype.str = {
             // trim: function() {
             //     return this.replace(/(^\s+)|(\s+$)/g, "");
             // },
@@ -2462,7 +2500,7 @@
             },
             // console.log('hihih {0}, ,{2}'.format('dfasda', '34324343','dffds34324'));
             format: function() {
-                var args = slice.call(arguments),
+                var args = Array.prototype.slice.call(arguments),
                     len = args.length;
                 var str = this;
                 for (var i = 0, j = len; i < j; i++) {
@@ -2476,7 +2514,7 @@
 
         };
 
-        var dat_prototype = {
+        _prototype.dat = {
             // var _ = _;
             // 对Date的扩展，将 Date 转化为指定格式的String 
             // 月(M)、日(d)、小时(h)、分(m)、秒(s)、季度(q) 可以用 1-2 个占位符， 
@@ -2510,7 +2548,7 @@
                 return fmt;
             }
         };
-        var ele_prototype = {
+        _prototype.ele = {
             length: {
                 value: 1,
                 writable: false
@@ -2557,7 +2595,7 @@
                 return self;
             },
             html: function(str) {
-                var args = slice.call(arguments),
+                var args = Array.prototype.slice.call(arguments),
                     len = args.length;
                 if (len == 0) {
                     return this.innerHTML;
@@ -2613,7 +2651,7 @@
                 _.isFunction(fn) && fn.call(this, this, 0);
             },
             css: function(opt) { //todo
-                var args = slice.call(arguments),
+                var args = Array.prototype.slice.call(arguments),
                     len = args.length;
                 var needpre = function(str) {
                     var reg = RegExp(['transform', 'transition', 'animation', 'box-shadow', 'flex'].join('|')) ////,'@keyframes'
@@ -2668,7 +2706,7 @@
                 return this;
             },
             width: function() {
-                var args = slice.call(arguments),
+                var args = Array.prototype.slice.call(arguments),
                     len = args.length;
                 if (len == 1) {
                     this.css({ width: args[0] })
@@ -2676,7 +2714,7 @@
                 return this.offsetWidth;
             },
             height: function() {
-                var args = slice.call(arguments),
+                var args = Array.prototype.slice.call(arguments),
                     len = args.length;
                 if (len == 1) {
                     this.css({ height: args[0] })
@@ -2684,7 +2722,7 @@
                 return this.offsetHeight;
             },
             pos: function(p) {
-                var args = slice.call(arguments),
+                var args = Array.prototype.slice.call(arguments),
                     len = args.length;
                 if (len == 1) {
                     return this.css({
@@ -2818,18 +2856,18 @@
         };
 
         ['hide', 'show', 'isHide', 'active', 'passive'].forEach(function(t) { //, 'pos'
-            ele_prototype[t] = function() {
+            _prototype.ele[t] = function() {
                 return _[t] && _[t].call(this, this);
             }
         });
 
         ['$', 'query', 'hover', 'tab', 'hasAttr', 'hasClass', 'addClass', 'removeClass', 'closest'].forEach(function(t) {
-            ele_prototype[t] = function() {
+            _prototype.ele[t] = function() {
                 return _[t] && _[t].apply(this, arguments);
             }
         });
 
-        var arr_prototype = {
+        _prototype.arr = {
             //支持链式
             query: function(selector) {
                 var list = [];
@@ -2886,14 +2924,14 @@
             // },
 
         };
-        arr_prototype.$ = arr_prototype.query;
+        _prototype.arr.$ = _prototype.arr.query;
 
         ['attr', 'remove', 'removeAttr', 'removeClass', 'addClass', 'html', 'filter', 'append',
             'on', 'off', 'trigger', 'css', 'addEvent', 'hide', 'show', 'active', 'passive',
             'clearEvent', 'hover', 'tab', 'siblings'
         ].forEach(function(t) {
-            arr_prototype[t] = function() {
-                var args = slice.call(arguments),
+            _prototype.arr[t] = function() {
+                var args = Array.prototype.slice.call(arguments),
                     len = args.length;
                 if (this.length == 0) {
                     return this;
@@ -2915,17 +2953,52 @@
                 }
             }
         });
+        //扩展原型  函数  extend prototype
+        _.extproto = function(obj) {
+            _.each(Array.prototype.slice.call(arguments, 1), function(source) {
+                if (source) {
+                    for (var prop in source) {
+                        if (_.isObject(source[prop])) {
+                            Object.defineProperty(obj, prop, source[prop]);
+                        } else if (_.isFunction(source[prop])) {
+                            // if (!obj.hasOwnProperty(prop)) {
+                            if (!Object.prototype.hasOwnProperty.call(obj, prop)) {
+                                obj[prop] = source[prop];
+                                //禁止被for in 枚举
+                                var descriptor = Object.getOwnPropertyDescriptor(obj, prop);
+                                descriptor.enumerable = false;
+                                Object.defineProperty(obj, prop, descriptor);
+                            } else {
+                                console.log(obj, "obj hasOwnProperty " + prop)
+                            }
+                        } else {
+                            // if (!obj.hasOwnProperty(prop)) {
+                            if (!Object.prototype.hasOwnProperty.call(obj, prop)) {
+                                obj[prop] = source[prop];
+                            }
+                        }
+                    }
+                }
+            });
+            return obj;
+        };
 
-        //原型扩展
-        Object.prototype = _.extproto(Object.prototype, obj_prototype);
-        Number.prototype = _.extproto(Number.prototype, num_prototype);
-        String.prototype = _.extproto(String.prototype, str_prototype);
-        Date.prototype = _.extproto(Date.prototype, dat_prototype);
-        Element.prototype = _.extproto(Element.prototype, ele_prototype);
-        Array.prototype = _.extproto(Array.prototype, arr_prototype);
+        //原型扩展 
+        _.extproto(Object.prototype, _prototype.obj);
+        _.extproto(Number.prototype, _prototype.num);
+        _.extproto(String.prototype, _prototype.str);
+        _.extproto(Date.prototype, _prototype.dat);
+        _.extproto(Element.prototype, _prototype.ele);
+        _.extproto(Array.prototype, _prototype.arr);
 
 
-
+        // [Object, Number, String, Date, Element, Array].forEach(function(t) {
+        //     var name = t.toString().replace(/function\s(\w+)\(\).+/, function(m, c) {
+        //         return c.toLowerCase().slice(0, 3);
+        //     });
+        //     console.log(name)
+        //     // _.extproto(t.prototype, _prototype[name]);
+        // });
 
         /**
          * Base64 解加密
@@ -3090,7 +3163,7 @@
             _touchstart = isSupportTouch ? "touchstart" : "mousedown",
             _touchend = isSupportTouch ? "touchend" : "mouseup",
             _touchmove = isSupportTouch ? "touchmove" : "mousemove";
-        var containerWidth = document.documentElement.clientWidth >= 680 ? 680 : document.documentElement.clientWidth;
+        // var containerWidth = document.documentElement.clientWidth >= 680 ? 680 : document.documentElement.clientWidth;
 
         //事件
         var Events = (function() {
@@ -3146,6 +3219,28 @@
                                         self.off(type, el);
                                     }
                                 }
+                            }
+                            addEvent(_touchstart, el, starHandler);
+                            addEvent(_touchend, el, endHandler);
+                            break;
+                        case LONGTAP: //长按
+                            var _longtap;
+                            var starHandler = function(ev) {
+                                _longtap = setTimeout(function() {
+                                    if (_.isFunction(listener)) {
+                                        listener.call(el, el, ev);
+                                    } else if (_.isArray(listener)) {
+                                        listener.forEach(function(t) {
+                                            t.call(el, el, ev);
+                                        });
+                                    }
+                                    if (once) {
+                                        self.off(type, el);
+                                    }
+                                }, 1000)
+                            }
+                            var endHandler = function(ev) {
+                                _longtap && clearTimeout(_longtap);
                             }
                             addEvent(_touchstart, el, starHandler);
                             addEvent(_touchend, el, endHandler);
@@ -3253,7 +3348,7 @@
             }
         })();
 
-        var toucher = window.toucher = function(options) {
+        var toucher = _.toucher = function(options) {
             return new toucher.prototype.init(options);
         }
         toucher.prototype = {
@@ -3343,7 +3438,7 @@
         //         } else if (_.isElement(el)) {
         //             toucher.prototype.on.call(this, item, el, fn.bind(el))
         //         }
-        //         // var args = slice.call(arguments);
+        //         // var args = Array.prototype.slice.call(arguments);
         //         // args.unshift(item);
         //         // toucher.prototype.on.apply(this, args)
         //     }
@@ -3377,7 +3472,7 @@
 
         // str = _wrap("table", str);
         // return str;
-        var walker = window.walker = function(options) {
+        var walker = _.walker = function(options) {
             return new walker.prototype.init(options);
         }
         walker.prototype = {
@@ -3556,7 +3651,7 @@
                         }
                         if (this.ch) {
                             key = this._parseKey();
-                            if (Object.hasOwnProperty.call(obj, key)) {
+                            if (Object.prototype.hasOwnProperty.call(obj, key)) {
                                 this.error("Duplicate key '" + key + "'");
                                 console.log(obj)
                             }
@@ -3724,7 +3819,7 @@
 
         //按次序循环
         var cycle = _.cycle = function() {
-            var args = slice.call(arguments);
+            var args = Array.prototype.slice.call(arguments);
             return new cycle.prototype.init(args);
         }
         cycle.prototype = {
@@ -3789,7 +3884,7 @@
         cycle.prototype.init.prototype = cycle.prototype;
 
         //polyfill  requestAnimationFrame
-        (function() {
+        inBrowser && (function() {
             var lastTime = 0;
             var vendors = ['ms', 'moz', 'webkit', 'o'];
             for (var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
@@ -3859,12 +3954,6 @@
             init: function(opt, coordinate) {
                 //默认坐标 ra 和xy
                 this.coordinate = _.isUndefined(coordinate) ? "ra" : coordinate;
-                // if (coordinate == "ra" || coordinate == "polar") {
-                // } else { //"xy"
-
-                // }
-
-
                 var x = opt.x || 0,
                     y = opt.y || 0,
                     r = opt.r || 0;
@@ -3879,8 +3968,6 @@
 
 
                 if (opt.path == "square") {
-
-                    // var t = _.tan(a)
                     this.x = r * _.atan(a);
                     this.y = r * _.tan(a);
 
@@ -3903,22 +3990,13 @@
                     this.y += this.o.y;
 
                 } else { //circle
-
                     var p = this.xy(r, a, this.o);
                     this.x = p.x;
                     this.y = p.y;
-
                 }
-
-
             },
             //极坐标转xy坐标
             xy: function(r, a, o) {
-                // return {
-                //     x: o.x + r * _.sin(a),
-                //     y: o.y + r * _.cos(a)
-                // }
-
                 return {
                     x: o.x + r * _.cos(a),
                     y: o.y + r * _.sin(a)
@@ -3949,12 +4027,7 @@
                 var opt = _.extendMe({}, this, {
                     x: x,
                     y: y
-                })
-
-                // var opt = _.extendMe({}, this, {
-                //     x: (p.x - this.x) / 2 + this.o.x,
-                //     y: (p.y - this.y) / 2 + this.o.y
-                // })
+                });
                 return _point(opt);
             },
 
@@ -3971,7 +4044,7 @@
                 var opt = _.extendMe({}, this, {
                     x: 2 * (p.x - this.x) + this.o.x,
                     y: 2 * (p.y - this.y) + this.o.x
-                })
+                });
                 return _point(opt);
             },
             //平移
@@ -3982,11 +4055,6 @@
                         y: this.y + y || 0
                     }
                 }
-                // if (this.chainFlag) {
-                //     this.o.x += x;
-                //     this.o.y += y
-                //     return this;
-                // }
                 var opt = _.extendMe({}, this, {
                     x: this.o.x + x || 0,
                     y: this.o.y + y || 0
@@ -3997,15 +4065,7 @@
             rotate: function(a) {
                 if (this.coordinate == "xy") {
                     return this.xy(this.r, a, this.o);
-                    // return {
-                    //     x: this.o.x + this.r * _.cos(a),
-                    //     y: this.o.y + this.r * _.sin(a)
-                    // }
                 }
-                // if (this.chainFlag) {
-                //     this.a += a;
-                //     return this;
-                // }
                 var opt = _.extendMe({}, this, {
                     a: this.a + a,
                     x: this.o.x,
@@ -4022,16 +4082,9 @@
                 })
                 return _point(opt);
             },
-            // chain: function() {
-            //     this.chainFlag = true;
-            // },
             clone: function() {
                 return _point({ x: this.o.x, y: this.o.y, r: this.r, a: this.a });
-            },
-            // //坐标系
-            // coordinate: function(cs) {
-            //     this.cs = cs
-            // }
+            }
         }
         _point.prototype.init.prototype = _point.prototype;
 
@@ -4061,14 +4114,6 @@
                 var a = _.isUndefined(opt.a) ? 0 : opt.a;
                 var vx = _.isUndefined(opt.vx) ? 1 : opt.vx;
                 var vy = _.isUndefined(opt.vx) ? 1 : opt.vy;
-                // if (opt.offsetX) {
-                //     x += opt.offsetX;
-                //     // opt.offsetX = 0;
-                // }
-                // if (opt.offsetY) {
-                //     x += opt.offsetY;
-                //     // opt.offsetY = 0;
-                // }
                 x += opt.offsetX || 0;
                 y += opt.offsetY || 0;
 
@@ -4175,32 +4220,17 @@
                 this.link(vs, opt);
             },
             spiral: function(opt) {
-                var p = _.point(opt) //, "xy"
-                var vs = [p]
-                var turns = opt.turns;
-                var r = opt.r;
-                // vs.push(p.translate(r * i, 0))
-                // for (var i = 0; i < 10; i++) {
-                //     vs.push(p.translate(r * i, -r * i))
-                //     vs.push(p.translate(r * i, r * i))
-                //     vs.push(p.translate(-r * i, r * i))
-                //     vs.push(p.translate(-r * i, -r * i))
-                // }
-
+                var p = _.point(opt),
+                    vs = [p],
+                    turns = opt.turns,
+                    r = opt.r;
                 for (var i = 0; i < turns; i += 2) {
                     vs.push(p = p.translate(r * i, 0))
                     vs.push(p = p.translate(0, r * i))
                     vs.push(p = p.translate(-r * (i + 1), 0))
                     vs.push(p = p.translate(0, -r * (i + 1)))
                 }
-                // return vs
                 this.link(vs, opt);
-
-                // p.translate(r,0)
-                // p.translate(r,r)
-                // p.translate(-r,r)
-                // p.translate(-r,-r)
-
             },
             //斐波那契数列 螺旋
             fibonacci: function(opt) {
@@ -5259,12 +5289,11 @@
             //     })();
             // },
             movie: function() {
-                // self.clear();
                 var self = this;
                 var vsGroup = [];
-                var groups = this.groups;
+                var groups = self.groups;
                 var len = groups.length;
-                var mode = this.mode;
+                var mode = self.mode;
                 self.draw.clear();
 
                 groups.forEach(function(t, i) {
@@ -5281,7 +5310,7 @@
                             break
                     }
 
-                    if (this.link) {
+                    if (self.link) {
                         for (var j = i; j < len - 1; j++) {
                             var vs = [t, groups[j + 1]];
                             vsGroup.push(vs);
@@ -5305,10 +5334,10 @@
                     }
                 })
 
-                if (this.link) {
+                if (self.link) {
                     self.linkGroup(vsGroup);
                 }
-                this.id = requestAnimationFrame(this.movie.bind(this));
+                self.id = requestAnimationFrame(self.movie.bind(self));
             },
             stop: function() {
                 this.id && cancelAnimationFrame(this.id);
@@ -5319,16 +5348,23 @@
 
         //画图 
         //把基础图形组合起来，然后还可以动
-        var draw = _.draw = function(options) {
-            return new draw.prototype.init(options);
+        var draw = _.draw = function(options, context, canvas) {
+            return new draw.prototype.init(options, context, canvas);
         }
 
         draw.prototype = {
             constructor: draw,
-            init: function(options) {
-                this.canvas = document.createElement("canvas");
-                this.context = this.canvas.getContext("2d");
+            init: function(options, context, canvas) {
+                if (context) { //小程序传入
+                    this.canvas = canvas;
+                    this.context = context;
+                } else {
+                    this.canvas = document.createElement("canvas");
+                    this.context = this.canvas.getContext("2d");
+                }
+
                 if (_.isObject(options)) {
+
                     options.a = options.a || options.angle;
                     this.attr(options);
                     var color = options["background"] || options["background-color"];
@@ -5345,9 +5381,10 @@
                         size: size,
                         position: position,
                         repeat: repeat
-                    })
+                    });
+                    this.callback = options.callback;
                 }
-                this.callback = options.callback;
+
                 return this;
             },
             //比率
@@ -5358,11 +5395,17 @@
                 }
                 var w = screen.w,
                     h = screen.h;
-
-                key.replace(/(\d+):(\d+)/, function(match, x, y) {
-                    h = w * y / x
-                })
-
+                if (_.isString(key)) {
+                    if (key.indexOf(":") >= 0) {
+                        key.replace(/(\d+):(\d+)/, function(match, x, y) {
+                            h = w * y / x;
+                        });
+                    } else {
+                        h = w * parseFloat(key);
+                    }
+                } else if (_.isNumber(key)) {
+                    h = w * key;
+                }
                 this.canvas.setAttribute('width', w);
                 this.canvas.setAttribute('height', h);
                 return this;
@@ -5373,7 +5416,7 @@
             },
 
             attr: function(opt) {
-                for (key in opt) {
+                for (var key in opt) {
                     //比率
                     if ("ratio" == key) {
                         this.ratio(opt[key])
@@ -5385,8 +5428,9 @@
                 return this;
             },
             background: function(opt) {
-                var canvas = this.canvas;
-                var ctx = this.context;
+                var self = this;
+                var canvas = self.canvas;
+                var ctx = self.context;
                 var src = opt.src,
                     size = opt.size,
                     position = opt.position,
@@ -5395,7 +5439,8 @@
 
 
                 if (color) {
-                    ctx.fillStyle = color;
+                    // ctx.fillStyle = color;
+                    self.setFillStyle(color);
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                 }
 
@@ -5436,11 +5481,12 @@
                                     zoom: zoom,
                                     callback: function() {
                                         var bg = ctx.createPattern(this, 'repeat');
-                                        ctx.fillStyle = bg;
+                                        // ctx.fillStyle = bg;
+                                        self.setFillStyle(bg);
                                         ctx.fillRect(0, 0, canvas.width, canvas.height);
                                         ctx.fill();
                                     }
-                                })
+                                });
                             }
                             break;
                         case "stretch": //stretch 拉伸铺满
@@ -5456,6 +5502,25 @@
                 })
                 return this;
             },
+            //样式   小程序写法 setXXX
+            setFillStyle: function(color) {
+                var color = _.isUndefined(color) ? "#000000" : color;
+                var ctx = this.context;
+                ctx.fillStyle = color;
+                ctx.setFillStyle && ctx.setFillStyle(color);
+            },
+            setStrokeStyle: function(color) {
+                var color = _.isUndefined(color) ? "#000000" : color;
+                var ctx = this.context;
+                ctx.strokeStyle = color;
+                ctx.setStrokeStyle && ctx.setStrokeStyle(color);
+            },
+            setLineWidth: function(lineWidth) {
+                var ctx = this.context;
+                var lineWidth = _.isUndefined(lineWidth) ? 0.5 : lineWidth;
+                ctx.lineWidth = lineWidth;
+                ctx.setLineWidth && ctx.setLineWidth(lineWidth);
+            },
             fill: function(opt) {
                 var ctx = this.context;
                 if (opt) {
@@ -5463,7 +5528,7 @@
                         opt.color = _.rgba();
                     }
                     if (opt.fill) {
-                        ctx.fillStyle = _.isUndefined(opt.color) ? "#000000" : opt.color;
+                        this.setFillStyle(opt.color);
                         ctx.fill();
                     }
                 }
@@ -5472,15 +5537,12 @@
             stroke: function(opt) {
                 var ctx = this.context;
                 if (opt) {
-                    var lineWidth = _.isUndefined(opt.lineWidth) ? 0.5 : opt.lineWidth;
-                    if (lineWidth) {
-                        ctx.lineWidth = lineWidth;
-                    }
+                    this.setLineWidth(opt.lineWidth);
                     if (opt.randomColor) {
                         opt.color = _.hsl();
                     }
                     if (_.isUndefined(opt.stroke) || opt.stroke) {
-                        ctx.strokeStyle = opt.color;
+                        this.setStrokeStyle(opt.color)
                         ctx.stroke();
                     }
                 } else {
@@ -5515,14 +5577,12 @@
                 } else {
                     ctx.beginPath();
                 }
-
             },
-
-
             clear: function(color) {
                 var canvas = this.canvas;
                 var ctx = this.context;
-                ctx.fillStyle = color || "#ffffff";
+                // ctx.fillStyle = color || "#ffffff";
+                this.setFillStyle(color || "#ffffff");
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             },
             //中心点
@@ -5701,12 +5761,7 @@
                 var callback = options.callback;
                 if (typeof(Worker) !== "undefined") {
                     if (typeof(this.w) == "undefined") {
-                        // if (data) {
-                        //     file += (file.indexOf("?") > -1 ? "&" : "?") + _.toQueryString(data);
-                        // }
                         this.w = new Worker(file);
-                        // w.onmessage = function(event) {
-                        // };
                     }
                     this.w.addEventListener('message', function(event) {
                         //e.data为从worker线程得到的数据
@@ -5910,7 +5965,7 @@
         //     defaultPage:"home"
         // })
         //router({"markdown":"markdown"})
-        var router = window.router = function(options) {
+        var router = _.router = function(options) {
             return new router.prototype.init(options);
         }
 
@@ -6355,21 +6410,6 @@
                 fs.forEach(function(t) {
                     val = _callFilter.call(self, val, t, data);
                 });
-
-
-                // var fs = filter.split(","),
-                //     len = fs.length;
-                // if (len > 0 && fs[len - 1] != "string") {
-                //     fs.push("string");
-                //     len++;
-                // }
-                // if (len == 1) {
-                //     val = _callFilter.call(self, val, filter, data);
-                // } else if (len > 1) {
-                //     fs.forEach(function(t) {
-                //         val = _callFilter.call(self, val, t, data);
-                //     });
-                // }
             }
             return val;
         };
@@ -6449,7 +6489,6 @@
             if (_.isUndefined(data)) {
                 $length = 0;
                 str = _.isUndefined(defaultTpl) ? tpl : defaultTpl;
-                // str = defaultTpl || tpl;
             } else if (_.isArray(data)) {
                 var $length = data.length;
 
@@ -6615,12 +6654,10 @@
                     data = _.filter(data, function(item) {
                         var ks = name.split(",")
                         if (ks.length == 1) {
-                            // return _.indexOf(_.getVal(item, name), keyword) >= 0;
                             return _.has(_.getVal(item, name), keyword);
                         } else {
                             var flag = false;
                             ks.forEach(function(name) {
-                                // if (_.indexOf(_.getVal(item, name), keyword) >= 0) {
                                 if (_.has(_.getVal(item, name), keyword)) {
                                     flag = true;
                                 }
@@ -6678,7 +6715,6 @@
             var onHandler = function(item, ev) {
                 if (_.isElement(this)) {
                     var name = this.attr(ON),
-                        // method = self.customMethods[name];
                         method = self.methods[name]; //每个独立methods
                     if (method && _.isFunction(method)) {
                         method.call(self, this, ev);
@@ -6766,7 +6802,7 @@
             constructor: template,
             init: function(options) {
                 var self = this,
-                    args = slice.call(arguments),
+                    args = Array.prototype.slice.call(arguments),
                     len = args.length;
                 self.methods = {};
 
@@ -6784,11 +6820,9 @@
                             return;
                         } else if (_.isObject(options)) {
                             _.each(options, function(v, k) {
-
                                 switch (k) {
                                     case "el":
                                         self.el = options.el;
-
                                         if (_.isString(self.el)) {
                                             self.selector = self.el;
                                             self.el = _.query(self.el);
@@ -6987,7 +7021,15 @@
         //继承工具
         template.prototype = _.extend({}, template.prototype, _);
         template.prototype.init.prototype = template.prototype;
-        //兼容 underscore
-        if (!window._) { window._ = _; }
+
+
+        if (inBrowser) {
+            //兼容 underscore
+            if (!window._) { window._ = _; }
+            window.tpler = _.tpler;
+            window.toucher = _.toucher;
+            window.walker = _.walker;
+            window.router = _.router;
+        }
         return template;
     }));

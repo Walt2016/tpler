@@ -1,7 +1,7 @@
 ##tpler##
 一个js开发框架
 
-提供模板，事件，开发调试，画图等功能。
+提供模板，事件，调试工具，画图等功能。
 
 
 js调用方式：
@@ -70,8 +70,8 @@ toucher([{
 ```
 
 
-4.日志
-嵌入调试
+4.日志 
+嵌入调试工具
 ```
 _.debug()
 ```
@@ -81,11 +81,17 @@ _.debug()
 
 5、几何作图
 ```
- _.draw({
+ var draw=_.draw({ratio:1})
+ document.body.appendChild(draw.canvas);
+
+ var opt={
  	shape:"circle",
  	r:100,
  	color:"rgab(200,200,200,0.2)"
- 	})
+ 	}
+ 	
+ 	draw.shape(opt)
+ 	
 
 ```
 

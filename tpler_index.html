@@ -7,6 +7,7 @@
     <title>几何图形</title>
     <link rel="shortcut icon" type="image/x-icon" href="data:image/gif;base64,YQ==">
     <script src="js/tpler.js"></script>
+    <script src="data/opt.js"></script>
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/console.css">
     <style>
@@ -243,7 +244,7 @@
 
     #configPanel {
         position: absolute;
-        top:0;
+        top: 0;
         left: 0;
         right: 0;
     }
@@ -328,9 +329,6 @@
                 }
             }
         };
-        var _uc = function(word) {
-            return word.substring(0, 1).toUpperCase() + word.substring(1);
-        }
         //开关
         var _switch = function(item, k) {
             var val;
@@ -351,15 +349,14 @@
             }
             return val;
         }
-        var _toggle = function(k, x) { //, val
-            optCycle.methods["next" + _uc(k) + _uc(x)] = (function(item, ev) { //callback
+        var _toggle = function(k, x) {
+            optCycle.methods[_.camelCase("next", k, x)] = (function(item, ev) {
                 var k = this[0],
                     x = this[1];
-                optCycle.data[k][x] = !optCycle.data[k][x];
-                // callback && callback(optCycle.data[k][x]);
+                optCycle.data[k][x].value = !optCycle.data[k][x].value;
 
-                item && item.html(optCycle.filters.toggle(optCycle.data[k][x]));
-                // console.log(optCycle.data[k][x])
+                item && item.html(optCycle.filters.toggle(optCycle.data[k][x].value));
+
                 var iPos = _.pos(item);
                 var w = iPos.width;
                 var h = iPos.height;
@@ -372,9 +369,9 @@
                 }, 200)
             }).bind([k, x])
         }
-        var _next = function(k, x) { //, val, c
+        var _next = function(k, x) {
 
-            optCycle.methods["next" + _uc(k) + _uc(x)] = (function(item, ev) { //callback
+            optCycle.methods[_.camelCase("next", k, x)] = (function(item, ev) {
                 var k = this[0],
                     x = this[1];
                 var c = optCycle.data[k][x];
@@ -403,7 +400,7 @@
                         div2.css({ width: w / 2, height: h, top: 0, left: 0, position: "absolute", background: background })
 
                     }
-                    // callback && callback(this.val());
+
                     var val = c.val();
                     if (x == "color") {
                         val = optCycle.filters.color(val);
@@ -416,21 +413,9 @@
                         div.remove()
                         div2.remove()
                     }, 200)
-
-
-
                 }
-
-
                 console.log(val)
             }).bind([k, x]);
-
-            // if (_.isObject(c.val())) {
-            //     optCycle.filters[x] = (function(val) {
-            //         return this.val().text;
-            //     }).bind(c);
-            // }
-
         }
 
         for (var k in optJson) {
@@ -442,7 +427,7 @@
                     if (x == "random") {
                         optCycle.data[k][x] = val;
                         for (var y in val) {
-                            _toggle(k, x + _uc(y), val[y])
+                            _toggle(k, _.camelCase(x, y), val[y])
                         }
                     } else if (x == "switch") {
                         optCycle.data[k][x] = val;
@@ -514,7 +499,7 @@
                         var val = o[x];
                         if (x == "random") {
                             for (var y in val) {
-                                opt[k][x + _uc(y)] = val[y]
+                                opt[k][_.camelCase(x, y)] = val[y]
                             }
                         } else {
                             if (_.isBoolean(val)) {
@@ -544,13 +529,11 @@
                 _viewData.tabs.push(tab);
                 var o = data[k];
                 if (_.isObject(o)) {
-                    // tab.name = o.text;
                     for (var x in o) {
-                        // optCycle.data.v
                         var val = o[x];
                         if (x == "random") {
                             for (var y in val) {
-                                var item = { key: y, value: val[y], method: "next" + _uc(k) + "Random" + _uc(y) }
+                                var item = { key: y, value: val[y], method: _.camelCase("next", k, "Random", y) }
                                 if (optCycle.data[k][y].text) {
                                     item.key = optCycle.data[k][y].text
                                 }
@@ -558,21 +541,15 @@
                                     item.value = optCycle.filters.toggle(val[y])
                                 }
                                 tab.random.push(item);
-                                // opt[k]["random" + _uc(y)] = val[y]
                             }
                         } else if (x == "text") {
                             tab[x] = val;
                         } else if (x == "switch") {
                             tab[x] = val;
-                            tab[x + "Method"] = "next" + _uc(k) + _uc(x)
+                            tab[x + "Method"] = _.camelCase("next", k, x);
 
-                        }
-                        // else if (["text", "switch"].indexOf(x) >= 0) {
-                        //     tab[x] = val;
-                        //     tab["switchMethod"]="next"+_uc(k)+_uc(x)
-                        // } 
-                        else {
-                            var item = { key: x, value: val, method: "next" + _uc(k) + _uc(x) };
+                        } else {
+                            var item = { key: x, value: val, method: _.camelCase("next", k, x) };
                             if (_.isBoolean(val)) {
                                 item.filter = "toggle";
                                 item.value = optCycle.filters.toggle(val)
@@ -582,15 +559,10 @@
 
 
                                 if (_.isBoolean(val.value)) {
-                                    item.value = optCycle.filters.toggle(val.value); //val.value
+                                    item.value = optCycle.filters.toggle(val.value);
 
                                 } else {
                                     if (_.isObject(val.val())) {
-                                        // if(item.key=="color"){
-                                        //     item.value = optCycle.filters.color(val.value);
-                                        // }else{
-                                        //     item.value = val.val().text ? val.val().text : val.val();
-                                        // }
                                         item.value = val.val().text ? val.val().text : val.val();
 
                                     } else {
@@ -610,11 +582,8 @@
                             } else {
                                 item.filter = x;
                             }
-
                             tab.items.push(item);
-
                         }
-
                     }
                 }
             }
@@ -626,106 +595,98 @@
 
 
 
-    _.ajax("data/opt.json?v=5", function(result) {
-        var optJson = _.json(result)
-        console.log(optJson)
+    // _.ajax("data/opt.json?v=5", function(result) {
+    // var optJson = _.json(result)
+    var optJson = opt;
+    console.log(optJson)
 
-        var c = _createOptCycle(optJson);
-        console.log(c)
-        console.log(c.init())
-        console.log(c.viewData())
+    var c = _createOptCycle(optJson);
+    console.log(c)
+    console.log(c.init())
+    console.log(c.viewData())
 
-        var draw = _.draw({
-            ratio: "1:1",
-            background: "#dedede",
-            callback: function(result) {}
-        })
-        var motion;
-
-        tpler({
-            el: "#container",
-            filters: _.extend({
-                    tabItem: function(val) {
-                        return _.parseTpl({
-                            template: "_tab-body-item-row_tpl",
-                            data: val,
-                        })
-                    }
-                },
-                c.filters
-            ),
-            methods: _.extend({
-                configHandler: function(item, ev) {
-
-                    var configPanel = _.$("#configPanel");
-                    // configPanel.css({ "width": (_.screen.x - 28) + "px", "height": (_.screen.y - 128) + "px" })
-                    configPanel.$(".scroll").css({ height: (_.screen.y - 100) + "px" })
-                    var icon = item.$(".icon");
-                    if (configPanel.hasClass("hide")) {
-                        configPanel.removeClass("hide");
-                        icon.removeClass("upArrow").addClass("downArrow")
-                    } else {
-                        configPanel.addClass("hide");
-                        icon.removeClass("downArrow").addClass("upArrow")
-                    }
-
-                },
-                stopHandler: function(item,ev) {
-                    motion && motion.stop();
-                },
-                startHandler: function(item,ev) {
-                    _.hide("#configPanel");
-                    var icon = _.$("#configBtn .icon");
-                    icon.removeClass("downArrow").addClass("upArrow")
-                    console.log(c.init())
-
-
-                   
-                    draw.clear("#dedede");
-                    var opt=c.init()
-
-                    if (item.id != "startBtn") {
-                       var pos = _.pos(ev)
-                        opt.shape = _.extend(opt.shape, {x:pos.x,y:pos.y});
-                    }
-                     
-
-                    motion && motion.stop();
-                    if (opt.motion.switch == "on") {
-                        _.show("#stopBtn");
-                        motion = draw.motion(opt);
-                    } else {
-                        _.hide("#stopBtn");
-                        draw.group(opt);
-                    }
-
-                    // _.hide("#stopBtn");
-                        // draw.group(opt);
-                }
-            }, c.methods),
-            data: c.viewData(),
-            callback: function() {
-                _.$(".tab-head-item").tab("active", function(ev) {
-                    // console.log(ev)
-                })
-                _.$(".tab-head-item").first().active()
-                _.$(".tab-body-item").first().show()
-                _.$(".tab").css({ height: (_.screen.y - 30) + "px" })
-
-                _.$(".screen").appendChild(draw.canvas)
-                var self=this;
-                toucher({
-                    el: draw.canvas,
-                    type: "touchstart",
-                    callback: function(item, ev) {
-                        self.methods.startHandler(item, ev);
-                    }
-                })
-
-
-            }
-        })
+    var draw = _.draw({
+        ratio: "1:1",
+        background: "#dedede",
+        callback: function(result) {}
     })
+    var motion;
+
+    tpler({
+        el: "#container",
+        filters: _.extend({
+                tabItem: function(val) {
+                    return _.parseTpl({
+                        template: "_tab-body-item-row_tpl",
+                        data: val,
+                    })
+                }
+            },
+            c.filters
+        ),
+        methods: _.extend({
+            configHandler: function(item, ev) {
+
+                var configPanel = _.$("#configPanel");
+                configPanel.$(".scroll").css({ height: (_.screen.y - 100) + "px" })
+                var icon = item.$(".icon");
+                if (configPanel.hasClass("hide")) {
+                    configPanel.removeClass("hide");
+                    icon.removeClass("upArrow").addClass("downArrow")
+                } else {
+                    configPanel.addClass("hide");
+                    icon.removeClass("downArrow").addClass("upArrow")
+                }
+
+            },
+            stopHandler: function(item, ev) {
+                motion && motion.stop();
+            },
+            startHandler: function(item, ev) {
+                _.hide("#configPanel");
+                var icon = _.$("#configBtn .icon");
+                icon.removeClass("downArrow").addClass("upArrow")
+                console.log(c.init())
+
+                draw.clear("#dedede");
+                var opt = c.init()
+
+                if (item.id != "startBtn") {
+                    var pos = _.pos(ev)
+                    opt.shape = _.extend(opt.shape, { x: pos.x, y: pos.y });
+                }
+
+
+                motion && motion.stop();
+                if (opt.motion.switch == "on") {
+                    _.show("#stopBtn");
+                    motion = draw.motion(opt);
+                } else {
+                    _.hide("#stopBtn");
+                    draw.group(opt);
+                }
+            }
+        }, c.methods),
+        data: c.viewData(),
+        callback: function() {
+            _.$(".tab-head-item").tab("active", function(ev) {
+            })
+            _.$(".tab-head-item").first().active()
+            _.$(".tab-body-item").first().show()
+            _.$(".tab").css({ height: (_.screen.y - 30) + "px" })
+
+            _.$(".screen").appendChild(draw.canvas)
+            var self = this;
+            toucher({
+                el: draw.canvas,
+                type: "touchstart",
+                callback: function(item, ev) {
+                    self.methods.startHandler(item, ev);
+                }
+            })
+        }
+    })
+    // })
     </script>
 </body>
 
