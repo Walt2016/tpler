@@ -4189,7 +4189,7 @@
                     if (this.opt.fill) {
                         this.opt.color = _.rgba();
                     } else {
-                        this.opt.color = _.hsl();
+                        this.opt.color = _.rgb(); //_.hsl();小程序不支持
                     }
                 }
                 return this;
@@ -4942,7 +4942,7 @@
                     if (fill) {
                         opt2.color = _.rgba();
                     } else {
-                        opt2.color = _.hsl();
+                        opt2.color = _.rgb(); //_.hsl();//小程序不支持 hsl
                     }
                 }
                 return opt2;
@@ -5235,17 +5235,8 @@
                         bounce: opt.motion.bounce
 
                     });
-                    // if (colorful) {
-                    //     if (opt.shape.fill) {
-                    //         opt.color = _.rgba();
-                    //     } else {
-                    //         opt.color = _.hsl();
-                    //     }
-                    // }
-                    // var t = _shape(draw, opt.shape);
                     var t = draw.shape(opt.shape);
                     t.color(colorful)
-
                     this.groups.push(t);
                 };
 
@@ -5346,25 +5337,353 @@
         _motion.prototype.init.prototype = _motion.prototype;
 
 
+        // 解析draw.opt 文件
+        var createOptCycle = _.createOptCycle = function(optJson) {
+            var optCycle = {
+                data: {},
+                methods: {},
+                filters: {
+                    toggle: function(val) {
+                        return val == true ? "是" : "否"
+                    },
+                    color: function(val) {
+                        if (inBrowser)
+                            return val + '<div class="colorblock" style="background-color:' + val + '"></div>';
+                        return val;
+                    }
+                }
+            };
+
+            //开关
+            var _switch = function(item, k) {
+                var val;
+                if (inBrowser) {
+                    var bd = item.closest(".tab-body-item").query(".switchBody")
+                    if (item.hasClass('on')) {
+                        val = "off";
+                        [item, bd].removeClass("on").addClass("off");
+                    } else {
+                        val = "on";
+                        [item, bd].removeClass("off").addClass("on");
+                    }
+                    if (k == "motion") {
+                        if (val == "on") {
+                            _.show("#stopBtn");
+                        } else {
+                            _.hide("#stopBtn");
+                        }
+                    }
+                } else {
+                    val = this == "on" ? "off" : "on";
+                }
+                return val;
+            }
+            var _toggle = function(k, x) {
+                optCycle.methods[_.camelCase("next", k, x)] = (function(item, ev) {
+                    var k = this[0],
+                        x = this[1];
+                    var value;
+                    if (x.indexOf("random") == 0) {
+                        var y = x.substr(6).toLowerCase();
+                        x = "random";
+                        value = optCycle.data[k][x][y] = !optCycle.data[k][x][y];
+                    } else {
+                        if (optCycle.data[k][x]) {
+                            value = optCycle.data[k][x].value = !optCycle.data[k][x].value;
+                        }
+                    }
+
+                    if (inBrowser) {
+                        item && item.html(optCycle.filters.toggle(value));
+                        var iPos = _.pos(item);
+                        var w = iPos.width;
+                        var h = iPos.height;
+                        var div2 = document.createElement("div")
+                        var background = "rgba(0,0,0,0.1)";
+                        div2.css({ width: w, height: h, top: 0, left: 0, position: "absolute", background: background });
+                        item.appendChild(div2);
+                        setTimeout(function() {
+                            div2.remove();
+                        }, 200)
+                    }
+                    return optCycle
+                }).bind([k, x])
+            }
+            var _next = function(k, x) {
+                optCycle.methods[_.camelCase("next", k, x)] = (function(item, ev) {
+                    var k = this[0],
+                        x = this[1];
+                    var c = optCycle.data[k][x];
+                    if (_.isString(c)) {
+                        optCycle.data[k][x] = _switch.call(optCycle.data[k][x], item, k);
+                    } else if (_.isObject(c)) {
+
+                        if (inBrowser) {
+                            var iPos = _.pos(item);
+                            var ePos = _.pos(ev);
+                            var w = iPos.width;
+                            var h = iPos.height;
+                            var offset = ePos.x - iPos.x;
+                            var div2 = document.createElement("div");
+                            var div = document.createElement("div");
+                            var background = "rgba(0,0,0,0.1)"; // _.rgba().replace(/,[^,]*?\)/, ",0.1)"); //
+                            if (offset > w / 2) {
+                                c.next();
+                                div2.css({ width: w / 2, height: h, top: 0, left: w / 2, position: "absolute", background: background });
+                                div.addClass("rightArrow");
+                                div.pos({ x: w - 20, y: (h - 20) / 2 });
+                            } else {
+                                c.prev();
+                                div.addClass("leftArrow");
+                                div.pos({ x: 20, y: (h - 20) / 2 });
+                                div2.css({ width: w / 2, height: h, top: 0, left: 0, position: "absolute", background: background });
+                            }
+                            var val = c.val();
+                            if (x == "color") {
+                                val = optCycle.filters.color(val);
+                            }
+                            item && item.html(_.isObject(val) ? val.text : val);
+                            item.appendChild(div2);
+                            item.appendChild(div);
+
+                            setTimeout(function() {
+                                div.remove();
+                                div2.remove();
+                            }, 200)
+
+                            console.log(val);
+
+                        } else {
+                            c.next();
+                            console.log(c.val());
+
+                        }
+
+
+
+                    }
+
+                }).bind([k, x]);
+            }
+
+            for (var k in optJson) {
+                var o = optJson[k];
+                if (_.isObject(o)) {
+                    optCycle.data[k] = {};
+                    for (var x in o) {
+                        var val = o[x];
+                        if (x == "random") {
+                            optCycle.data[k][x] = val;
+                            for (var y in val) {
+                                _toggle(k, _.camelCase(x, y), val[y]);
+                            }
+                        } else if (x == "switch") {
+                            optCycle.data[k][x] = val;
+                            _next(k, x);
+
+                        } else {
+
+                            if (_.isBoolean(val)) {
+                                optCycle.data[k][x] = val;
+                                _toggle(k, x, val);
+
+                            } else if (_.isObject(val)) {
+                                var type = val.type;
+                                if (_.isBoolean(val.value)) {
+                                    optCycle.data[k][x] = val;
+                                    _toggle(k, x, val);
+                                } else {
+
+                                    if (["cycle", "color", "switch"].indexOf(type) >= 0) {
+                                        var c;
+                                        switch (type) {
+                                            case "cycle":
+                                                c = _.cycle(val.value, val.index || 0);
+                                                break;
+                                            case "color":
+                                                var colorArr = [],
+                                                    len = 15;
+                                                while (len--) colorArr.push(_.color());
+                                                c = _.cycle(colorArr, 0);
+                                                break;
+                                            case "switch":
+                                                c = _.cycle(["on", "off"], 0)
+                                                break;
+                                            case "boolean":
+                                                c = _.cycle([true, false]);
+                                                break;
+                                        }
+                                        if (c) {
+                                            if (val.text) c.text(val.text);
+                                            optCycle.data[k][x] = c;
+                                            _next(k, x);
+
+                                        } else {
+                                            console.log(val, [k, x]);
+                                        }
+
+                                    } else {
+                                        // optCycle.data[k][x]=val.value
+
+                                    }
+
+                                }
+                            } else if (_.isString(val)) {
+                                optCycle.data[k][x] = val;
+                            }
+                        }
+                    }
+                }
+            }
+
+            //init opt
+            optCycle.init = function() {
+                var opt = {};
+                for (var k in optCycle.data) {
+                    var o = optCycle.data[k];
+                    if (_.isObject(o)) {
+                        opt[k] = {};
+                        for (var x in o) {
+                            var val = o[x];
+                            if (x == "random") {
+                                for (var y in val) {
+                                    opt[k][_.camelCase(x, y)] = val[y];
+                                }
+                            } else {
+                                if (_.isBoolean(val)) {
+                                    opt[k][x] = val;
+                                } else if (_.isObject(val)) {
+                                    if (_.isBoolean(val.value)) {
+                                        opt[k][x] = val.value;
+                                    } else {
+                                        opt[k][x] = _.isObject(val.val()) ? val.val().key : val.val();
+                                    }
+                                } else if (_.isString(val)) {
+                                    opt[k][x] = val;
+                                }
+                            }
+                        }
+                    }
+                }
+                return opt;
+            }
+
+            //view data
+            optCycle.viewData = function() {
+                var data = optCycle.data; //optCycle.init();
+                var _viewData = { tabs: [] };
+                for (var k in data) {
+                    var tab = { key: k, items: [], random: [], switch: "none", active: false };
+                    _viewData.tabs.push(tab);
+                    var o = data[k];
+                    if (_.isObject(o)) {
+                        for (var x in o) {
+                            var val = o[x];
+                            if (x == "random") {
+                                for (var y in val) {
+                                    var item = { key: y, value: val[y], text: y, method: _.camelCase("next", k, "Random", y) };
+                                    // if (optCycle.data[k][x][y].text) {
+                                    //     item.text = optCycle.data[k][x][y].text;
+                                    // }
+                                    if (optCycle.data[k][y].text) {
+                                        item.text = optCycle.data[k][y].text;
+                                    }
+                                    if (_.isBoolean(val[y])) {
+                                        item.value = optCycle.filters.toggle(val[y]);
+                                    }
+                                    tab.random.push(item);
+                                }
+                            } else if (x == "text") {
+                                tab[x] = val;
+                            } else if (x == "switch") {
+                                tab[x] = val;
+                                tab[x + "Method"] = _.camelCase("next", k, x);
+                            } else if (x == "active") {
+                                tab[x] = val;
+                            } else {
+                                var item = { key: x, value: val, text: x, method: _.camelCase("next", k, x) };
+                                if (_.isBoolean(val)) {
+                                    item.filter = "toggle";
+                                    item.value = optCycle.filters.toggle(val);
+                                } else if (_.isNumber(val)) {
+                                    item.filter = "string";
+                                } else if (_.isObject(val)) {
+                                    if (_.isBoolean(val.value)) {
+                                        item.value = optCycle.filters.toggle(val.value);
+                                    } else {
+                                        if (_.isObject(val.val())) {
+                                            item.value = val.val().text ? val.val().text : val.val();
+                                        } else {
+                                            if (item.key == "color") {
+                                                item.value = optCycle.filters.color(val.val());
+                                            } else {
+                                                item.value = val.val();
+                                            }
+
+                                        }
+                                    }
+                                    if (val.text) {
+                                        item.text = val.text;
+                                    }
+
+                                } else {
+                                    item.filter = x;
+                                }
+                                tab.items.push(item);
+                            }
+                        }
+                    }
+                }
+                return _viewData
+            }
+            return optCycle;
+        };
+
         //画图 
         //把基础图形组合起来，然后还可以动
-        var draw = _.draw = function(options, context, canvas) {
-            return new draw.prototype.init(options, context, canvas);
+        var draw = _.draw = function(options, canvas) {
+            return new draw.prototype.init(options, canvas);
         }
 
         draw.prototype = {
             constructor: draw,
-            init: function(options, context, canvas) {
-                if (context) { //小程序传入
+            init: function(options, canvas) { // componentInstance
+                var self = this;
+                if (canvas) {
                     this.canvas = canvas;
-                    this.context = context;
+                    if (inBrowser) {
+                        this.context = this.canvas.getContext("2d");
+                    } else {
+                        this.context = canvas.context;
+                    }
                 } else {
-                    this.canvas = document.createElement("canvas");
-                    this.context = this.canvas.getContext("2d");
+                    if (inBrowser) {
+                        this.canvas = document.createElement("canvas");
+                        this.context = this.canvas.getContext("2d");
+                    }
                 }
 
-                if (_.isObject(options)) {
+                // if (inBrowser) {
+                //     this.canvas = document.createElement("canvas");
+                //     this.context = this.canvas.getContext("2d");
+                // } else {
+                //     // if (wx) { //小程序
+                //     //     if (componentInstance) {
+                //     //         this.context = wx.createCanvasContext('canvas', componentInstance);
+                //     //         wx.getSystemInfo({
+                //     //             success: function(res) {
+                //     //                 self.canvas = { width: res.windowWidth, height: res.windowHeight };
+                //     //             }
+                //     //         });
+                //     //     } else {
+                //     //         return false;
+                //     //     }
+                //     // }
+                // }
 
+
+
+                if (_.isObject(options)) {
                     options.a = options.a || options.angle;
                     this.attr(options);
                     var color = options["background"] || options["background-color"];
@@ -5539,7 +5858,7 @@
                 if (opt) {
                     this.setLineWidth(opt.lineWidth);
                     if (opt.randomColor) {
-                        opt.color = _.hsl();
+                        opt.color = _.rgb();//_.hsl();小程序不支持
                     }
                     if (_.isUndefined(opt.stroke) || opt.stroke) {
                         this.setStrokeStyle(opt.color)
@@ -5600,7 +5919,7 @@
                     if (opt.randomA) {
                         opt.a = _.random(360);
                     }
-                    if (opt.random_shape) {
+                    if (opt.randomShape) {
                         opt.shape = _.random(["polygon", "circle", "start", "ray", "ring"])
                     }
                     if (opt.randomNum) {
@@ -5609,9 +5928,6 @@
                     if (opt.randomR) {
                         opt.r = _.between(30, 80);
                     }
-                    // var rotation = opt.rotation || opt.a == "rotation";
-                    // var a = _.isUndefined(opt.a) || !_.isNumber(opt.a) ? _.random(360) : opt.a;
-                    // return _.extend({}, this.default(), opt, { a: a, rotation: rotation });
                     return _.extend({}, this.default(), opt);
                 } else {
                     return {
@@ -5746,6 +6062,9 @@
 
         }
         draw.prototype.init.prototype = draw.prototype;
+
+
+
 
 
         //多线程 任务

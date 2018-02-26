@@ -5,7 +5,7 @@
 
 
 js调用方式：
-支持数组 tper([])和对象tper({})
+支持数组 tpler([])和对象tpler({})
 ```
 tpler({
 	el:"#mySwiper",
