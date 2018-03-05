@@ -43,11 +43,20 @@
             ON = "on", //绑定事件
             BIND = "bind"; //单向绑定
 
+
+        var inBrowser = typeof window !== 'undefined';
+        console.log("before inBrowser:" + inBrowser);
+
         var isSupportTouch = (function() {
-            try {
-                document.createEvent("TouchEvent");
-                return true;
-            } catch (e) {
+            if (inBrowser) {
+                try {
+                    document.createEvent("TouchEvent");
+                    return true;
+                } catch (e) {
+                    // console.log(e);
+                    return false;
+                }
+            } else {
                 return false;
             }
         })();
@@ -66,7 +75,6 @@
             return obj;
         };
 
-        //=extendMe  Object.assign
         var extendMe = function(obj) {
             var args = Array.prototype.slice.call(arguments),
                 len = args.length;
@@ -82,86 +90,90 @@
             return obj;
         };
 
-        var _createClass = function() {
-            function defineProperties(target, props) {
-                for (var i = 0; i < props.length; i++) {
-                    var descriptor = props[i];
-                    descriptor.enumerable = descriptor.enumerable || false;
-                    descriptor.configurable = true;
-                    if ("value" in descriptor) descriptor.writable = true;
-                    Object.defineProperty(target, descriptor.key, descriptor);
-                }
-            }
-            return function(Constructor, protoProps, staticProps) {
-                if (protoProps) defineProperties(Constructor.prototype, protoProps);
-                if (staticProps) defineProperties(Constructor, staticProps);
-                return Constructor;
-            };
-        }();
+        // var _createClass = function() {
+        //     function defineProperties(target, props) {
+        //         for (var i = 0; i < props.length; i++) {
+        //             var descriptor = props[i];
+        //             descriptor.enumerable = descriptor.enumerable || false;
+        //             descriptor.configurable = true;
+        //             if ("value" in descriptor) descriptor.writable = true;
+        //             Object.defineProperty(target, descriptor.key, descriptor);
+        //         }
+        //     }
+        //     return function(Constructor, protoProps, staticProps) {
+        //         if (protoProps) defineProperties(Constructor.prototype, protoProps);
+        //         if (staticProps) defineProperties(Constructor, staticProps);
+        //         return Constructor;
+        //     };
+        // }();
 
 
-        var inBrowser = typeof window !== 'undefined';
+
         var env = (function() {
             var os = {};
-            if (!inBrowser) {
-                return os;
-            }
-            var ua = navigator.userAgent,
-                android = ua.match(/(Android)[\s\/]+([\d\.]+)/),
-                ios = ua.match(/(iPad|iPhone|iPod)\s+OS\s([\d_\.]+)/),
-                wp = ua.match(/(Windows\s+Phone)\s([\d\.]+)/),
-                isWebkit = /WebKit\/[\d.]+/i.test(ua),
-                isSafari = ios ? (navigator.standalone ? isWebkit : (/Safari/i.test(ua) && !/CriOS/i.test(ua) && !/MQQBrowser/i.test(ua))) : false;
-            if (android) {
-                os.android = true;
-                os.version = android[2];
-            }
-            if (ios) {
-                os.ios = true;
-                os.version = ios[2].replace(/_/g, '.');
-                os.ios7 = /^7/.test(os.version);
-                os.ios11 = /^11/.test(os.version);
-                if (ios[1] === 'iPad') {
-                    os.ipad = true;
-                } else if (ios[1] === 'iPhone') {
-                    os.iphone = true;
-                    os.iphone5 = screen.height == 568;
-                } else if (ios[1] === 'iPod') {
-                    os.ipod = true;
+            if (inBrowser) {
+                var ua = navigator.userAgent,
+                    android = ua.match(/(Android)[\s\/]+([\d\.]+)/),
+                    ios = ua.match(/(iPad|iPhone|iPod)\s+OS\s([\d_\.]+)/),
+                    wp = ua.match(/(Windows\s+Phone)\s([\d\.]+)/),
+                    isWebkit = /WebKit\/[\d.]+/i.test(ua),
+                    isSafari = ios ? (navigator.standalone ? isWebkit : (/Safari/i.test(ua) && !/CriOS/i.test(ua) && !/MQQBrowser/i.test(ua))) : false;
+                if (android) {
+                    os.android = true;
+                    os.version = android[2];
                 }
-            }
-            if (isWebkit) {
-                os.webkit = true;
-            }
-            if (isSafari) {
-                os.safari = true;
+                if (ios) {
+                    os.ios = true;
+                    os.version = ios[2].replace(/_/g, '.');
+                    os.ios7 = /^7/.test(os.version);
+                    os.ios11 = /^11/.test(os.version);
+                    if (ios[1] === 'iPad') {
+                        os.ipad = true;
+                    } else if (ios[1] === 'iPhone') {
+                        os.iphone = true;
+                        // os.iphone5 = screen.height == 568;
+                    } else if (ios[1] === 'iPod') {
+                        os.ipod = true;
+                    }
+                }
+                if (isWebkit) {
+                    os.webkit = true;
+                }
+                if (isSafari) {
+                    os.safari = true;
+                }
             }
             return os;
         })();
 
 
+        var UA, isIE, isIE9, isEdge, isAndroid, isIOS, isChrome, weixin, envt, screen = { x: 100, y: 100 };
+        if (inBrowser) {
+            UA = inBrowser && window.navigator.userAgent.toLowerCase();
+            isIE = UA && /msie|trident/.test(UA);
+            isIE9 = UA && UA.indexOf('msie 9.0') > 0;
+            isEdge = UA && UA.indexOf('edge/') > 0;
+            isAndroid = UA && UA.indexOf('android') > 0;
+            isIOS = UA && /iphone|ipad|ipod|ios/.test(UA);
+            isChrome = UA && /chrome\/\d+/.test(UA) && !isEdge;
+            weixin = UA && UA.toLowerCase().match(/MicroMessenger/i) == "micromessenger";
+            envt = extend(env, {
+                inBrowser: inBrowser,
+                UA: UA,
+                isIE: isIE,
+                isIE9: isIE9,
+                isEdge: isEdge,
+                isAndroid: isAndroid,
+                isIOS: isIOS,
+                isChrome: isChrome,
+                weixin: weixin
+            });
+            screen = {
+                x: inBrowser ? document.documentElement.clientWidth : 100,
+                y: inBrowser ? document.documentElement.clientHeight : 100
+            };
 
-        var UA = inBrowser && window.navigator.userAgent.toLowerCase();
-        var isIE = UA && /msie|trident/.test(UA);
-        var isIE9 = UA && UA.indexOf('msie 9.0') > 0;
-        var isEdge = UA && UA.indexOf('edge/') > 0;
-        var isAndroid = UA && UA.indexOf('android') > 0;
-        var isIOS = UA && /iphone|ipad|ipod|ios/.test(UA);
-        var isChrome = UA && /chrome\/\d+/.test(UA) && !isEdge;
-
-        var weixin = UA && UA.toLowerCase().match(/MicroMessenger/i) == "micromessenger";
-
-        var envt = extend(env, {
-            inBrowser: inBrowser,
-            UA: UA,
-            isIE: isIE,
-            isIE9: isIE9,
-            isEdge: isEdge,
-            isAndroid: isAndroid,
-            isIOS: isIOS,
-            isChrome: isChrome,
-            weixin: weixin
-        });
+        }
 
 
         function TimeCom(dateValue) {
@@ -181,14 +193,12 @@
             this.week = newCom.getDay();
         }
 
+
         var _ = {
             envt: envt,
             extend: extend,
             extendMe: extendMe,
-            screen: {
-                x: inBrowser ? document.documentElement.clientWidth : 100,
-                y: inBrowser ? document.documentElement.clientHeight : 100
-            },
+            screen: screen,
 
             toDate: function(str) {
                 if (/^\d*$/.test(str)) {
@@ -683,6 +693,7 @@
                 try {
                     return JSON.parse(str)
                 } catch (e1) {
+                    console.log(e1);
                     try {
                         return eval("(" + str + ")");
                     } catch (e2) {
@@ -752,15 +763,16 @@
                 // document.execCommand('copy'); //ios系统无效
                 try {
                     if (document.execCommand('copy', showUI || false, null)) {
-                        console.log("copy ok")
+                        console.log("copy ok");
                         //success info
                     } else {
                         //fail info
-                        console.log("copy fail")
+                        console.log("copy fail");
                     }
-                } catch (err) {
+                } catch (e) {
                     //fail info
-                    console.log("unable to copy")
+                    console.log(e);
+                    console.log("unable to copy");
                 }
             },
             //代替 JSON.stringify()
@@ -847,11 +859,54 @@
             hsla: function() {
                 return "hsla(" + Math.ceil(Math.random() * 360) + ",50%,50%,0.5)";
             },
-            rgba: function() {
-                var c = [255, 255, 255, 1].map(function(t, i) {
-                    return i == 3 ? t * Math.random().toFixed(1) : Math.round(t * Math.random())
-                });
-                return "rgba(" + c.join(",") + ")";
+            // rgba: function() {
+            //     var c = [255, 255, 255, 1].map(function(t, i) {
+            //         return i == 3 ? t * Math.random().toFixed(1) : Math.round(t * Math.random())
+            //     });
+            //     return "rgba(" + c.join(",") + ")";
+            // },
+            //输出rgba颜色格式  
+            //红 100
+            //绿 010
+            //青 001 
+            //黄 110 
+            //紫 101
+            //全彩 111
+            //黑白灰 000
+            rgba: function(r, g, b, a) {
+                var args = Array.prototype.slice.call(arguments),
+                    len = args.length;
+                if (len < 4) {
+                    var min = 0.1,
+                        max = 0.7;
+                    var a = (min + (max - min) * Math.random()).toFixed(1);
+                }
+                if (len < 3) {
+                    var b = 1;
+                }
+                if (len < 2) {
+                    var g = 1;
+                }
+                if (len < 1) {
+                    var g = 1;
+                }
+                var arr = [r, g, b];
+                if (r * g * b == 1) {
+                    arr = arr.map(function(t) {
+                        return Math.floor(Math.random() * 255);
+                    });
+                } else if (r + g + b == 0) {
+                    var t = Math.floor(Math.random() * 255);
+                    arr = [t, t, t];
+                } else {
+                    var rgb = 155;
+                    var c = Math.floor(Math.random() * (255 - rgb) + rgb);
+                    arr = arr.map(function(t) {
+                        return t == 1 ? (Math.floor(Math.random() * (255 - rgb) + rgb)) : (Math.floor(Math.random() * (c / 2)));
+                    });
+                }
+                arr.push(a);
+                return "rgba(" + arr.join(",") + ")";
             },
             isHtml: function(tpl) {
                 return /<(\S*?) [^>]*>.*?<\/\1>|<.*?\/?>/.test(tpl);
@@ -887,7 +942,7 @@
                         '[Ivan Dementev]: https://github.com/DiVAN1x \n' +
                         "|表格|字段1|字段2|\n|---|---|---|\n|你好|呵呵|吼吼|\n" +
                         '`for(var i=0;i<10,i++) if(i>=5) alert("")`'
-                    console.log(tpl.replace(/\r?\n/g, "\\r\\n\r\n"))
+                    console.log(tpl.replace(/\r?\n/g, "\\r\\n\r\n"));
                 }
 
                 //注意先后顺序
@@ -1287,6 +1342,7 @@
                                 try {
                                     o = o[k];
                                 } catch (e) {
+                                    // console.log(e);
                                     return false;
                                 }
                             } else {
@@ -1323,7 +1379,7 @@
                                 range.select();
                             }
                         } catch (e) {
-                            console.log(e)
+                            console.log(e);
                         }
                     }, 1);
                 }
@@ -1554,14 +1610,6 @@
                 for (var key in obj)
                     if (_.has(obj, key)) keys.push(key);
                 return keys;
-
-
-                // var names = Object.getOwnPropertyNames(obj);
-                // return names;
-                // for (var i = 0; i < names.length; i++) { 
-                //     // var prop = names[i]; document.write(prop + ': ' + obj[prop]); 
-                //     //  document.write(newLine); 
-                // } 
             },
 
             each: function(obj, iterator, context) {
@@ -1624,7 +1672,6 @@
                 var ta = _.isArray(array) ? array.join(",").split(",") : array.split(",");
                 //去非数字
                 for (var i = 0; i < ta.length; i++) {
-                    // if (!_.isNumber(ta[i])) {
                     if (ta[i] == "") {
                         ta.splice(i, 1);
                         i--;
@@ -1643,7 +1690,6 @@
                 var ta = _.isArray(array) ? array.join(",").split(",") : array.split(",");
                 //去非数字
                 for (var i = 0; i < ta.length; i++) {
-                    // if (!_.isNumber(ta[i])) {
                     if (ta[i] == "") {
                         ta.splice(i, 1);
                         i--;
@@ -1698,6 +1744,7 @@
         //         return m.toUpperCase();
         //     })
         // }
+
 
         //show hide
 
@@ -2002,9 +2049,11 @@
                 try {
                     xmlHttp = new ActiveXObject("Msxml2.XMLHTTP");
                 } catch (e) {
+                    console.log(e);
                     try {
                         xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
                     } catch (e2) {
+                        console.log(e2);
                         xmlHttp = false;
                     }
                 }
@@ -2042,7 +2091,7 @@
                         }
 
                     } catch (e) {
-                        console.log(e)
+                        console.log(e);
                     }
 
                 }
@@ -2063,7 +2112,7 @@
                 if (option.dataType === 'json') {
                     try {
                         content = o.responseJSON = JSON.parse(xmlHttp.responseText);
-                    } catch (e) {}
+                    } catch (e) { console.log(e); }
                 }
                 if (xmlHttp.readyState == 4) {
                     switch (xmlHttp.status) {
@@ -2349,11 +2398,13 @@
                 try {
                     r1 = arg.toString().split(".")[1].length
                 } catch (e) {
+                    console.log(e);
                     r1 = 0
                 }
                 try {
                     r2 = this.toString().split(".")[1].length
                 } catch (e) {
+                    console.log(e);
                     r2 = 0
                 }
                 m = Math.pow(10, Math.max(r1, r2));
@@ -2381,11 +2432,13 @@
                 try {
                     r1 = this.toString().split(".")[1].length
                 } catch (e) {
+                    console.log(e);
                     r1 = 0
                 }
                 try {
                     r2 = arg.toString().split(".")[1].length
                 } catch (e) {
+                    console.log(e);
                     r2 = 0
                 }
                 m = Math.pow(10, Math.max(r1, r2));
@@ -2401,10 +2454,12 @@
                     s2 = this.toString();
                 try {
                     m += s1.split(".")[1].length
-                } catch (e) {}
+                } catch (e) {
+                    console.log(e);
+                }
                 try {
                     m += s2.split(".")[1].length
-                } catch (e) {}
+                } catch (e) { console.log(e); }
                 return Number(s1.replace(".", "")) * Number(s2.replace(".", "")) / Math.pow(10, m);
             },
 
@@ -2416,10 +2471,10 @@
                     r1, r2, result, m;
                 try {
                     t1 = this.toString().split(".")[1].length
-                } catch (e) {}
+                } catch (e) { console.log(e); }
                 try {
                     t2 = arg.toString().split(".")[1].length
-                } catch (e) {}
+                } catch (e) { console.log(e); }
                 // with(Math) {
                 //整数相除
                 if (t2 == 0 && t1 == 0) {
@@ -2957,27 +3012,33 @@
         _.extproto = function(obj) {
             _.each(Array.prototype.slice.call(arguments, 1), function(source) {
                 if (source) {
-                    for (var prop in source) {
-                        if (_.isObject(source[prop])) {
-                            Object.defineProperty(obj, prop, source[prop]);
-                        } else if (_.isFunction(source[prop])) {
-                            // if (!obj.hasOwnProperty(prop)) {
-                            if (!Object.prototype.hasOwnProperty.call(obj, prop)) {
-                                obj[prop] = source[prop];
-                                //禁止被for in 枚举
-                                var descriptor = Object.getOwnPropertyDescriptor(obj, prop);
-                                descriptor.enumerable = false;
-                                Object.defineProperty(obj, prop, descriptor);
+                    try {
+                        for (var prop in source) {
+                            if (_.isObject(source[prop])) {
+                                Object.defineProperty(obj, prop, source[prop]);
+                            } else if (_.isFunction(source[prop])) {
+                                // if (!obj.hasOwnProperty(prop)) {
+                                if (!Object.prototype.hasOwnProperty.call(obj, prop)) {
+                                    obj[prop] = source[prop];
+                                    //禁止被for in 枚举
+                                    var descriptor = Object.getOwnPropertyDescriptor(obj, prop);
+                                    descriptor.enumerable = false;
+                                    Object.defineProperty(obj, prop, descriptor);
+                                } else {
+                                    console.log(obj, "obj hasOwnProperty " + prop)
+                                }
                             } else {
-                                console.log(obj, "obj hasOwnProperty " + prop)
-                            }
-                        } else {
-                            // if (!obj.hasOwnProperty(prop)) {
-                            if (!Object.prototype.hasOwnProperty.call(obj, prop)) {
-                                obj[prop] = source[prop];
+                                // if (!obj.hasOwnProperty(prop)) {
+                                if (!Object.prototype.hasOwnProperty.call(obj, prop)) {
+                                    obj[prop] = source[prop];
+                                }
                             }
                         }
+
+                    } catch (e) {
+                        console.log(e)
                     }
+
                 }
             });
             return obj;
@@ -2988,8 +3049,10 @@
         _.extproto(Number.prototype, _prototype.num);
         _.extproto(String.prototype, _prototype.str);
         _.extproto(Date.prototype, _prototype.dat);
-        _.extproto(Element.prototype, _prototype.ele);
         _.extproto(Array.prototype, _prototype.arr);
+        if (inBrowser) {
+            _.extproto(Element.prototype, _prototype.ele);
+        }
 
 
         // [Object, Number, String, Date, Element, Array].forEach(function(t) {
@@ -2999,6 +3062,7 @@
         //     console.log(name)
         //     // _.extproto(t.prototype, _prototype[name]);
         // });
+
 
         /**
          * Base64 解加密
@@ -3193,6 +3257,10 @@
                     if (!isSupportTouch && type == TAP) {
                         type = "click";
                     }
+
+                    // if(type==TAP&&el.nodeName=="input"){
+                    //     type = "click";
+                    // }
                     // var canDrag = true;
 
 
@@ -3369,6 +3437,9 @@
                         listener = opt.listener || opt.callback,
                         once = opt.once || false; //事件只运行一次，运行一次就自行remove
                     if (_.isElement(el)) {
+                        if (el.nodeName.toLowerCase() == "input" && type == TAP) {
+                            type = "click"
+                        }
                         if (clear) {
                             self.clear({
                                 el: el,
@@ -3383,18 +3454,20 @@
                         })
                     } else if (_.isArray(el)) {
                         el.forEach(function(t) {
-                            if (clear) {
-                                self.clear({
-                                    el: t,
-                                    type: type
-                                });
-                            }
-                            es.push({
-                                type: type,
-                                el: t,
-                                listener: listener,
-                                once: once
-                            })
+                            // opt.el=t;
+                            _option(_.extend({}, opt, { el: t }));
+                            // if (clear) {
+                            //     self.clear({
+                            //         el: t,
+                            //         type: type
+                            //     });
+                            // }
+                            // es.push({
+                            //     type: type,
+                            //     el: t,
+                            //     listener: listener,
+                            //     once: once
+                            // })
 
                         });
                     }
@@ -4104,9 +4177,6 @@
                     this.draw = draw;
                     this.canvas = draw.canvas;
                     this.context = draw.context;
-                    this.render = draw.render.bind(draw);
-                    this.closePath = draw.closePath.bind(draw);
-                    this.beginPath = draw.beginPath.bind(draw);
                 }
                 if (!opt) return;
                 var x = _.isUndefined(opt.x) ? this.canvas.width / 2 : opt.x;
@@ -4119,7 +4189,7 @@
 
 
 
-                var opt = self.opt = _.extend({}, opt, {
+                var opt = this.opt = _.extend({}, opt, {
                     width: opt.r,
                     height: opt.r,
                     //range
@@ -4217,7 +4287,7 @@
             },
             regularPolygon: function(opt) {
                 var vs = this.regularVertices(opt);
-                this.link(vs, opt);
+                this.draw.link(vs, opt);
             },
             spiral: function(opt) {
                 var p = _.point(opt),
@@ -4230,7 +4300,7 @@
                     vs.push(p = p.translate(-r * (i + 1), 0))
                     vs.push(p = p.translate(0, -r * (i + 1)))
                 }
-                this.link(vs, opt);
+                this.draw.link(vs, opt);
             },
             //斐波那契数列 螺旋
             fibonacci: function(opt) {
@@ -4242,7 +4312,7 @@
                 var x = opt.x,
                     y = opt.y,
                     r = opt.r;
-                this.beginPath(opt);
+                this.draw.beginPath(opt);
                 // var w = 2 * r;
                 // ctx.beginPath();
                 // ctx.beginPath();
@@ -4320,7 +4390,7 @@
                     }
                 }
 
-                this.render(_.extend({}, opt, { closed: false }))
+                this.draw.render(_.extend({}, opt, { closed: false }))
                 return this;
             },
             //螺旋
@@ -4421,70 +4491,7 @@
                 })
                 return vs2;
             },
-            //连线
-            link: function(vs, opt) {
-                var self = this;
-                var ctx = this.context;
-                this.beginPath(opt);
-                vs.forEach(function(t, i) {
-                    if (i == 0) {
-                        ctx.moveTo(t.x, t.y);
-                    } else {
-                        ctx.lineTo(t.x, t.y);
-                    }
-                })
-                self.closePath(opt);
-                self.render(opt);
 
-                if (opt) {
-                    //显示外切圆
-                    if (opt.showExcircle) {
-                        opt.text = "";
-                        self.circle(opt);
-                    }
-                    //显示半径
-                    if (opt.showRadius) {
-                        var x = opt.x,
-                            y = opt.y;
-                        ctx.beginPath();
-                        vs.forEach(function(t) {
-                            ctx.moveTo(x, y);
-                            ctx.lineTo(t.x, t.y)
-                        })
-                        self.render(opt);
-                    }
-
-                    //显示顶点
-                    if (opt.showVertices) {
-                        var animate = opt.animate,
-                            animationInterval = opt.animationInterval || 200;
-                        // if (opt.move.switch == "on") {
-                        //     animate = false
-                        // }
-                        var verticesIdentifier = opt.verticesIdentifier;
-                        vs.forEach(function(t, i) {
-                            t.fill = true;
-                            if (verticesIdentifier) {
-                                t.r = 10
-                                t.text = i;
-                                // t.color = "#dedede"
-                                t.color = "rgba(0,0,0,0.2)"
-                            } else {
-                                t.r = 5
-                            }
-                            if (animate) {
-                                setTimeout(function() {
-                                    self.circle(t)
-                                }, animationInterval * i)
-                            } else {
-                                self.circle(t)
-                            }
-                        });
-                    }
-
-                }
-                return this;
-            },
             circle: function(opt) {
                 var ctx = this.context;
                 var x = opt.x,
@@ -4493,7 +4500,7 @@
                 ctx.beginPath();
                 ctx.arc(x, y, r, 0, Math.PI * 2, true);
                 ctx.closePath();
-                this.render(opt);
+                this.draw.render(opt);
                 var text = opt.text;
                 if (!_.isUndefined(text)) {
                     ctx.fillStyle = "#000";
@@ -4517,7 +4524,7 @@
                 ctx.beginPath();
                 ctx.arc(x, y, r, 0, Math.PI * 2);
                 ctx.closePath();
-                this.render(opt);
+                this.draw.render(opt);
             },
             //椭圆
             ellipse: function(opt) {
@@ -4538,7 +4545,7 @@
                 ctx.moveTo((x + a) / ratioX, y / ratioY);
                 ctx.arc(x / ratioX, y / ratioY, r, 0, 2 * Math.PI);
                 ctx.closePath();
-                this.render(opt);
+                this.draw.render(opt);
                 ctx.restore();
             },
 
@@ -4559,13 +4566,13 @@
                 ctx.beginPath();
                 ctx.arc(x, y, r, startAngle, endAngle, anticlockwise)
                 ctx.closePath();
-                this.render(opt);
+                this.draw.render(opt);
                 return this;
             },
             //环形
             ring: function(opt) {
                 var ctx = this.context;
-                this.beginPath(opt)
+                this.draw.beginPath(opt)
                 var x = opt.x,
                     y = opt.y,
                     r = opt.r,
@@ -4573,8 +4580,8 @@
                 ctx.arc(x, y, r, 0, PIx2, false);
                 ctx.moveTo(x + r2, y);
                 ctx.arc(x, y, r2, PIx2, 0, true);
-                this.closePath(opt)
-                this.render(opt);
+                this.draw.closePath(opt)
+                this.draw.render(opt);
 
                 // if (_.isObject(opt.group) && opt.group.group == "ring") {
                 //     var shape = opt.shape.shape;
@@ -4611,7 +4618,7 @@
             //多边形
             polygon: function(opt) {
                 var vs = this.vertices(opt);
-                return this.link(vs, opt);
+                return this.draw.link(vs, opt);
             },
             //线条
             line: function(opt) {
@@ -4627,7 +4634,6 @@
             square: function(opt) {
                 opt.num = 4;
                 return this.polygon(opt);
-
             },
             //矩形
             rectangle: function(opt) {
@@ -4637,10 +4643,10 @@
                     h = 2 * r * _.sin(45);
                 var x = opt.x - w / 2,
                     y = opt.y - h / 2;
-                this.beginPath(opt);
+                this.draw.beginPath(opt);
                 ctx.rect(x, y, w, h)
-                this.closePath(opt);
-                this.render(opt);
+                this.draw.closePath(opt);
+                this.draw.render(opt);
             },
             //菱形
             diamond: function(opt) {
@@ -4677,26 +4683,6 @@
                 // this.link(vs, opt)
                 return this;
             },
-            linkGroup: function(vsGroup, opt) {
-                var self = this;
-                // console.log("图形个数：" + vsGroup.length)
-                // var result = {
-                //     num: vsGroup.length
-                // }
-                // self.callback && self.callback(result);
-                if (opt && opt.animate) { //动画
-                    vsGroup.forEach(function(t, i) {
-                        setTimeout(function() {
-                            self.link(t, opt)
-                        }, 200 * i);
-                    })
-                } else {
-                    vsGroup.forEach(function(t) {
-                        self.link(t, opt)
-                    })
-                }
-                return self;
-            },
             //对角线
             diagonal: function(opt) {
                 var vs = this.vertices(opt);
@@ -4709,8 +4695,8 @@
                         }
                     }
                 }
-                this.linkGroup(vsGroup, _.extend({}, opt, { showVertices: false }));
-                return this.link(vs, opt);
+                this.draw.linkGroup(vsGroup, _.extend({}, opt, { showVertices: false }));
+                return this.draw.link(vs, opt);
             },
             //斑马
             zebra: function(opt) {
@@ -4720,8 +4706,8 @@
                 var vsGroup = _.slice(vs, 2).map(function(t) {
                     return t.concat([{ x: x, y: y }])
                 })
-                this.linkGroup(vsGroup, _.extend({}, opt, { fill: true, showVertices: false, showExcircle: false }));
-                return this.link(vs, opt);
+                this.draw.linkGroup(vsGroup, _.extend({}, opt, { fill: true, showVertices: false, showExcircle: false }));
+                return this.draw.link(vs, opt);
             },
             //交叉线
             cross: function(opt) {
@@ -4732,7 +4718,7 @@
                 for (var i = 0; i < num; i++) {
                     vsGroup.push([vs[i], vs[i + num]]);
                 }
-                return this.linkGroup(vsGroup, opt);
+                return this.draw.linkGroup(vsGroup, opt);
             },
             //射线  等角射线
             ray: function(opt) {
@@ -4750,7 +4736,7 @@
                         return [{ x: x, y: y }, v];
                     })
                 }
-                return this.linkGroup(vsGroup, opt);
+                return this.draw.linkGroup(vsGroup, opt);
             },
             //花瓣
             flower: function(opt) {
@@ -4772,7 +4758,7 @@
                     });
                     _flower(vs2);
                 })(vs);
-                return self.linkGroup(vsGroup, opt);
+                return self.draw.linkGroup(vsGroup, opt);
             },
             //太阳花
             sunflower: function(opt) {
@@ -4787,7 +4773,7 @@
                     vs2.push(vs[(i + interval) % len])
                     vsGroup.push(vs2);
                 }
-                return this.linkGroup(vsGroup, opt);
+                return this.draw.linkGroup(vsGroup, opt);
             },
             //谢尔宾斯基三角形
             sierpinski: function(opt) {
@@ -4806,7 +4792,7 @@
                         });
                     }
                 })(vs);
-                return self.linkGroup(vsGroup, opt);
+                return self.draw.linkGroup(vsGroup, opt);
             },
             //内切 多边形
             inpolygon: function(opt) {
@@ -4821,15 +4807,9 @@
                         _inpolygon(vs2)
                     }
                 })(vs);
-                return self.linkGroup(vsGroup, opt);
+                return self.draw.linkGroup(vsGroup, opt);
             },
-            // //外切圆
-            // excircle: function(opt) {
-            //     var shape = opt.shape || "polygon";
-            //     this[shape](opt);
-            //     this.circle(opt);
-            //     return this;
-            // },
+            
             //顶点镜像
             mirror: function(opt) {
                 var vsGroup = [];
@@ -4842,9 +4822,8 @@
                     })
                     vsGroup.push(vs2);
                 });
-                return this.linkGroup(vsGroup, opt);
+                return this.draw.linkGroup(vsGroup, opt);
             },
-
         }
         _shape.prototype.init.prototype = _shape.prototype;
 
@@ -4862,28 +4841,18 @@
                 var x = opt.shape.x,
                     y = opt.shape.y,
                     r = opt.shape.r,
-                    color = opt.shape.color;
-                var shape = opt.shape.shape || "circle";
-
+                    color = opt.shape.color,
+                    shape = opt.shape.shape || "circle";
                 var colorful = opt.group.colorful;
-
-
                 var speed = opt.motion.speed || 3;
                 // var identifier = opt.motion.identifier;
 
-                // var bounce = opt.motion.bounce
-                // // var colorful = opt.motion.colorful;
-                // opt.group.animate = false;
-                // opt.group.colorful = false;
-
-                var a = opt.shape.a;
-                // var mode = opt.motion.mode;
 
                 var sr = r;
-                var width, height;
+                var width=r, height=r;
 
                 if (opt.group.switch == "on") {
-                    if (["mirror", "surround"].indexOf(opt.group) != -1) {
+                    if (["mirror", "surround"].indexOf(opt.group.group) != -1) {
                         // sr += opt.sr
                         width = opt.group.sr + r;
                         height = opt.group.sr + r
@@ -4891,48 +4860,46 @@
                     // sr=_.min(sr,canvas.width/2-10)
                 }
 
-
-
-                this.id = opt.id;
-                this.x = x;
-                this.y = y;
-                this.r = r || 5;
-                // if (colorful) {
-                //     this.color = _.rgba(); // _.rgba();
-                // } else {
-                //     this.color = color;
+                // if(width>=this.canvas.width||height>=this.canvas.height){
+                //     opt.motion.bounce=false;
                 // }
-                // speed: 15,
-                this.vx = (Math.random() * 2 - 1) * speed;
-                this.vy = (Math.random() * 2 - 1) * speed;
+                
 
-                // this.sr = sr;
-                this.a = a;
-                this.width = width;
-                this.height = height;
-                this.range = {
-                    top: 0,
-                    left: 0,
-                    right: this.canvas.width,
-                    bottom: this.canvas.height
+                if (opt.motion.switch == "on") {
+                    opt.group.animate = false;
+                    if(_.isUndefined(opt.group.a))opt.group.a=0;
                 }
-
-                // opt.shape = _.extend(opt.shape, { x: this.x, y: this.y, color: this.color, a: this.a })
-
-                if (opt.group.switch == "on") {
-                    this[opt.group.group](opt)
-                } else {
-                    this.shape(opt.shape);
+                var colorArr = [];
+                var interval = opt.group.interval || 1;
+                if (colorful) {
+                    for (var i = 0; i < 360 / interval; i++) {
+                        colorArr.push(_.rgba())
+                    }
                 }
+                opt.group = _.extend({}, opt.group, {
+                    speed: speed,
+                    // vx: (Math.random() * 2 - 1) * speed,
+                    // vy: (Math.random() * 2 - 1) * speed,
+                    // a: 0,
+                    width: width,
+                    height: height,
+                    range: {
+                        top: 0,
+                        left: 0,
+                        right: this.canvas.width,
+                        bottom: this.canvas.height
+                    },
+                    colorArr: colorArr
+                })
 
-                // _shapeGroup(this, opt)
-                // self.group.call(self, opt);
 
-                // self[shape].call(self, _.extend(opt, { x: this.x, y: this.y, color: this.color }))
+
+                this.opt = _.extend({}, opt);
+                this.setup();
             },
             //图形
             shape: function(opt) {
-                _.shape(this.draw, opt);
+                this.draw.shape(opt.shape)
             },
             color: function(opt) {
                 var colorful = opt.group.colorful;
@@ -4947,43 +4914,55 @@
                 }
                 return opt2;
             },
+            setup: function(opt) {
+                var opt = opt || this.opt;
+                if (opt.group.switch == "on") {
+                    this[opt.group.group](opt)
+                } else {
+                    this.shape(opt);
+                }
+            },
             //旋转
             rotate: function() {
-                this.a += speed;
+                this.opt.group.a += this.opt.group.speed;
                 return this;
             },
             //反弹
             bounce: function() {
-                if (this.x < this.range.left + this.width) { //碰到左边的边界
-                    this.x = this.width;
-                    this.vx = -this.vx;
-                } else if (this.y < this.range.top + this.height) {
-                    this.y = this.height;
-                    this.vy = -this.vy;
-                } else if (this.x > this.range.right - this.width) {
-                    this.x = this.range.right - this.widt;
-                    this.vx = -this.vx;
-                } else if (this.y > this.range.bottom - this.height) {
-                    this.y = this.range.bottom - this.height;
-                    this.vy = -this.vy;
+                
+                var g = this.opt.group
+                if (g.x < g.range.left + g.width) { //碰到左边的边界
+                    g.x = g.width;
+                    g.vx = -g.vx;
+                } else if (g.y < g.range.top + g.height) {
+                    g.y = g.height;
+                    g.vy = -g.vy;
+                } else if (g.x > g.range.right - g.width) {
+                    g.x = g.range.right - g.width;
+                    g.vx = -g.vx;
+                } else if (g.y > g.range.bottom - g.height) {
+                    g.y = g.range.bottom - g.height;
+                    g.vy = -g.vy;
                 }
             },
             //移动
             move: function() {
-                this.x += this.vx;
-                this.y += this.vy;
-                // if (bounce) {
-                //     this.bounce()
-                // }
+                var g = this.opt.group;
+                g.x += g.vx;
+                g.y += g.vy;
+                if (this.opt.motion.bounce) {
+                    this.bounce()
+                }
                 return this;
             },
 
             //环形
             ring: function(opt) {
-                this.shape(opt.shape);
+                this.shape(opt);
                 var r2 = opt.shape.r * opt.shape.rRatio;
                 opt.shape = _.extend({}, opt.shape, { r: r2 });
-                this.shape(opt.shape);
+                this.shape(opt);
+                // this.draw.shape(opt.shape);
                 // this[shape] && this[shape](opt)
 
 
@@ -5012,12 +4991,12 @@
             // 公转: revolution 自转: rotation
             surround: function(opt) {
                 var self = this;
-                var x = opt.shape.x,
-                    y = opt.shape.y,
-                    r = opt.shape.r;
+                var r = opt.shape.r;
                 var rotation = opt.group.rotation; //自转
                 var interval = opt.group.interval || 1; //间隔
                 var spiral = opt.group.spiral; //螺旋
+                var x = opt.group.x,
+                    y = opt.group.y;
 
                 var sr = opt.group.sr; //环绕半径
                 if (_.isUndefined(sr)) {
@@ -5027,22 +5006,24 @@
                 var clockwise = opt.group.clockwise; //顺时针逆时针
                 var sAngle, eAngle;
 
+                var sa=opt.group.a||0;
+
                 if (clockwise) {
-                    sAngle = 360;
-                    eAngle = 0;
+                    sAngle = sa+360;
+                    eAngle = sa; //0;
                     if (spiral) {
                         sAngle = sAngle * spiral;
                     }
                 } else {
-                    sAngle = 0;
-                    eAngle = 360
+                    sAngle = sa ;//0;
+                    eAngle = sa+360
                     if (spiral) {
                         eAngle = eAngle * spiral;
                     }
                 }
                 var a = sAngle;
                 var animationInterval = opt.group.animationInterval || 5;
-                // var _surround = 
+                var index = 0;
                 (function _surround() {
                     if (r < 5) {
                         return
@@ -5073,8 +5054,10 @@
                         x: x + sr * _.sin(a),
                         y: y + sr * _.cos(a),
                         r: r,
+                        color: opt.group.colorArr[index++]
                     }
-                    self.shape(_.extend({}, opt.shape, opt2, self.color(opt)))
+                    opt.shape = _.extend({}, opt.shape, opt2) //, self.color(opt)
+                    self.shape(opt);
                     if (opt.group.animate) { //动画
                         setTimeout(_surround, animationInterval)
                     } else {
@@ -5094,7 +5077,8 @@
                     if (r <= 0) {
                         return;
                     }
-                    self.shape(_.extend({}, opt.shape, self.color(opt), { r: r }))
+                    opt.shape=_.extend({}, opt.shape, self.color(opt), { r: r });
+                    self.shape(opt);
                     r = r - interval;
                     if (opt.group.animate) {
                         setTimeout(_concentric, animationInterval)
@@ -5103,6 +5087,17 @@
                     }
                 })();
                 return self;
+            },
+            //外切圆
+            excircle: function(opt) {
+                this.shape(opt);
+                // var shape = opt.shape || "polygon";
+                // this[shape](opt);
+                opt.shape=_.extend({},opt.shape,{shape:"circle",text:""})
+                this.shape(opt);
+
+                // this.circle(opt);
+                return this;
             },
             //平铺
             repeat: function(opt) {
@@ -5147,7 +5142,8 @@
                             opt.shape.x -= 2 * r;
                         }
                     }
-                    self.shape.call(self, _.extend({}, opt.shape, self.color(opt)));
+                    opt.shape=_.extend({}, opt.shape, self.color(opt));
+                    self.shape.call(self, opt);
                     opt.shape.y += 2 * r;
                     if (animate) {
                         setTimeout(_repeat, animationInterval);
@@ -5208,65 +5204,40 @@
             init: function(draw, opt) {
                 var self = this;
                 this.draw = draw;
-                var num = opt.motion.num;
                 this.mode = opt.motion.mode;
                 this.link = opt.motion.link;
-                // this.linkGroup = draw.linkGroup;
-
                 this.speed = opt.motion.speed || 1;
+                var num = opt.motion.num;
                 var colorful = opt.motion.colorful;
-                // this.speedXY = {
-                //     vx: (Math.random() * 2 - 1) * opt.motion.speed || 1,
-                //     vy: (Math.random() * 2 - 1) * opt.motion.speed || 1,
-                //     bounce: opt.motion.bounce
-                // }
-
-
-
 
                 if (opt.motion.switch == "on") {
                     opt.shape.animate = false
                 }
                 this.groups = [];
                 for (var i = 0; i < num; i++) {
-                    opt.shape = _.extend({}, opt.shape, {
-                        vx: (Math.random() * 2 - 1) * opt.motion.speed || 1,
-                        vy: (Math.random() * 2 - 1) * opt.motion.speed || 1,
-                        bounce: opt.motion.bounce
+                    opt.id = i;
+                    var t;
+                    if (opt.group.switch == "on") {
+                        this.mode = _.camelCase(opt.motion.mode, "group");
 
-                    });
-                    var t = draw.shape(opt.shape);
-                    t.color(colorful)
+                        opt.group = _.extend({}, opt.group, {
+                            vx: (Math.random() * 2 - 1) * opt.motion.speed || 1,
+                            vy: (Math.random() * 2 - 1) * opt.motion.speed || 1,
+                            bounce: opt.motion.bounce
+                        });
+                        t = draw.group(opt);
+                    } else {
+                        opt.shape = _.extend({}, opt.shape, {
+                            vx: (Math.random() * 2 - 1) * opt.motion.speed || 1,
+                            vy: (Math.random() * 2 - 1) * opt.motion.speed || 1,
+                            bounce: opt.motion.bounce
+                        });
+                        t = draw.shape(opt.shape);
+                        t.color(colorful)
+                    }
                     this.groups.push(t);
                 };
 
-                // this.rotate(draw, opt);
-
-
-
-                // (function _movie() {
-                //     for (var i = 0; i < num; i++) {
-                //         // this.groups.push(new GROUP(i));
-                //         opt.id = i;
-                //         // this.groups.push(_shapeGroup(draw, opt))
-                //         // this.groups.push(_shape(draw,opt.shape))
-                //         // groupsTimer&&clearTimeout(groupsTimer)
-
-
-                //         opt.shape.a += speed;
-                //         // _shape(draw, opt.shape)
-                //         draw.clear()
-                //         draw.shape(opt.shape)
-
-
-
-
-
-
-                //     }
-                //     // this.id = setTimeout(_movie, 500)
-                //     self.id = requestAnimationFrame(_movie);
-                // })();
                 this.movie();
             },
             //旋转
@@ -5289,22 +5260,31 @@
 
                 groups.forEach(function(t, i) {
                     switch (mode) {
-                        case "rotation": //旋转
-                            // self.draw.clear();
-                            // t.color(self.colorful);
+                        case "rotation":
+                        case "rotationGroup": //旋转
                             t.rotate(self.speed).setup();
-
+                            break;
+                        case "move":
+                        case "moveGroup": //移动
+                            t.move().setup();
                             break;
                         default: //移动
-                            // self.draw.clear();
                             t.move().setup();
-                            break
+                            break;
                     }
+                    if (self.link) { //连接线
 
-                    if (self.link) {
+
                         for (var j = i; j < len - 1; j++) {
-                            var vs = [t, groups[j + 1]];
-                            vsGroup.push(vs);
+                            var vs;
+                            if (mode == "moveGroup") {
+                                vs = [t.opt.group, groups[j + 1].opt.group];
+                            } else {
+                                vs = [t.opt, groups[j + 1].opt];
+                            }
+
+                            self.draw.link(vs);
+                            // vsGroup.push(vs);
 
                             // if (t.meet(groups[j + 1])) {
                             //     console.log("反弹")
@@ -5323,15 +5303,24 @@
                             // }
                         }
                     }
-                })
+                });
+                // self.link&&self.draw.linkGroup(vsGroup);
+                self.draw.canvas.callback && self.draw.canvas.callback.call(self.draw.context, self.draw.context);
 
-                if (self.link) {
-                    self.linkGroup(vsGroup);
+                if (inBrowser) {
+                    self.id = requestAnimationFrame(self.movie.bind(self));
+                } else {
+                    self.id = setTimeout(self.movie.bind(self), 17)
                 }
-                self.id = requestAnimationFrame(self.movie.bind(self));
+
+
             },
             stop: function() {
-                this.id && cancelAnimationFrame(this.id);
+                if (inBrowser) {
+                    this.id && cancelAnimationFrame(this.id);
+                } else {
+                    this.id && clearTimeout(this.id);
+                }
             }
         }
         _motion.prototype.init.prototype = _motion.prototype;
@@ -5341,7 +5330,20 @@
         var createOptCycle = _.createOptCycle = function(optJson) {
             var optCycle = {
                 data: {},
-                methods: {},
+                methods: {
+                    autoNext: function(item, ev) {
+                        // var k = this[0],
+                        // x = this[1];
+                        if (inBrowser) {
+                            var k = item.closest(".tab-body-item").attr("name");
+                            var x = item.name;
+                            var checked = item.checked;
+                            optCycle.data[k][x].auto = checked;
+                            console.log(x, checked)
+
+                        }
+                    }
+                },
                 filters: {
                     toggle: function(val) {
                         return val == true ? "是" : "否"
@@ -5377,20 +5379,23 @@
                     val = this == "on" ? "off" : "on";
                 }
                 return val;
-            }
+            };
             var _toggle = function(k, x) {
                 optCycle.methods[_.camelCase("next", k, x)] = (function(item, ev) {
                     var k = this[0],
                         x = this[1];
                     var value;
-                    if (x.indexOf("random") == 0) {
-                        var y = x.substr(6).toLowerCase();
-                        x = "random";
-                        value = optCycle.data[k][x][y] = !optCycle.data[k][x][y];
-                    } else {
-                        if (optCycle.data[k][x]) {
-                            value = optCycle.data[k][x].value = !optCycle.data[k][x].value;
-                        }
+                    // if (x.indexOf("random") == 0) {
+                    //     var y = x.substr(6).toLowerCase();
+                    //     x = "random";
+                    //     value = optCycle.data[k][x][y] = !optCycle.data[k][x][y];
+                    // } else {
+                    //     if (optCycle.data[k][x]) {
+                    //         value = optCycle.data[k][x].value = !optCycle.data[k][x].value;
+                    //     }
+                    // }
+                    if (optCycle.data[k][x]) {
+                        value = optCycle.data[k][x].value = !optCycle.data[k][x].value;
                     }
 
                     if (inBrowser) {
@@ -5408,7 +5413,7 @@
                     }
                     return optCycle
                 }).bind([k, x])
-            }
+            };
             var _next = function(k, x) {
                 optCycle.methods[_.camelCase("next", k, x)] = (function(item, ev) {
                     var k = this[0],
@@ -5439,7 +5444,7 @@
                                 div2.css({ width: w / 2, height: h, top: 0, left: 0, position: "absolute", background: background });
                             }
                             var val = c.val();
-                            if (x == "color") {
+                            if (["color", "lineColor"].indexOf(x) >= 0) {
                                 val = optCycle.filters.color(val);
                             }
                             item && item.html(_.isObject(val) ? val.text : val);
@@ -5451,20 +5456,15 @@
                                 div2.remove();
                             }, 200)
 
-                            console.log(val);
+                            // console.log(val);
 
                         } else {
                             c.next();
                             console.log(c.val());
-
                         }
-
-
-
                     }
-
                 }).bind([k, x]);
-            }
+            };
 
             for (var k in optJson) {
                 var o = optJson[k];
@@ -5472,12 +5472,13 @@
                     optCycle.data[k] = {};
                     for (var x in o) {
                         var val = o[x];
-                        if (x == "random") {
-                            optCycle.data[k][x] = val;
-                            for (var y in val) {
-                                _toggle(k, _.camelCase(x, y), val[y]);
-                            }
-                        } else if (x == "switch") {
+                        // if (x == "random") {
+                        //     optCycle.data[k][x] = val;
+                        //     for (var y in val) {
+                        //         _toggle(k, _.camelCase(x, y), val[y]);
+                        //     }
+                        // } else 
+                        if (x == "switch") {
                             optCycle.data[k][x] = val;
                             _next(k, x);
 
@@ -5515,6 +5516,7 @@
                                         }
                                         if (c) {
                                             if (val.text) c.text(val.text);
+                                            if (val.auto) c.auto = val.auto;
                                             optCycle.data[k][x] = c;
                                             _next(k, x);
 
@@ -5545,23 +5547,33 @@
                         opt[k] = {};
                         for (var x in o) {
                             var val = o[x];
-                            if (x == "random") {
-                                for (var y in val) {
-                                    opt[k][_.camelCase(x, y)] = val[y];
-                                }
-                            } else {
-                                if (_.isBoolean(val)) {
-                                    opt[k][x] = val;
-                                } else if (_.isObject(val)) {
-                                    if (_.isBoolean(val.value)) {
-                                        opt[k][x] = val.value;
-                                    } else {
-                                        opt[k][x] = _.isObject(val.val()) ? val.val().key : val.val();
+                            // if (x == "random") {
+                            //     for (var y in val) {
+                            //         if (val[y]) {
+                            //             optCycle.data[k][y].next(); //random()
+                            //         }
+                            //     }
+                            // } else {
+
+                            if (_.isBoolean(val)) {
+                                opt[k][x] = val;
+                            } else if (_.isObject(val)) {
+                                if (_.isBoolean(val.value)) {
+                                    opt[k][x] = val.value;
+                                    if (val.auto) { //自动变值下一个
+                                        // val.next && val.next();
+                                        val.value = !val.value;
                                     }
-                                } else if (_.isString(val)) {
-                                    opt[k][x] = val;
+                                } else {
+                                    opt[k][x] = _.isObject(val.val()) ? val.val().key : val.val();
+                                    if (val.auto) { //自动变值下一个
+                                        val.next && val.next();
+                                    }
                                 }
+                            } else if (_.isString(val)) {
+                                opt[k][x] = val;
                             }
+                            // }
                         }
                     }
                 }
@@ -5573,27 +5585,25 @@
                 var data = optCycle.data; //optCycle.init();
                 var _viewData = { tabs: [] };
                 for (var k in data) {
-                    var tab = { key: k, items: [], random: [], switch: "none", active: false };
+                    var tab = { key: k, items: [], switch: "none", active: false }; //random: [],
                     _viewData.tabs.push(tab);
                     var o = data[k];
                     if (_.isObject(o)) {
                         for (var x in o) {
                             var val = o[x];
-                            if (x == "random") {
-                                for (var y in val) {
-                                    var item = { key: y, value: val[y], text: y, method: _.camelCase("next", k, "Random", y) };
-                                    // if (optCycle.data[k][x][y].text) {
-                                    //     item.text = optCycle.data[k][x][y].text;
-                                    // }
-                                    if (optCycle.data[k][y].text) {
-                                        item.text = optCycle.data[k][y].text;
-                                    }
-                                    if (_.isBoolean(val[y])) {
-                                        item.value = optCycle.filters.toggle(val[y]);
-                                    }
-                                    tab.random.push(item);
-                                }
-                            } else if (x == "text") {
+                            // if (x == "random") {
+                            //     for (var y in val) {
+                            //         var item = { key: y, value: val[y], text: y, method: _.camelCase("next", k, "Random", y) };
+                            //         if (optCycle.data[k][y].text) {
+                            //             item.text = optCycle.data[k][y].text;
+                            //         }
+                            //         if (_.isBoolean(val[y])) {
+                            //             item.value = optCycle.filters.toggle(val[y]);
+                            //         }
+                            //         tab.random.push(item);
+                            //     }
+                            // } else 
+                            if (x == "text") {
                                 tab[x] = val;
                             } else if (x == "switch") {
                                 tab[x] = val;
@@ -5614,18 +5624,19 @@
                                         if (_.isObject(val.val())) {
                                             item.value = val.val().text ? val.val().text : val.val();
                                         } else {
-                                            if (item.key == "color") {
+                                            if (["color", "lineColor"].indexOf(item.key) >= 0) {
                                                 item.value = optCycle.filters.color(val.val());
                                             } else {
                                                 item.value = val.val();
                                             }
-
                                         }
                                     }
                                     if (val.text) {
                                         item.text = val.text;
                                     }
-
+                                    if (val.auto) {
+                                        item.auto = val.auto;
+                                    }
                                 } else {
                                     item.filter = x;
                                 }
@@ -5662,26 +5673,6 @@
                         this.context = this.canvas.getContext("2d");
                     }
                 }
-
-                // if (inBrowser) {
-                //     this.canvas = document.createElement("canvas");
-                //     this.context = this.canvas.getContext("2d");
-                // } else {
-                //     // if (wx) { //小程序
-                //     //     if (componentInstance) {
-                //     //         this.context = wx.createCanvasContext('canvas', componentInstance);
-                //     //         wx.getSystemInfo({
-                //     //             success: function(res) {
-                //     //                 self.canvas = { width: res.windowWidth, height: res.windowHeight };
-                //     //             }
-                //     //         });
-                //     //     } else {
-                //     //         return false;
-                //     //     }
-                //     // }
-                // }
-
-
 
                 if (_.isObject(options)) {
                     options.a = options.a || options.angle;
@@ -5858,20 +5849,20 @@
                 if (opt) {
                     this.setLineWidth(opt.lineWidth);
                     if (opt.randomColor) {
-                        opt.color = _.rgb();//_.hsl();小程序不支持
+                        opt.color = _.rgb(); //_.hsl();小程序不支持
                     }
                     if (_.isUndefined(opt.stroke) || opt.stroke) {
-                        this.setStrokeStyle(opt.color)
+                        this.setStrokeStyle(opt.lineColor || opt.color);
                         ctx.stroke();
                     }
                 } else {
                     ctx.stroke();
                 }
-
                 return this;
             },
             render: function(opt) {
-                return this.fill(opt).stroke(opt);
+                this.fill(opt).stroke(opt);
+                return this
             },
             //图形闭合
             closePath: function(opt) {
@@ -5897,10 +5888,10 @@
                     ctx.beginPath();
                 }
             },
+
             clear: function(color) {
                 var canvas = this.canvas;
                 var ctx = this.context;
-                // ctx.fillStyle = color || "#ffffff";
                 this.setFillStyle(color || "#ffffff");
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             },
@@ -5916,18 +5907,18 @@
             default: function(opt) {
                 var canvas = this.canvas;
                 if (opt) {
-                    if (opt.randomA) {
-                        opt.a = _.random(360);
-                    }
-                    if (opt.randomShape) {
-                        opt.shape = _.random(["polygon", "circle", "start", "ray", "ring"])
-                    }
-                    if (opt.randomNum) {
-                        opt.num = _.between(3, 20);
-                    }
-                    if (opt.randomR) {
-                        opt.r = _.between(30, 80);
-                    }
+                    // if (opt.randomA) {
+                    //     opt.a = _.random(360);
+                    // }
+                    // if (opt.randomShape) {
+                    //     opt.shape = _.random(["polygon", "circle", "start", "ray", "ring"])
+                    // }
+                    // if (opt.randomNum) {
+                    //     opt.num = _.between(3, 20);
+                    // }
+                    // if (opt.randomR) {
+                    //     opt.r = _.between(30, 80);
+                    // }
                     return _.extend({}, this.default(), opt);
                 } else {
                     return {
@@ -5938,8 +5929,91 @@
                     }
                 }
             },
+            //连线
             link: function(vs, opt) {
-                _.shape(this).link(vs, opt);
+                var self = this;
+                var ctx = this.context;
+                this.beginPath(opt);
+                vs.forEach(function(t, i) {
+                    if (t) {
+                        if (i == 0) {
+                            ctx.moveTo(t.x, t.y);
+                        } else {
+                            ctx.lineTo(t.x, t.y);
+                        }
+                    }
+                })
+                self.closePath(opt);
+                self.render(opt);
+
+                if (opt) {
+                    //显示外切圆
+                    if (opt.showExcircle) {
+                        opt.text = "";
+                        self.shape().circle(opt);
+                        // _.shape(this).circle(opt);
+                    }
+                    //显示半径
+                    if (opt.showRadius) {
+                        var x = opt.x,
+                            y = opt.y;
+                        ctx.beginPath();
+                        vs.forEach(function(t) {
+                            ctx.moveTo(x, y);
+                            ctx.lineTo(t.x, t.y)
+                        })
+                        self.render(opt);
+                    }
+
+                    //显示顶点
+                    if (opt.showVertices) {
+                        var animate = opt.animate,
+                            animationInterval = opt.animationInterval || 200;
+                        var verticesIdentifier = opt.verticesIdentifier;
+                        var _shape = self.shape();
+                        var verticesColor = _.rgb();
+                        vs.forEach(function(t, i) {
+                            t.fill = true;
+                            if (verticesIdentifier) {
+                                t.r = 10
+                                t.text = i + 1;
+                                t.color = "rgba(0,0,0,0.2)"
+                            } else {
+                                t.color = verticesColor;
+                                t.r = 3;
+                            }
+                            if (animate) {
+                                setTimeout(function() {
+                                    _shape.circle(t);
+                                }, animationInterval * i)
+                            } else {
+                                _shape.circle(t);
+                            }
+                        });
+                    }
+
+                }
+                return this;
+            },
+            linkGroup: function(vsGroup, opt) {
+                var self = this;
+                // console.log("图形个数：" + vsGroup.length)
+                // var result = {
+                //     num: vsGroup.length
+                // }
+                // self.callback && self.callback(result);
+                if (opt && opt.animate) { //动画
+                    vsGroup.forEach(function(t, i) {
+                        setTimeout(function() {
+                            self.link(t, opt)
+                        }, 200 * i);
+                    })
+                } else {
+                    vsGroup.forEach(function(t) {
+                        self.link(t, opt)
+                    })
+                }
+                return self;
             },
             //图形
             shape: function(opt) {
@@ -5947,12 +6021,16 @@
             },
             //图形组合
             group: function(opt) {
+                opt.group = this.default(opt.group);
                 opt.shape = this.default(opt.shape);
+                var t;
                 if (opt.group.switch == "on") {
-                    _shapeGroup(this, opt);
+                    t = _shapeGroup(this, opt);
                 } else {
-                    _shape(this, opt.shape);
+                    t = _shape(this, opt.shape);
                 }
+                this.canvas.callback && this.canvas.callback.call(this.context, this.context);
+                return t;
             },
             //运动
             motion: function(opt) {
@@ -6712,10 +6790,12 @@
                                 var fn = new Function("return (" + _filter + ".call(this,arguments[0]));");
                                 val = fn.call(self, val, data);
                             } catch (e) {
+                                console.log(e);
                                 try {
                                     var fn = new Function("data", "return (" + _filter + ");");
                                     val = fn.call(self, val, data);
                                 } catch (e) {
+                                    console.log(e);
                                     val = _filter;
                                 }
                             }
@@ -6945,6 +7025,11 @@
             //     }
             // }
 
+            // if(_.hasAttr(el),"if"){
+            //     condition=el.attr("if");
+            //     console.log(condition)
+            // }
+
 
             if (_.hasAttr(el, SYNTAX)) {
                 syntax = el.attr(SYNTAX);
@@ -7054,6 +7139,8 @@
                 } else {
                     type = TAP;
                 }
+                var el = _.$(key.brackets(elem));
+
                 if (ON != key) {
                     var customHandler = function(item, ev) {
                         var method = self.methods["_on_" + key];
@@ -7062,15 +7149,16 @@
                         }
                     }
                     toucher({
-                        el: key.brackets(elem),
+                        el: el,
                         type: type,
                         clear: true,
                         listener: customHandler
                     });
 
                 } else {
+
                     toucher({
-                        el: key.brackets(elem),
+                        el: el,
                         type: type,
                         clear: true,
                         listener: fn

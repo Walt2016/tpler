@@ -282,10 +282,10 @@
         <div class="btn" on="startHandler" id="startBtn">画图</div>
     </script>
     <script type="text/template" id="_tab-head-item_tpl">
-        <div class="tab-head-item" target="panel_{=key}" flex>{=text}</div>
+        <div class="tab-head-item {=active|tabActive}" target="{=key}" flex on="tabHandler">{=text}</div>
     </script>
     <script type="text/template" id="_tab-body-item_tpl">
-        <div class="tab-body-item hide" id="panel_{=key}">
+        <div class="tab-body-item {=active|tabBodyActive}" name="{=key}">
             <div class="grid mt4">
                 <div class="row head">
                     <div class="hd flex">{=key}
@@ -295,15 +295,20 @@
             </div>
             <div class="switchBody {=switch}">
                 <div class="grid mt4">
+                    <div class="row">
+                        <div class="hd">字段</div>
+                        <div class="td flex">值</div>
+                        <div>自动</div>
+                    </div>
                     {=items|tabItem}
                 </div>
-                <div class="grid mt4">
+                <!-- <div class="grid mt4">
                     <div class="row head">
-                        <div class="hd flex">随机
+                        <div class="hd flex">按次序变化
                         </div>
                     </div>
                     {=random|tabItem}
-                </div>
+                </div> -->
             </div>
         </div>
     </script>
@@ -311,6 +316,9 @@
         <div class="row">
             <div class="hd">{=text}</div>
             <div class="td flex" on="{=method}">{=value}</div>
+            <div>
+                <input type="checkbox" name="{=key}" on="autoNext"  {=auto|checkbox}/>
+            </div>
         </div>
     </script>
     <script>
@@ -322,19 +330,15 @@
     console.log(c.init())
     console.log(c.viewData())
 
-
     // _.ajax("data/opt.json?v=5", function(result) {
     // var optJson = _.json(result)
+    // })
 
     var draw = _.draw({
         ratio: "1:1",
         background: "#dedede",
         callback: function(result) {}
     })
-
-
-
-
 
     var motion;
 
@@ -346,19 +350,54 @@
                         template: "_tab-body-item-row_tpl",
                         data: val,
                     })
+                },
+                checkbox:function(val){
+                    return val?'checked':""
+                },
+                tabActive:function(val){
+                    return val?'active':"";
+                },
+                tabBodyActive:function(val){
+                    return val?"":"hide"
                 }
             },
             c.filters
         ),
         methods: _.extend({
+            tabHandler:function(item,ev){
+                var target=item.attr("target");
+                item.addClass("active").siblings().removeClass("active");
+                        // _.$('#' + this.attr("target")).show().siblings().hide();
+
+                _.$(".tab-body-item").forEach(function(t){
+                   if(t.attr("name")==target) {
+                    t.show();
+                   }else{
+                     t.hide()
+                   }
+                })
+
+                for(var key in c.data){
+                    if(key==target){
+                        c.data[key].active=true;
+                    }else{
+                        c.data[key].active=false;
+                    }
+                }
+
+            },
             configHandler: function(item, ev) {
+
 
                 var configPanel = _.$("#configPanel");
                 configPanel.$(".scroll").css({ height: (_.screen.y - 100) + "px" })
                 var icon = item.$(".icon");
                 if (configPanel.hasClass("hide")) {
                     configPanel.removeClass("hide");
-                    icon.removeClass("upArrow").addClass("downArrow")
+                    icon.removeClass("upArrow").addClass("downArrow");
+                    var cfg=_.extend({},this,{data:c.viewData(),el:"#configPanel"});
+                    // console.log(cfg);
+                    tpler(cfg);
                 } else {
                     configPanel.addClass("hide");
                     icon.removeClass("downArrow").addClass("upArrow")
@@ -372,7 +411,7 @@
                 _.hide("#configPanel");
                 var icon = _.$("#configBtn .icon");
                 icon.removeClass("downArrow").addClass("upArrow")
-                console.log(c.init())
+                // console.log(c.init())
 
                 draw.clear("#dedede");
                 var opt = c.init()
@@ -380,6 +419,7 @@
                 if (item.id != "startBtn") {
                     var pos = _.pos(ev)
                     opt.shape = _.extend(opt.shape, { x: pos.x, y: pos.y });
+                    opt.group=_.extend(opt.group, { x: pos.x, y: pos.y });
                 }
 
 
@@ -395,9 +435,9 @@
         }, c.methods),
         data: c.viewData(),
         callback: function() {
-            _.$(".tab-head-item").tab("active", function(ev) {})
-            _.active(_.$(".tab-head-item").first());
-            _.show(_.$(".tab-body-item").first());
+            // _.$(".tab-head-item").tab("active", function(ev) {})
+            // _.active(_.$(".tab-head-item").first());
+            // _.show(_.$(".tab-body-item").first());
             _.$(".tab").css({ height: (_.screen.y - 30) + "px" })
 
             _.$(".screen").appendChild(draw.canvas)
@@ -411,7 +451,7 @@
             })
         }
     })
-    // })
+    
     </script>
 </body>
 
