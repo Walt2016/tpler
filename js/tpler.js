@@ -1,4 +1,6 @@
 //一个js开发框架
+//template.event.canvas
+//v0.7.20180516
 ;
 (function(root, factory) {
     if (typeof define === "function" && define.amd) {
@@ -15,9 +17,9 @@
 }(this,
     function() {
         //模板标签  ([^|]+?[\|(string|file|image|time)]?     /{=([\s\S]+?)}/g; 
-        var reg_tpl_tag = /{=(.*?)(?:\|(.*?))?}/g;
-        var reg_operation_symbol = /[\+|\-|\*|\/|\(|\)]+/g; //支持 加减乘除括号  operation symbol
-        var rootEl, $index = 1,
+        var reg_tpl_tag = /{=(.*?)(?:\|(.*?))?}/g,
+            reg_operation_symbol = /[\+|\-|\*|\/|\(|\)]+/g, //支持 加减乘除括号  operation symbol
+            rootEl, $index = 1,
             $length = 1,
             toucher,
             customFilters = {}, //扩展类型
@@ -43,86 +45,70 @@
             ON = "on", //绑定事件
             BIND = "bind"; //单向绑定
 
-
         var inBrowser = typeof window !== 'undefined';
         console.log("before inBrowser:" + inBrowser);
 
-        var isSupportTouch = (function() {
-            if (inBrowser) {
-                try {
-                    document.createEvent("TouchEvent");
-                    return true;
-                } catch (e) {
-                    // console.log(e);
-                    return false;
-                }
-            } else {
+        var isSupportTouch = inBrowser ? (function() {
+            try {
+                document.createEvent("TouchEvent");
+                return true;
+            } catch (e) {
                 return false;
             }
-        })();
+        })() : false;
 
+        //继承属性 和原型方法
         var extend = function(obj) {
-            var args = Array.prototype.slice.call(arguments),
-                len = args.length;
+            // var args = Array.prototype.slice.call(arguments),
+            var len = arguments.length;
+            if (len > 1) obj = obj || {};
             for (var i = 1; i < len; i++) {
-                var source = args[i];
-                if (source) {
-                    for (var prop in source) { //include functions in prototype
-                        obj[prop] = source[prop];
-                    }
-                }
+                var source = arguments[i]; //args[i];
+                if (source)
+                    for (var prop in source)
+                        obj[prop] = source[prop]; //include functions in prototype
             }
             return obj;
         };
 
-        var extendMe = function(obj) {
-            var args = Array.prototype.slice.call(arguments),
-                len = args.length;
+        //只继承属性，不包括原型方法
+        var extendOwn = function(obj) {
+            var len = arguments.length;
+            if (len > 1) obj = obj || {};
             for (var i = 1; i < len; i++) {
-                var source = args[i];
-                if (source) {
-                    for (var prop in source) { //only properties in this object
-                        if (Object.prototype.hasOwnProperty.call(source, prop))
-                            obj[prop] = source[prop];
-                    }
-                }
+                var source = arguments[i];
+                if (source)
+                    for (var prop in source)
+                        if (Object.prototype.hasOwnProperty.call(source, prop)) obj[prop] = source[prop]; //only properties in this object
             }
             return obj;
         };
 
-        // var _createClass = function() {
-        //     function defineProperties(target, props) {
-        //         for (var i = 0; i < props.length; i++) {
-        //             var descriptor = props[i];
-        //             descriptor.enumerable = descriptor.enumerable || false;
-        //             descriptor.configurable = true;
-        //             if ("value" in descriptor) descriptor.writable = true;
-        //             Object.defineProperty(target, descriptor.key, descriptor);
-        //         }
-        //     }
-        //     return function(Constructor, protoProps, staticProps) {
-        //         if (protoProps) defineProperties(Constructor.prototype, protoProps);
-        //         if (staticProps) defineProperties(Constructor, staticProps);
-        //         return Constructor;
-        //     };
-        // }();
+        var screen = { x: 100, y: 100 },
+            envt;
+        if (inBrowser) {
+            var ua = window.navigator.userAgent.toLowerCase(),
+                isIE = /msie|trident/.test(ua),
+                isIE9 = !!~ua.indexOf('msie 9.0'),
+                isEdge = !!~ua.indexOf('edge/'),
+                isChrome = /chrome\/\d+/.test(ua) && !isEdge,
+                weixin = /MicroMessenger/i.test(ua),
+                isWxMiniProgram = /miniprogram/i.test(window.__wxjs_environment);
 
-
-
-        var env = (function() {
-            var os = {};
-            if (inBrowser) {
-                var ua = navigator.userAgent,
-                    android = ua.match(/(Android)[\s\/]+([\d\.]+)/),
+            var env = (function() {
+                var os = {};
+                var android = ua.match(/(Android)[\s\/]+([\d\.]+)/),
                     ios = ua.match(/(iPad|iPhone|iPod)\s+OS\s([\d_\.]+)/),
                     wp = ua.match(/(Windows\s+Phone)\s([\d\.]+)/),
                     isWebkit = /WebKit\/[\d.]+/i.test(ua),
                     isSafari = ios ? (navigator.standalone ? isWebkit : (/Safari/i.test(ua) && !/CriOS/i.test(ua) && !/MQQBrowser/i.test(ua))) : false;
                 if (android) {
+                    os.isAndroid = true;
                     os.android = true;
                     os.version = android[2];
                 }
                 if (ios) {
+                    os.isIOS = true;
                     os.ios = true;
                     os.version = ios[2].replace(/_/g, '.');
                     os.ios7 = /^7/.test(os.version);
@@ -131,7 +117,6 @@
                         os.ipad = true;
                     } else if (ios[1] === 'iPhone') {
                         os.iphone = true;
-                        // os.iphone5 = screen.height == 568;
                     } else if (ios[1] === 'iPod') {
                         os.ipod = true;
                     }
@@ -142,274 +127,126 @@
                 if (isSafari) {
                     os.safari = true;
                 }
-            }
-            return os;
-        })();
-
-
-        var UA, isIE, isIE9, isEdge, isAndroid, isIOS, isChrome, weixin, envt, screen = { x: 100, y: 100 };
-        if (inBrowser) {
-            UA = inBrowser && window.navigator.userAgent.toLowerCase();
-            isIE = UA && /msie|trident/.test(UA);
-            isIE9 = UA && UA.indexOf('msie 9.0') > 0;
-            isEdge = UA && UA.indexOf('edge/') > 0;
-            isAndroid = UA && UA.indexOf('android') > 0;
-            isIOS = UA && /iphone|ipad|ipod|ios/.test(UA);
-            isChrome = UA && /chrome\/\d+/.test(UA) && !isEdge;
-            weixin = UA && UA.toLowerCase().match(/MicroMessenger/i) == "micromessenger";
+                return os;
+            })();
             envt = extend(env, {
                 inBrowser: inBrowser,
-                UA: UA,
+                ua: ua,
                 isIE: isIE,
                 isIE9: isIE9,
                 isEdge: isEdge,
-                isAndroid: isAndroid,
-                isIOS: isIOS,
                 isChrome: isChrome,
-                weixin: weixin
+                weixin: weixin,
+                isWxMiniProgram: isWxMiniProgram
             });
             screen = {
-                x: inBrowser ? document.documentElement.clientWidth : 100,
-                y: inBrowser ? document.documentElement.clientHeight : 100
+                x: document.documentElement.clientWidth,
+                y: document.documentElement.clientHeight
             };
-
         }
-
-
-        function TimeCom(dateValue) {
-            var newCom;
-            if (dateValue == "") {
-                newCom = new Date();
-            } else {
-                newCom = new Date(dateValue);
-            }
-            this.year = newCom.getFullYear();
-            this.month = newCom.getMonth() + 1;
-            this.day = newCom.getDate();
-            this.hour = newCom.getHours();
-            this.minute = newCom.getMinutes();
-            this.second = newCom.getSeconds();
-            this.msecond = newCom.getMilliseconds();
-            this.week = newCom.getDay();
-        }
-
 
         var _ = {
             envt: envt,
             extend: extend,
-            extendMe: extendMe,
+            extendOwn: extendOwn,
             screen: screen,
 
-            toDate: function(str) {
-                if (/^\d*$/.test(str)) {
-                    return new Date(Number(str));
-                } else if (_.isString(str)) {
-                    return new Date(Date.parse(str.replace(/-/g, "/")));
-                }
-                return str;
-            },
-            dateAdd: function(interval, number, date) {
-                var date;
-                if (_.isString(date)) {
-                    date = _.toDate(date)
-                } else {
-                    date = new Date(date);
-                }
-                switch (interval.toLowerCase()) {
-                    case "y":
-                    case "year":
-                        return new Date(date.setFullYear(date.getFullYear() + number));
-                    case "m":
-                    case "month":
-                        return new Date(date.setMonth(date.getMonth() + number));
-                    case "d":
-                    case "day":
-                        return new Date(date.setDate(date.getDate() + number));
-                    case "w":
-                    case "week":
-                        return new Date(date.setDate(date.getDate() + 7 * number));
-                    case "h":
-                    case "hour":
-                        return new Date(date.setHours(date.getHours() + number));
-                    case "n":
-                    case "min":
-                    case "minute":
-                        return new Date(date.setMinutes(date.getMinutes() + number));
-                    case "s":
-                    case "second":
-                        return new Date(date.setSeconds(date.getSeconds() + number));
-                    case "l":
-                    case "ms":
-                    case "msecond":
-                        return new Date(date.setMilliseconds(date.getMilliseconds() + number));
-                }
-            },
-            dateDiff: function(interval, date1, date2) {
-                var TimeCom1 = new TimeCom(date1);
-                var TimeCom2 = new TimeCom(date2);
-                var result;
-                switch (String(interval).toLowerCase()) {
-                    case "y":
-                    case "year":
-                        result = TimeCom1.year - TimeCom2.year;
-                        break;
-                    case "m":
-                    case "month":
-                        result = (TimeCom1.year - TimeCom2.year) * 12 + (TimeCom1.month - TimeCom2.month);
-                        break;
-                    case "d":
-                    case "day":
-                        result = Math.round((Date.UTC(TimeCom1.year, TimeCom1.month - 1, TimeCom1.day) - Date.UTC(TimeCom2.year, TimeCom2.month - 1, TimeCom2.day)) / (1000 * 60 * 60 * 24));
-                        break;
-                    case "h":
-                    case "hour":
-                        result = Math.round((Date.UTC(TimeCom1.year, TimeCom1.month - 1, TimeCom1.day, TimeCom1.hour) - Date.UTC(TimeCom2.year, TimeCom2.month - 1, TimeCom2.day, TimeCom2.hour)) / (1000 * 60 * 60));
-                        break;
-                    case "n":
-                    case "min":
-                    case "minute":
-                        result = Math.round((Date.UTC(TimeCom1.year, TimeCom1.month - 1, TimeCom1.day, TimeCom1.hour, TimeCom1.minute) - Date.UTC(TimeCom2.year, TimeCom2.month - 1, TimeCom2.day, TimeCom2.hour, TimeCom2.minute)) / (1000 * 60));
-                        break;
-                    case "s":
-                    case "second":
-                        result = Math.round((Date.UTC(TimeCom1.year, TimeCom1.month - 1, TimeCom1.day, TimeCom1.hour, TimeCom1.minute, TimeCom1.second) - Date.UTC(TimeCom2.year, TimeCom2.month - 1, TimeCom2.day, TimeCom2.hour, TimeCom2.minute, TimeCom2.second)) / 1000);
-                        break;
-                    case "l":
-                    case "ms":
-                    case "msecond":
-                        result = Date.UTC(TimeCom1.year, TimeCom1.month - 1, TimeCom1.day, TimeCom1.hour, TimeCom1.minute, TimeCom1.second, TimeCom1.msecond) - Date.UTC(TimeCom2.year, TimeCom2.month - 1, TimeCom2.day, TimeCom2.hour, TimeCom2.minute, TimeCom2.second, TimeCom1.msecond);
-                        break;
-                    case "w":
-                    case "week":
-                        result = Math.round((Date.UTC(TimeCom1.year, TimeCom1.month - 1, TimeCom1.day) - Date.UTC(TimeCom2.year, TimeCom2.month - 1, TimeCom2.day)) / (1000 * 60 * 60 * 24)) % 7;
-                        break;
-                    default:
-                        result = "invalid";
-                }
-                return (result);
 
+            //类型
+            type: function(o) {
+                if (o === null) return 'null';
+                var s = Object.prototype.toString.call(o);
+                var t = s.match(/\[object (.*?)\]/)[1].toLowerCase();
+                return t === 'number' ? isNaN(o) ? 'nan' : !isFinite(o) ? 'infinity' : t : t;
             },
-            timeFormat: function(time) {
-                if (typeof time !== 'number' || time < 0) {
-                    return time;
-                }
-                var hour = parseInt(time / 3600);
-                time = time % 3600;
-                var minute = parseInt(time / 60);
-                time = time % 60;
-                // 这里秒钟也取整
-                var second = parseInt(time);
-
-                return ([hour, minute, second]).map(function(n) {
-                    n = n.toString();
-                    return n[1] ? n : '0' + n;
-                }).join(':');
+            isElement: function(o) {
+                return o && (o.nodeType === 1 || o.nodeType === 9);
             },
-            //一年中的第几周
-            week: function(dateStr) {
-                var totalDays = 0;
-                var d = _.toDate(dateStr); //new Date();
-                if (!d) return "";
-                var years = d.getFullYear();
-                var days = new Array(12);
-                days[0] = 31;
-                days[2] = 31;
-                days[3] = 30;
-                days[4] = 31;
-                days[5] = 30;
-                days[6] = 31;
-                days[7] = 31;
-                days[8] = 30;
-                days[9] = 31;
-                days[10] = 30;
-                days[11] = 31;
-
-                //判断是否为闰年，针对2月的天数进行计算
-                if (Math.round(d.getFullYear() / 4) == d.getFullYear() / 4) {
-                    days[1] = 29
-                } else {
-                    days[1] = 28
-                }
-
-                if (d.getMonth() == 0) {
-                    totalDays = totalDays + d.getDate();
-                } else {
-                    var curMonth = d.getMonth();
-                    for (var count = 1; count <= curMonth; count++) {
-                        totalDays = totalDays + days[count - 1];
+            isDocument: function(o) {
+                return o && o.nodeName && o.nodeType === 9;
+            },
+            //对象类名
+            objectName: function(obj) {
+                return _.isUndefined(obj) ? _.isUndefined(obj) : _.isNull(obj) ? _.isNull(obj) : obj.prototype.constructor ? obj.prototype.constructor.name : obj.__proto__.constructor.name
+            },
+            //has(obj,"z.b.c")  key in obj
+            has: function(obj, key) {
+                if (_.isObject(obj)) {
+                    var ks = key.split(".");
+                    var o = obj;
+                    while (key = ks.shift()) { //trim
+                        if (o && o.hasOwnProperty(key)) { //Object.prototype.hasOwnProperty.call(this, k)
+                            o = o[key];
+                        } else {
+                            return false;
+                        }
                     }
-                    totalDays = totalDays + d.getDate();
+                    return true;
+                } else if (_.isArray(obj) || _.isString(obj)) {
+                    return !!~obj.indexOf(key); // !== -1;  >= 0
                 }
-                //得到第几周
-                var result = Math.round(totalDays / 7);
-                return result;
+                return false;
             },
-            month: function(dateStr) {
-                var d = _.toDate(dateStr);
-                return d ? d.getMonth() : "";
+            isJQuery: function(o) {
+                return o ? !!(o.jquery) : false;
             },
-            text: function(obj) {
-                //HTMLScriptElement.text  是一个属性，故用此方法
-                if (_.isElement(obj)) {
-                    return obj.innerText;
-                }
+            keys: function(obj) {
+                if (!_.isObject(obj)) return [];
+                if (Object.keys) return Object.keys(obj);
+                var keys = [];
+                for (var key in obj)
+                    if (_.has(obj, key)) keys.push(key);
+                return keys;
             },
-            html: function(obj) {
-                if (_.isElement(obj)) {
-                    return obj.innerHTML;
-                }
-            },
-            fast: function() {
-                var _run = function(fn, index, times) {
-                    var t1, t2;
-                    t1 = (new Date()).getTime();
-                    for (var i = 1; i <= times; i++) {
-                        fn.call(this);
-                    }
-                    t2 = (new Date()).getTime();
-                    console.log("fn {" + fn.name + "} _run " + times + " times ,last: " + (t2 - t1) + "ms")
-                    return t2 - t1;
-                }
-                var args = Array.prototype.slice.call(arguments),
-                    last = args.pop(),
-                    times = 10000;
-                if (_.isNumber(last)) {
-                    times = last;
-                } else {
-                    args.push(last);
-                }
-                for (var i = 0; i < args.length; i++) {
-                    args[i] && _run.call(this, args[i], i, times);
-                }
-            },
-            //数组相等
-            //对象相等
+            //对象  数组 相等
             equal: function(a, b) {
                 if (a === b) {
                     return true;
                 } else if (_.isArray(a) && _.isArray(b)) {
-                    return a.toString() == b.toString();
+                    return a.toString() === b.toString();
                 } else if (_.isObject(a) && _.isObject(b)) {
-                    if (Object.keys(a).length != Object.keys(b).length) {
-                        return false
-                    }
-                    for (var k in a) {
-                        if (!_.equal(a[k], b[k])) {
-                            return false
-                        }
-                    }
+                    if (_.keys(a).length !== _.keys(b).length) return false;
+                    for (var k in a)
+                        if (!_.equal(a[k], b[k])) return false;
                     return true;
-                } else if (_.type(a) == _.type(b)) {
-                    return a == b;
+                } else if (_.type(a) === _.type(b)) {
+                    return a === b;
                 }
                 return false;
             },
-            //位置信息 支持事件 和Element
+
+            text: function(obj) {
+                //HTMLScriptElement.text  是一个属性，故用此方法
+                if (_.isElement(obj)) return obj.innerText;
+            },
+            html: function(obj) {
+                if (_.isElement(obj)) return obj.innerHTML;
+            },
+            fast: function() {
+                var len = arguments.length,
+                    args = new Array(len), //fast then Array.prototype.slice.call(arguments)
+                    times = 10000;
+                while (len--) args[len] = arguments[len];
+                var last = args[args.length - 1];
+                if (_.isNumber(last)) {
+                    times = last;
+                    args.pop();
+                }
+                var _run = function(fn, times) {
+                    var word = 'run ' + fn.name + '{} ' + times + ' time' + (times > 1 ? 's' : '');
+                    console.time(word);
+                    while (times--) fn.apply(this, args);
+                    console.timeEnd(word);
+                }
+                args.forEach(function(t) {
+                    t && _run.call(this, t, times);
+                });
+            },
+
+            //位置信息  事件 Element
             pos: function(e, offset) {
                 function Postion(x, y, el) {
-                    if (_.isDocument(el)) {
-                        el = document.doctype ? window.document.documentElement : document.body;
-                    }
+                    if (_.isDocument(el)) el = document.doctype ? window.document.documentElement : document.body;
                     this.x = x;
                     this.y = y;
                     this.time = +new Date();
@@ -429,7 +266,7 @@
                 var offsetPos;
                 if (_.isElement(offset) || _.isTouchEvent(e) || _.isMouseEvent(e)) {
                     offsetPos = _.pos(offset)
-                } else if (_.isObject(offset) && "Postion" == _.objectName(offset)) { // offset.__proto__.constructor.name ==
+                } else if (_.isObject(offset) && "Postion" === _.objectName(offset)) { // offset.__proto__.constructor.name ==
                     offsetPos = offset;
                 }
                 if (_.isElement(e)) { //元素
@@ -478,8 +315,7 @@
                     }
                     return new Postion(x, y, el);
                 } else if (_.isString(e)) {
-                    var el = _.query(e);
-                    return _.pos(el)
+                    return _.pos(_.query(e))
                 }
             },
             //拖动事件
@@ -551,7 +387,6 @@
             },
             //随机id
             random: function(possible, len, prefix) {
-
                 if (_.isArray(possible)) {
                     return possible[Math.floor(Math.random() * possible.length)];
                 } else if (_.isNumber(possible)) {
@@ -570,31 +405,35 @@
             between: function(min, max) {
                 return min + Math.round((max - min) * Math.random());
             },
+            //自动为ele生成一个随机id
             autoid: function(ele, force) {
                 var _autoid = function(ele) {
-                    if (_.isDocument(ele)) {
-                        return ele;
-                    }
+                    if (_.isDocument(ele)) return ele;
                     if (_.isElement(ele)) {
                         if (force) {
                             ele.setAttribute("id", _.random());
                         } else {
-                            if (_.isEmpty(ele.id)) {
-                                ele.setAttribute("id", _.random());
-                            }
+                            _.isEmpty(ele.id) && ele.setAttribute("id", _.random());
                         }
                     }
                     return ele;
                 };
-
-                if (_.isArray(ele)) {
-                    var arr = [];
-                    ele.forEach(function(t) {
-                        arr.push(_autoid(t));
+                return _.isArray(ele) ? ele.map(function(t) {
+                    return _autoid(t);
+                }) : _autoid(ele);
+            },
+            //转化jquery =>Element
+            jqToEl: function(selector, callback) {
+                if (_.isJQuery(selector)) {
+                    var result = [];
+                    selector.each(function(i, t) {
+                        if (callback) {
+                            result.push(callback(t));
+                        } else {
+                            result.push(t);
+                        }
                     });
-                    return arr;
-                } else {
-                    return _autoid(ele);
+                    return result.length === 1 ? result[0] : result;
                 }
             },
             //Array.prototype.find已经存在，所以使用query
@@ -602,14 +441,13 @@
             //找不到 返回  []，与 closest addclass removeclass等统一[] ，方便链式写
             //找到数组 [el]，长度为1的时，返回 el  ，方便 siblings链式
             query: function(selector) {
-                var args = Array.prototype.slice.call(arguments),
-                    len = args.length;
-                if (len > 1) {
-                    selector = args.join(",")
-                }
-                if (_.isWindow(selector) || _.isDocument(selector)) {
-                    return selector;
-                }
+                // var args = Array.prototype.slice.call(arguments),
+                //     len = args.length;
+                var len = arguments.length,
+                    args = new Array(len);
+                while (len--) args[len] = arguments[len];
+                if (args.length > 1) selector = args.join(",")
+                if (_.isWindow(selector) || _.isDocument(selector)) return selector;
                 if (_.isFunction(selector)) {
                     selector();
                     return [];
@@ -625,7 +463,6 @@
                     }
                     return selector;
                 }
-
                 if (_.isElement(selector)) {
                     _.autoid(selector);
                     if (_.isElement(this)) {
@@ -635,21 +472,11 @@
                         return selector;
                     }
                 } else if (_.isArray(selector)) {
-                    var result = [];
-                    selector.forEach(function(item) {
-                        result.push(_.query(item));
+                    return selector.map(function(t) {
+                        return _.query(t);
                     });
-                    return result;
                 } else if (_.isJQuery(selector)) { //兼容JQuery
-                    if (selector.length == 1) {
-                        return selector.get(0);
-                    } else {
-                        var result = [];
-                        for (var i = 0; i < selector.length; i++) {
-                            result.push(selector.get(i));
-                        }
-                        return result;
-                    }
+                    return _.jqToEl(selector);
                 } else {
                     selector = _selectorFn.call(this, selector);
                 }
@@ -658,23 +485,12 @@
                     var eles = document.querySelectorAll(selector),
                         args = Array.prototype.slice.call(eles),
                         len = args.length;
-
-                    if (len == 0) {
-                        return [];
-                    } else if (len == 1) {
-                        return _.autoid(args[0]);
-                    } else if (len > 1) {
-                        return _.autoid(args);
-                    }
-
+                    return len === 0 ? [] : len === 1 ? _.autoid(args[0]) : _.autoid(args);
                 } catch (e) {
                     console.log(e);
                     //jQuery特有表达式 :filter
                     var arr = selector.split(":");
-                    if (arr.length > 1) {
-                        return _.query(arr[0]).filter(arr[1]);
-                    }
-                    return [];
+                    return arr.length > 1 ? _.query(arr[0]).filter(arr[1]) : [];
                 }
             },
 
@@ -687,9 +503,7 @@
             //不必符合严格的JSON格式
             //非标准格式json
             json: function(str) {
-                if (_.isEmpty(str)) {
-                    return {}
-                }
+                if (_.isEmpty(str)) return {};
                 try {
                     return JSON.parse(str)
                 } catch (e1) {
@@ -729,36 +543,31 @@
             capitalize: function(word) {
                 var args = Array.prototype.slice.call(arguments),
                     len = args.length;
-                if (len > 1) {
-                    return _.capitalize.call(this, args);
-                }
-                if (_.isArray(word)) {
-                    var arr = [];
-                    word.forEach(function(t) {
-                        arr.push(_.capitalize(t));
-                    })
-                    return arr;
-                }
+                if (len > 1) return _.capitalize.call(this, args);
+                if (_.isArray(word)) return word.map(function(t) {
+                    return _.capitalize(t);
+                });
+                word = '' + word;
                 return word.substring(0, 1).toUpperCase() + word.substring(1);
             },
             //驼峰命名
             camelCase: function(word) {
                 var args = Array.prototype.slice.call(arguments),
                     len = args.length;
-                if (len > 1) {
-                    return args[0] + _.capitalize(args.slice(1)).join("");
-                }
-                if (_.isArray(word)) {
-                    return word[0] + _.capitalize(word.slice(1)).join("");
-                }
+                if (len > 1) return args[0] + _.capitalize(args.slice(1)).join('');
+                if (_.isArray(word)) return word[0] + _.capitalize(word.slice(1)).join('');
                 return args[0];
+            },
+            //驼峰转下划线 underscodeCase
+            camel2underscode: function(camelCase) {
+                return camelCase.match(/^[a-z][a-z0-9]+|[A-Z][a-z0-9]*/g).join('_').toLowerCase();
             },
             //复制到剪贴板 只绑定click事件
             copy: function(ele, showUI) {
                 const range = document.createRange();
                 range.selectNode(ele);
                 const selection = window.getSelection();
-                if (selection.rangeCount > 0) selection.removeAllRanges();
+                selection.rangeCount > 0 && selection.removeAllRanges();
                 selection.addRange(range);
                 // document.execCommand('copy'); //ios系统无效
                 try {
@@ -775,19 +584,27 @@
                     console.log("unable to copy");
                 }
             },
+            // toArray: function(obj) {
+            //     var arr = [];
+            //     for (var key in obj) {
+            //         arr.push({
+            //             key: obj[key]
+            //         })
+            //     }
+            //     return arr;
+            // },
             //代替 JSON.stringify()
             stringify: function(obj, ownProperty) {
-                var sb = [],
-                    str = "",
+                var str = "",
                     k, v;
                 if (_.isUndefined(obj)) {
                     str = "undefined";
                 } else if (_.isBoolean(obj)) {
-                    str = obj ? "true" : "false"
+                    str = obj.valueOf() ? "true" : "false"
                 } else if (_.isString(obj)) {
                     str = "\"" + obj + "\""
                 } else if (_.isNumber(obj)) {
-                    str = obj;
+                    str = obj.valueOf();
                 } else if (_.isDocument(obj)) {
                     str = "#document";
                 } else if (_.isElement(obj)) {
@@ -801,10 +618,9 @@
                         str = "function(){}";
                     }
                 } else if (_.isArray(obj)) {
-                    obj.forEach(function(t) {
-                        sb.push(_.stringify(t));
-                    })
-                    str = "[" + sb.join(",") + "]";
+                    str = "[" + obj.map(function(t) {
+                        return _.stringify(t);
+                    }).join(",") + "]";
                 } else if (_.isMouseEvent(obj)) {
                     str = "MouseEvent";
                     str += "(" + _.stringify(obj.target) + ")"
@@ -813,7 +629,10 @@
                     str += "(" + _.stringify(obj.target) + ")"
                 } else if (_.isNull(obj)) {
                     str += "null";
-                } else if (typeof obj == "object") {
+                } else if (_.isDate(obj)) {
+                    str = _.time(obj).format();
+                } else if (typeof obj === "object") {
+                    var sb = [];
                     for (k in obj) {
                         if (Object.prototype.hasOwnProperty.call(obj, k)) {
                             sb.push("\"" + k + "\":");
@@ -829,7 +648,7 @@
                         }
                     }
                     sb.pop();
-                    str = "{" + sb.join("") + "}";
+                    str = "{" + sb.join('') + "}";
                 } else if (_.isInfinity(obj)) {
                     str = "Infinity";
                 } else {
@@ -839,18 +658,15 @@
             },
             //符合格式的json字符串
             toJSONString: function(json) {
-                if (_.isObject(json)) {
-                    return JSON.stringify(json);
-                } else {
-                    return json;
-                }
+                return _.isObject(json) ? JSON.stringify(json) : json;
             },
             //随机颜色
             color: function() {
                 // return this.hsl();
                 return this.rgba();
             },
-            rgb: function() {
+            rgb: function(type) {
+                //位移0去掉小数 正数取整
                 return '#' + ('00000' + (Math.random() * 0x1000000 << 0).toString(16)).slice(-6);
             },
             hsl: function() { //微信小程序不支持hsl
@@ -859,12 +675,15 @@
             hsla: function() {
                 return "hsla(" + Math.ceil(Math.random() * 360) + ",50%,50%,0.5)";
             },
-            // rgba: function() {
-            //     var c = [255, 255, 255, 1].map(function(t, i) {
-            //         return i == 3 ? t * Math.random().toFixed(1) : Math.round(t * Math.random())
-            //     });
-            //     return "rgba(" + c.join(",") + ")";
-            // },
+            //深色 rgb 有一位小于80
+            deepColor: function() {
+                var n = Math.random() * 3 << 0;
+                var c = [255, 255, 255].map(function(t, i) {
+                    return i === n ? Math.random() * 80 << 0 : t * Math.random() << 0;
+                    // return i == 3 ? t * Math.random().toFixed(1) : Math.round(t * Math.random())
+                });
+                return "rgb(" + c.join(",") + ")";
+            },
             //输出rgba颜色格式  
             //红 100
             //绿 010
@@ -891,22 +710,125 @@
                     var g = 1;
                 }
                 var arr = [r, g, b];
-                if (r * g * b == 1) {
+                if (r * g * b === 1) {
                     arr = arr.map(function(t) {
                         return Math.floor(Math.random() * 255);
                     });
-                } else if (r + g + b == 0) {
+                } else if (r + g + b === 0) {
                     var t = Math.floor(Math.random() * 255);
                     arr = [t, t, t];
                 } else {
                     var rgb = 155;
                     var c = Math.floor(Math.random() * (255 - rgb) + rgb);
                     arr = arr.map(function(t) {
-                        return t == 1 ? (Math.floor(Math.random() * (255 - rgb) + rgb)) : (Math.floor(Math.random() * (c / 2)));
+                        return t === 1 ? (Math.floor(Math.random() * (255 - rgb) + rgb)) : (Math.floor(Math.random() * (c / 2)));
                     });
                 }
                 arr.push(a);
                 return "rgba(" + arr.join(",") + ")";
+            },
+            // hex2rgb
+            colorRgb: function(color, alpha) {
+                var reg = /^#([0-9a-fA-f]{3}|[0-9a-fA-f]{6})$/;
+                var sColor = color.toLowerCase();
+                if (sColor && reg.test(sColor)) {
+                    if (sColor.length === 4) {
+                        var sColorNew = "#";
+                        for (var i = 1; i < 4; i += 1) {
+                            sColorNew += sColor.slice(i, i + 1).concat(sColor.slice(i, i + 1));
+                        }
+                        sColor = sColorNew;
+                    }
+                    //处理六位的颜色值  
+                    var sColorChange = [];
+                    for (var i = 1; i < 7; i += 2) {
+                        sColorChange.push(parseInt("0x" + sColor.slice(i, i + 2)));
+                    }
+                    if (alpha) {
+                        sColorChange.push(alpha);
+                        return "rgba(" + sColorChange.join(",") + ")";
+                    }
+                    return "RGB(" + sColorChange.join(",") + ")";
+                } else {
+                    return sColor;
+                }
+
+                // if (hex.length == 4) {
+                //     hex = hex.replace(/^#([0-9a-fA-F]{1})([0-9a-fA-F]{1})([0-9a-fA-F]{1})$/, function(m, r, g, b) {
+                //         return "#" + [r, g, b].map(function(t) {
+                //             return "" + t + t;
+                //         }).join('');
+                //     })
+                // }
+                // if (color.length == 7) {
+                //     return hex.replace(/^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/, function(m, r, g, b) {
+                //         return "rgb(" + [r, g, b].map(function(t) {
+                //             return parseInt("0x" + t); //parseInt(t, 16)
+                //         }) + ")";
+                //     });
+                // }
+                // return hex;
+            },
+            // rgb2hex
+            colorHex: function(color) {
+                var reg = /^#([0-9a-fA-f]{3}|[0-9a-fA-f]{6})$/;
+                if (/^(rgb|RGB)/.test(color)) {
+                    var aColor = color.replace(/(?:|||rgb|RGB)*/g, "").split(",");
+                    var strHex = "#";
+                    for (var i = 0; i < aColor.length; i++) {
+                        var hex = Number(aColor[i]).toString(16);
+                        if (hex === "0") hex += hex;
+                        strHex += hex;
+                    }
+                    if (strHex.length !== 7) strHex = color;
+                    return strHex;
+                } else if (reg.test(color)) {
+                    var aNum = color.replace(/#/, "").split("");
+                    if (aNum.length === 6) {
+                        return color;
+                    } else if (aNum.length === 3) {
+                        var numHex = "#";
+                        aNum.forEach(function(t) {
+                            numHex += t + t;
+                        });
+                        return numHex;
+                    }
+                } else {
+                    return color;
+                }
+
+            },
+
+            //渐变色数组  每两位的颜色小于80是深色
+            gradientColor: function(startColor, endColor, step) {
+                var startRGB = this.colorRgb(startColor); //转换为rgb数组模式
+                var startR, startG, startB;
+                startRGB.replace(/(\d{1,3}),(\d{1,3}),(\d{1,3})/g, function(m, r, g, b) {
+                    startR = Number(r);
+                    startG = Number(g);
+                    startB = Number(b);
+                });
+                var endRGB = this.colorRgb(endColor);
+                var endR, endG, endB;
+                endRGB.replace(/(\d{1,3}),(\d{1,3}),(\d{1,3})/g, function(m, r, g, b) {
+                    endR = Number(r);
+                    endG = Number(g);
+                    endB = Number(b);
+                });
+
+                sR = (endR - startR) / step; //总差值
+                sG = (endG - startG) / step;
+                sB = (endB - startB) / step;
+
+                var colorArr = [];
+                for (var i = 0; i < step; i++) {
+                    //计算每一步的hex值 
+                    var rgba = 'rgba(' + parseInt((sR * i + startR)) + ',' + parseInt((sG * i + startG)) + ',' + parseInt((sB * i + startB)) + ',0.5)';
+                    colorArr.push(rgba);
+                    // var hex = this.colorHex();
+                    // colorArr.push(hex);
+                }
+                return colorArr;
             },
             isHtml: function(tpl) {
                 return /<(\S*?) [^>]*>.*?<\/\1>|<.*?\/?>/.test(tpl);
@@ -926,6 +848,7 @@
                 var matcher = content.match(REG_BODY);
                 return matcher && matcher.length > 1 ? matcher[1] : content;
             },
+            // todo
             markdown: function(tpl) {
                 if (_.isEmpty(tpl)) {
                     tpl = '# 标题  ## 标题2  \n' +
@@ -1016,7 +939,7 @@
                 ]
                 //var reg = new RegExp('(\\s|^)' + cls + '(\\s|$)');
 
-                var _star = function(tag, options) {
+                var _start = function(tag, options) {
                     var sb = [];
                     sb.push('<');
                     sb.push(tag);
@@ -1031,7 +954,7 @@
                 }
 
                 var _wrap = function(tag, text, options) {
-                    return text ? _star(tag, options) + text + _end(tag) : _star(tag, options);
+                    return text ? _start(tag, options) + text + _end(tag) : _start(tag, options);
                 }
 
                 var escape = {
@@ -1170,68 +1093,40 @@
             },
             hasClass: function(cls) {
                 var elem = this;
-                if (_.isJQuery(elem)) {
-                    elem = elem.get(0);
-                }
-                if (_.isElement(elem)) {
-                    // return _.contains(elem.className.split(" "), cls);
-                    return elem.className.split(" ").indexOf(cls) != -1
-                } else {
-                    return false;
-                }
+                if (_.isJQuery(elem)) elem = elem.get(0);
+                return _.isElement(elem) ? !!~elem.className.split(" ").indexOf(cls) : false;
             },
             addClass: function(cls) {
-                var elem = this;
-                var clsArr = Array.prototype.slice.call(arguments);
-                if (clsArr.length == 1 && cls) {
-                    clsArr = cls.split(" ");
-                }
+                var elem = this,
+                    clsArr = Array.prototype.slice.call(arguments);
+                if (clsArr.length === 1 && cls) clsArr = cls.split(" ");
 
-                var _addClass = function() {
-                    var elem = this;
-                    if (_.isString(elem)) {
-                        elem = _.query(elem);
-                    }
-
+                return (function _addClass(elem) {
+                    if (_.isString(elem)) elem = _.query(elem);
                     if (_.isElement(elem)) {
                         elem.className = _.uniq(elem.className.split(" ").concat(clsArr)).join(" "); //允许一次加多个样式
                     } else if (_.isJQuery(elem)) {
                         elem.addClass(cls); //兼容jquery
                     } else if (_.isArray(elem)) {
-                        _.each(elem, function(item) {
-                            _addClass.call(item); //递归调用
+                        return elem.map(function(t) {
+                            return _addClass(t);
                         });
                     }
-                }
-                _addClass.call(elem);
-                if (_.isArray(elem)) {
-                    var len = elem.length;
-                    if (len == 0) {
-                        // return null;
-                        return [];
-                    } else if (len == 1) {
-                        elem = elem[0];
-                    }
-                }
-                return elem;
+                    return elem;
+                })(elem);
             },
             removeClass: function(cls) {
                 var elem = this;
                 var clsArr = Array.prototype.slice.call(arguments);
-                if (clsArr.length == 1 && cls) {
-                    clsArr = cls.split(" ");
-                }
-                if (clsArr.length > 1) {
-                    clsArr.forEach(function(t) {
-                        _.removeClass.call(elem, t)
-                    })
-                }
-                var _removeClass = function() {
-                    var elem = this;
-                    if (_.isString(elem)) {
-                        elem = _.query(elem);
-                    }
+                if (clsArr.length === 1 && cls) clsArr = cls.split(" ");
 
+
+                clsArr.length > 1 && clsArr.forEach(function(t) {
+                    _.removeClass.call(elem, t)
+                });
+
+                return (function _removeClass(elem) {
+                    if (_.isString(elem)) elem = _.query(elem);
                     if (_.isElement(elem)) {
                         if (elem.hasClass(cls)) {
                             var reg = new RegExp('(\\s|^)' + cls + '(\\s|$)');
@@ -1240,21 +1135,12 @@
                     } else if (_.isJQuery(elem)) {
                         elem.removeClass(cls); //兼容jquery
                     } else if (_.isArray(elem)) {
-                        _.each(elem, function(item) {
-                            _removeClass.call(item, cls); //递归调用
+                        return elem.map(function(t) {
+                            return _removeClass(t);
                         });
                     }
-                }
-                _removeClass.call(elem);
-                if (_.isArray(elem)) {
-                    var len = elem.length;
-                    if (len == 0) {
-                        return [];
-                    } else if (len == 1) {
-                        elem = elem[0];
-                    }
-                }
-                return elem;
+                    return elem
+                })(elem);
             },
             //悬停效果
             hover: function(cls, callback) {
@@ -1298,9 +1184,9 @@
             },
             //数组切割
             slice: function(arr, size) {
-                var args = Array.prototype.slice.call(arguments),
+                var args = Array.prototype.slice.call(arguments), //转换成数组
                     len = args.length;
-                if (len == 2 && _.isArray(arr) && _.isNumber(size)) {
+                if (len === 2 && _.isArray(arr) && _.isNumber(size)) {
                     var result = [];
                     for (var x = 0; x < Math.ceil(arr.length / size); x++) {
                         var start = x * size;
@@ -1309,54 +1195,22 @@
                     }
                     return result;
                 }
-                return len == 0 ? null : len == 1 ? args[0] : args;
+                return len === 0 ? null : len === 1 ? args[0] : args;
             },
             //判断是否有属性
-            hasAttr: function(elem, attr) {
+            hasAttr: function(attr) {
+                var elem = this;
                 if (_.isElement(elem)) {
                     return !_.isNull(elem.getAttribute(attr));
                 } else if (_.isJQuery(elem)) {
-                    return typeof(elem.attr(attr)) != "undefined";
+                    return !_.isUndefined(elem.attr(attr));
                 } else if (_.isString(elem)) {
-                    elem = _.query(elem);
-                    return _.hasAttr(elem, attr)
+                    return _.hasAttr.call(_.query(elem), attr)
                 } else {
                     return false;
                 }
             },
-            //for in 可以遍历扩展原型  hasOwnProperty只会原生的
-            has: function(obj, key) {
-                var _has = function(k) {
-                    return Object.prototype.hasOwnProperty.call(this, k)
-                }
-                if (_.isObject(obj)) {
-                    var ks = key.split(".");
-                    var len = ks.length;
-                    if (len == 1) {
-                        return _has.call(obj, key);
-                    } else {
-                        var o = obj;
-                        for (var i = 0; i < len; i++) {
-                            var k = ks.shift().trim();
-                            if (_has.call(o, k)) {
-                                try {
-                                    o = o[k];
-                                } catch (e) {
-                                    // console.log(e);
-                                    return false;
-                                }
-                            } else {
-                                return false;
-                            }
-                        }
-                        return true;
-                    }
-                } else if (_.isArray(obj) || _.isString(obj)) {
-                    return obj.indexOf(key) != -1;
-                } else if (_.isUndefined(obj) || _.isUndefined(key)) {
-                    return false;
-                }
-            },
+
             //contenteditable是非标准的编辑，光标不能自动跳入，需要用脚本控制
             focus: function(editor) {
                 editor.onfocus = function() {
@@ -1385,52 +1239,12 @@
                 }
                 editor.focus();
             },
-            //对象类名
-            objectName: function(obj) {
-                return _.isUndefined(obj) ? _.isUndefined(obj) : _.isNull(obj) ? _.isNull(obj) : obj.prototype.constructor ? obj.prototype.constructor.name : obj.__proto__.constructor.name
-            },
 
-            //类型
-            type: function(o) {
-                // handle null in old IE
-                if (o === null) {
-                    return 'null';
-                }
-                // handle DOM elements
-                var s = Object.prototype.toString.call(o);
-                var t = s.match(/\[object (.*?)\]/)[1].toLowerCase();
-                // handle NaN and Infinity
-                if (t === 'number') {
-                    if (isNaN(o)) {
-                        return 'nan';
-                    }
-                    if (!isFinite(o)) {
-                        return 'infinity';
-                    }
-                }
-                return t;
-            },
-            isElement: function(o) {
-                if (o && (o.nodeType === 1 || o.nodeType === 9)) {
-                    return true
-                }
-                return false;
-            },
-            isDocument: function(o) {
-                if (o && o.nodeName && o.nodeType === 9) { //&& o.nodeName == "#document"
-                    return true;
-                }
-                return false;
-            },
-            isImage: function(o) {
-                return _.type(o) == "htmlimageelement";
-            },
-            isCanvas: function(o) {
-                return _.type(o) == "htmlcanvaselement";
-            },
+
+
             //图片状态
             isImgLoad: function(img) {
-                return isIE ? img.readyState == 'complete' : img.complete;
+                return isIE ? img.readyState === 'complete' : img.complete;
             },
             loadImg: function(imgSrc, callback) {
                 var originImg; //原图
@@ -1442,6 +1256,7 @@
                     originImg.src = canvas.toDataURL('image/jpeg'); //quality
                 } else {
                     originImg = new Image();
+                    // originImg.crossOrigin = ''; //支持CORS(Cross-Origin Resource Sharing)（跨域资源共享）
                     originImg.src = imgSrc;
                 }
                 if (_.isImgLoad(originImg)) {
@@ -1595,36 +1410,19 @@
                     el.style.backgroundImage = 'url("' + img.src + '")';
                 })
             },
-            isJQuery: function(o) {
-                if (o) {
-                    return !!(o.jquery);
-                }
-                return false;
-            },
 
-
-            keys: function(obj) {
-                if (!_.isObject(obj)) return [];
-                if (Object.keys) return Object.keys(obj);
-                var keys = [];
-                for (var key in obj)
-                    if (_.has(obj, key)) keys.push(key);
-                return keys;
-            },
 
             each: function(obj, iterator, context) {
                 if (obj == null) return obj;
                 if (Array.prototype.forEach && obj.forEach === Array.prototype.forEach) {
                     obj.forEach(iterator, context);
                 } else if (obj.length === +obj.length) {
-                    for (var i = 0, length = obj.length; i < length; i++) {
+                    for (var i = 0, length = obj.length; i < length; i++)
                         if (iterator.call(context, obj[i], i, obj) === {}) return;
-                    }
                 } else {
                     var keys = _.keys(obj);
-                    for (var i = 0, length = keys.length; i < length; i++) {
+                    for (var i = 0, length = keys.length; i < length; i++)
                         if (iterator.call(context, obj[keys[i]], keys[i], obj) === {}) return;
-                    }
                 }
                 return obj;
             },
@@ -1644,7 +1442,7 @@
             contains: function(obj, target) {
                 if (obj == null) return false;
                 if (obj == target) return true; //
-                if (Array.prototype.indexOf && obj.indexOf === Array.prototype.indexOf) return obj.indexOf(target) != -1;
+                if (Array.prototype.indexOf && obj.indexOf === Array.prototype.indexOf) return !!~obj.indexOf(target);
                 return _.any(obj, function(value) {
                     return value === target;
                 });
@@ -1665,27 +1463,24 @@
             max: function(array) {
                 var args = Array.prototype.slice.call(arguments),
                     len = args.length;
-                if (len > 1) {
-                    array = args;
-                }
+                if (len > 1) array = args;
+
                 //多维数组转一维
                 var ta = _.isArray(array) ? array.join(",").split(",") : array.split(",");
                 //去非数字
                 for (var i = 0; i < ta.length; i++) {
-                    if (ta[i] == "") {
+                    if (ta[i] === "") {
                         ta.splice(i, 1);
                         i--;
                     }
                 }
-                if (ta == []) return 0;
-                return Math.max.apply(Math, ta);
+                return ta === [] ? 0 : Math.max.apply(Math, ta);
             },
             min: function(array) {
                 var args = Array.prototype.slice.call(arguments),
                     len = args.length;
-                if (len > 1) {
-                    array = args;
-                }
+                if (len > 1) array = args;
+
                 //多维数组转一维
                 var ta = _.isArray(array) ? array.join(",").split(",") : array.split(",");
                 //去非数字
@@ -1695,8 +1490,7 @@
                         i--;
                     }
                 }
-                if (ta == []) return 0;
-                return Math.min.apply(Math, ta);
+                return ta === [] ? 0 : Math.min.apply(Math, ta);
             },
 
 
@@ -1722,21 +1516,23 @@
             //     })
             // },
 
+            //克隆并 继承.可继承{}， 不能继承 undefined []
             clone: function(obj) {
                 if (!_.isObject(obj)) return obj;
-                return _.isArray(obj) ? obj.slice() : _.extend({}, obj);
+                if (_.isArray(obj)) return obj.slice();
+                var args = Array.prototype.slice.call(arguments);
+                args.unshift({});
+                return _.extend.apply(null, args);
             },
-
-            // Invert the keys and values of an object. The values must be serializable.
+            // {key:value} => {value:key}  ，Invert the keys and values of an object. The values must be serializable.
             invert: function(obj) {
                 var result = {};
                 var keys = _.keys(obj);
-                for (var i = 0, length = keys.length; i < length; i++) {
-                    result[obj[keys[i]]] = keys[i];
-                }
+                keys.forEach(function(t) {
+                    result[obj[t]] = t;
+                });
                 return result;
             }
-
         };
 
         // _.upperCaseFirstAlphabet=function(str){
@@ -1758,20 +1554,42 @@
             { "key": "fadeinleft", "reverse": "fadeoutright", "type": "animate" }
         ].forEach(function(t) {
             _[t.key] = function() {
-                var elem = Array.prototype.slice.call(arguments);
-                if (t.type == "animate") {
-                    _.removeClass.call(elem, t.reverse, "hide")
+                var len = arguments.length,
+                    args;
+                if (len === 0) {
+                    return;
+                } else if (len === 1) {
+                    args = arguments[0];
+                } else {
+                    args = new Array(len);
+                    while (len--) args[len] = arguments[len];
                 }
-                return _.addClass.call(elem, t.key);
+
+
+                // var elem =Array.prototype.slice.call(arguments);
+                if (t.type === "animate") {
+                    _.removeClass.call(args, t.reverse, "hide")
+                }
+                return _.addClass.call(args, t.key);
             };
 
             _[t.reverse] = function() {
-                var elem = Array.prototype.slice.call(arguments);
-                if (t.type == "animate") {
-                    _.addClass.call(elem, t.reverse);
-                    return _.removeClass.call(elem, t.key, "hide");
+                var len = arguments.length,
+                    args;
+                if (len === 0) {
+                    return;
+                } else if (len === 1) {
+                    args = arguments[0];
+                } else {
+                    args = new Array(len);
+                    while (len--) args[len] = arguments[len];
                 }
-                return _.removeClass.call(elem, t.key);
+                // var elem = Array.prototype.slice.call(arguments);
+                if (t.type === "animate") {
+                    _.addClass.call(args, t.reverse);
+                    return _.removeClass.call(args, t.key, "hide");
+                }
+                return _.removeClass.call(args, t.key);
             };
 
             // _['is'+_.upperCaseFirstAlphabet(t.key)]=function(){
@@ -1788,10 +1606,10 @@
 
 
         //去掉'Element' 'Object'，需单独处理
-        //增加NodeList Arguments Window touchevent MouseEvent Screen  Infinity
+        //增加NodeList Arguments Window touchevent MouseEvent Screen  Infinity Date
         ['Null', 'Undefined', 'Array', 'String', 'Number',
             'Boolean', 'Function', 'RegExp', 'NaN', 'Infinity', // 'Infinite',
-            'NodeList', 'Arguments', 'Window', 'TouchEvent', "MouseEvent", "Screen"
+            'NodeList', 'Arguments', 'Window', 'TouchEvent', 'MouseEvent', 'Screen', 'Date'
         ].forEach(function(t) {
             _['is' + t] = function(o) {
                 return _.type(o) === t.toLowerCase();
@@ -1801,12 +1619,21 @@
         _.isObject = function(o) {
             return _.isElement(o) ? true : _.type(o) === "object";
         };
+        //html Element
+        ['Div', 'Image', 'Canvas'].forEach(function(t) {
+            _['is' + t] = function(o) {
+                return _.type(o) === 'html' + t.toLowerCase() + 'element';
+            };
+        });
+        //空数组  空对象
         _.isEmpty = function(obj) {
             if (obj == null) return true;
-            if (_.isArray(obj) || _.isString(obj)) return obj.length === 0;
-            if (_.isElement(obj)) return _.size(obj) == 0;
+            if (_.isNumber(obj)) return false; //数字不为空 ，0也不为空
+            if (_.isDate(obj)) return false; //日期
+            if (_.isArray(obj) || _.isString(obj)) return obj.length === 0; //空数组
+            if (_.isElement(obj)) return _.size(obj) === 0; //dom
             for (var key in obj)
-                if (_.has(obj, key)) return false;
+                if (_.has(obj, key)) return false; //对象有属性
             return true;
         };
         _.uniq = _.unique = function(array, isSorted, iterator, context) {
@@ -1890,9 +1717,7 @@
 
         // Internal implementation of a recursive `flatten` function.
         var flatten = function(input, shallow, output) {
-            if (shallow && _.every(input, _.isArray)) {
-                return Array.prototype.concat.apply(output, input);
-            }
+            if (shallow && _.every(input, _.isArray)) return Array.prototype.concat.apply(output, input);
             _.each(input, function(value) {
                 if (_.isArray(value) || _.isArguments(value)) {
                     shallow ? Array.prototype.push.apply(output, value) : flatten(value, shallow, output);
@@ -1909,11 +1734,11 @@
         };
 
         _.getVal = function(data, name) {
-            var val = "";
-            var nameArr = name.split("."),
+            var val = "",
+                nameArr = name.split("."),
                 len = nameArr.length;
             if (_.isObject(data)) {
-                if (len == 1) {
+                if (len === 1) {
                     val = data[name];
                 } else {
                     val = data[nameArr.shift()];
@@ -1921,29 +1746,17 @@
                     if (_.isObject(val)) {
                         for (var i = 0; i < len; i++) {
                             val = val[nameArr[i]];
-                            if (_.isUndefined(val)) {
-                                val = "";
-                                return "";
-                            }
+                            if (_.isUndefined(val)) return val = "";
                         }
                     }
                 }
             } else if (_.isString(data) || _.isNumber(data)) {
-                if (name == "text") {
-                    val = data;
-                }
+                if (name === "text") val = data;
             }
             return val;
         }
 
         _.$ = _.query;
-
-        // Array.intersect = function(a, b) {
-        //     return a.uniq().each(function(o) {
-        //         return b.contains(o) ? o : null
-        //     });
-        // };
-
 
 
         // List of HTML entities for escaping.
@@ -1964,16 +1777,14 @@
             unescape: new RegExp('(' + _.keys(entityMap.unescape).join('|') + ')', 'g')
         };
 
-        // Functions for escaping and unescaping strings to/from HTML interpolation.
-        _.each(['escape', 'unescape'], function(method) {
-            _[method] = function(string) {
-                if (string == null) return '';
-                return ('' + string).replace(entityRegexes[method], function(match) {
-                    return entityMap[method][match];
+        //定义函数 'escape', 'unescape'
+        ['escape', 'unescape'].forEach(function(t) {
+            _[t] = function(str) {
+                return str == null ? '' : ('' + str).replace(entityRegexes[t], function(match) {
+                    return entityMap[t][match];
                 });
             };
-        });
-
+        })
 
         /**
          * 。。。。
@@ -1995,9 +1806,7 @@
          */
         _.toQueryString = function(obj) {
             var result = [];
-            for (var key in obj) {
-                result.push(_.toQueryPair(key, obj[key]));
-            }
+            for (var key in obj) result.push(_.toQueryPair(key, obj[key]));
             return result.join("&");
         };
 
@@ -2025,41 +1834,33 @@
                 len = args.length;
             if (len >= 2) {
                 if (_.isFunction(args[1])) {
-                    option = _.extend(option, {
+                    _.extend(option, {
                         success: args[1]
                     })
                 } else if (_.isObject(args[1])) {
-                    option = _.extend(option, args[1])
-                    if (_.isObject(option.data)) {
-                        option.data = _.toQueryString(option.data);
-                    }
+                    _.extend(option, args[1]);
+                    if (_.isObject(option.data)) option.data = _.toQueryString(option.data);
                 }
 
             }
 
-            if (len >= 3) {
-                if (_.isFunction(args[2])) {
-                    option = _.extend(option, {
-                        error: args[2]
-                    })
-                }
-            }
+
+            len >= 3 && _.isFunction(args[2]) && _.extend(option, {
+                error: args[2]
+            })
+
 
             function createXmlHttpRequest() {
                 try {
                     xmlHttp = new ActiveXObject("Msxml2.XMLHTTP");
                 } catch (e) {
-                    console.log(e);
                     try {
                         xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
                     } catch (e2) {
-                        console.log(e2);
                         xmlHttp = false;
                     }
                 }
-                if (!xmlHttp && typeof XMLHttpRequest != "undefined") {
-                    xmlHttp = new XMLHttpRequest();
-                }
+                if (!xmlHttp && typeof XMLHttpRequest !== "undefined") xmlHttp = new XMLHttpRequest();
             }
 
             function sendXmlHttpRequest() {
@@ -2075,7 +1876,7 @@
 
                         if (option.method === "GET") {
                             if (option.data) {
-                                uri += (uri.indexOf("?") > -1 ? "&" : "?") + option.data;
+                                uri += !!~(uri.indexOf("?") ? "&" : "?") + option.data;
                                 option.data = null;
                             }
                             xmlHttp.open("GET", uri, option.isAsync);
@@ -2099,9 +1900,7 @@
 
             //回调函数 
             function handleStateChange() {
-                if (done) {
-                    return true;
-                }
+                if (done) return true;
                 var o = {};
                 var content = o.responseText = xmlHttp.responseText;
                 o.responseXML = xmlHttp.responseXML;
@@ -2112,7 +1911,7 @@
                 if (option.dataType === 'json') {
                     try {
                         content = o.responseJSON = JSON.parse(xmlHttp.responseText);
-                    } catch (e) { console.log(e); }
+                    } catch (e) {}
                 }
                 if (xmlHttp.readyState == 4) {
                     switch (xmlHttp.status) {
@@ -2180,16 +1979,12 @@
         }
 
         _.loading = function(loadEl, callback, animate) {
-            if (_.isString(loadEl)) {
-                loadEl = _.query(loadEl);
-            }
+            if (_.isString(loadEl)) loadEl = _.query(loadEl);
             if (_.isElement(loadEl)) {
                 var loadArr = ['~oo~', '^oo^', '^oo~', '~oo^'];
                 var loadAnimationTimeout = false;
                 var loadAnimation = function() {
-                    if (loadAnimationTimeout) {
-                        return;
-                    }
+                    if (loadAnimationTimeout) return;
                     setTimeout(function() {
                         loadEl.query(".tip").text(loadArr.random()); //"数据加载中 " + 
                         loadAnimation();
@@ -2218,9 +2013,7 @@
             };
 
             var _error = function(elem, result) {
-                if (_.isFunction(error)) {
-                    error.call(elem, elem, result);
-                }
+                if (_.isFunction(error)) error.call(elem, elem, result);
             }
 
             if (_.isElement($file)) {
@@ -2251,10 +2044,7 @@
             function isImgLoad(callback) {
                 $img.each(function() {
                     // 找到为0就将isLoad设为false，并退出each
-                    if (this.height === 0) {
-                        isLoad = false;
-                        return false;
-                    }
+                    if (this.height === 0) return isLoad = false;
                 });
                 // 为true，没有发现为0的。加载完毕
                 if (isLoad) {
@@ -2285,13 +2075,7 @@
         _.polyfill = function(obj, arr, fn) {
             for (var i = 0, len = arr.length; i < len; i++) {
                 var f = obj[arr[i]];
-                if (_.isFunction(f)) {
-                    if (i == 0) {
-                        return f;
-                    } else {
-                        return obj[arr[0]] = f;
-                    }
-                }
+                if (_.isFunction(f)) return obj[arr[0]] = f;
             }
             return obj[arr[0]] = fn;
         }
@@ -2309,16 +2093,14 @@
         _.selectorMatches = function(el, selector) {
             var p = Element.prototype;
             var f = p.matches || p.webkitMatchesSelector || p.mozMatchesSelector || p.msMatchesSelector ||
-                function(s) { return Array.prototype.slice.call(document.querySelectorAll(s)).indexOf(this) !== -1; };
+                function(s) { return !!~Array.prototype.slice.call(document.querySelectorAll(s)).indexOf(this); };
             return f.call(el, selector);
         }
 
         _.closest = function(selector) {
             var el = this;
             while (el) {
-                if (el && _.selectorMatches(el, selector)) { //parent.matches(selector)
-                    return el;
-                }
+                if (el && _.selectorMatches(el, selector)) return el;
                 el = el.parentElement; //parentNode
             }
             return [];
@@ -2353,7 +2135,256 @@
         };
 
 
-        var _prototype = {}
+        //日期工具
+        var _time = _.time = function(dateValue) {
+            return new _time.prototype.init(dateValue);
+        }
+
+        //_.time.toDate("09:30:00")
+        //_.time.toDate(timeRange[0].begin.format("yyyy-MM-dd") + " " + (new Date()).format(" HH:mm:ss"))
+        // 指定时间  hh:mm:ss     默认当天日期  
+        // 指定日期  yyyy-MM-dd   默认时间 00:00:00  (非当前时间)   
+        _time.toDate = function(str) {
+            if (_.isDate(str)) {
+                return str;
+            } else if (_.isEmpty(str)) {
+                return new Date();
+            } else if (/^\d*$/.test(str)) {
+                return new Date(Number(str));
+            } else if (_.isString(str)) {
+                if (this.isTimeString(str)) str = this().format("yyyy-MM-dd") + " " + str;
+                return new Date(Date.parse(str.replace(/-/g, "/")));
+            }
+            return str;
+        };
+
+        // 时间格式 hh:mm:ss 
+        _time.isTimeString = function(str) {
+            return /^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/.test(str);
+        }
+
+        _time.set = function(date, time) {
+            return this.toDate(time ? date + ' ' + time : date);
+            // var self = this;
+
+            // if (this.isTimeString(time)) {
+            //     //时间补0
+            //     time = time.replace(/\d{1,2}/g, function(t) {
+            //         return self.zerofill(t)
+            //     });
+            //     // str.replace(reg, function(t, h, m, s) {
+            //     //     console.log(t + ":----")
+            //     //     console.log("h:" + h)
+            //     //     console.log("m:" + m)
+            //     //     console.log("s:" + s)
+            //     //     return self.zerofill(t)
+            //     // })
+            //     //(new Date()).format("yyyy-MM-dd")
+            //     date += ' ' + time;
+            // }
+
+            // return new Date(Date.parse(date.replace(/-/g, "/")));
+        }
+        //补0
+        _time.zerofill = function(n) {
+            n = '' + n;
+            return n[1] ? n : '0' + n;
+        }
+        //时长 格式化
+        _time.durationFormat = function(duration) {
+            var self = this;
+            if (typeof duration !== 'number' || duration < 0) return "00:00";
+            var hour = parseInt(duration / 3600);
+            duration %= 3600;
+            var minute = parseInt(duration / 60);
+            duration %= 60;
+            var second = parseInt(duration);
+            var arr = [minute, second];
+            if (hour > 0) arr.unshift(hour);
+            return arr.map(function(n) {
+                return self.zerofill(n)
+            }).join(':');
+        };
+
+        //映射短名字
+        _time.mapShortName = function(s) {
+            s = ('' + s).toLowerCase();
+            var m = {
+                "y": "year",
+                "m": "month",
+                "d": "day",
+                "w": "week",
+                "h": "hour",
+                "n": "minute",
+                "min": "minute",
+                "s": "second",
+                "l": "msecond",
+                "ms": "msecond",
+            };
+            return s in m ? m[s] : s;
+        };
+        //时间间隔
+        _time.diff = function(interval, date1, date2) {
+            var t1 = this(date1),
+                t2 = this(date2),
+                _diff = t1.time - t2.time,
+                seconds = 1000,
+                minutes = seconds * 60,
+                hours = minutes * 60,
+                days = hours * 24,
+                years = days * 365;
+
+            switch (this.mapShortName(interval)) {
+                case "year":
+                    result = t1.year - t2.year; //_diff/years
+                    break;
+                case "month":
+                    result = (t1.year - t2.year) * 12 + (t1.month - t2.month);
+                    break;
+                case "day":
+                    result = Math.round(_diff / days);
+                    break;
+                case "hour":
+                    result = Math.round(_diff / hours);
+                    break;
+                case "minute":
+                    result = Math.round(_diff / minutes);
+                    break;
+                case "second":
+                    result = Math.round(_diff / seconds);
+                    break;
+                case "msecond":
+                    result = _diff;
+                    break;
+                case "week":
+                    result = Math.round(_diff / days) % 7;
+                    break;
+                default:
+                    result = "invalid";
+            }
+            return result;
+        };
+        _time.add = function(interval, number, date) {
+            var date = this.toDate(date);
+            switch (this.mapShortName(interval)) {
+                case "year":
+                    return new Date(date.setFullYear(date.getFullYear() + number));
+                case "month":
+                    return new Date(date.setMonth(date.getMonth() + number));
+                case "day":
+                    return new Date(date.setDate(date.getDate() + number));
+                case "week":
+                    return new Date(date.setDate(date.getDate() + 7 * number));
+                case "hour":
+                    return new Date(date.setHours(date.getHours() + number));
+                case "minute":
+                    return new Date(date.setMinutes(date.getMinutes() + number));
+                case "second":
+                    return new Date(date.setSeconds(date.getSeconds() + number));
+                case "msecond":
+                    return new Date(date.setMilliseconds(date.getMilliseconds() + number));
+            }
+            return date;
+        };
+
+        _time.prototype = {
+            constructor: _time,
+            init: function(dateValue) {
+                var t = this.date = this.constructor.toDate(dateValue);
+                this.year = t.getFullYear();
+                this.month = t.getMonth() + 1;
+                this.day = t.getDate(); //日期 day_of_month
+                this.hour = t.getHours();
+                this.minute = t.getMinutes();
+                this.second = t.getSeconds();
+                this.msecond = t.getMilliseconds(); //毫秒 
+                this.day_of_week = t.getDay() === 0 ? 7 : t.getDay(); //  星期几   What day is today
+                // 中国的概念是周一是每周的开始, 周日12pm是每周结束.
+
+                this.time = t.getTime();
+                this.quarter = Math.floor((t.getMonth() + 3) / 3); //季度 
+
+            },
+
+            // 转化为指定格式的String 
+            // 月(M)、日(d)、小时(h)、分(m)、秒(s)、季度(q) 可以用 1-2 个占位符， 
+            // 年(y)可以用 1-4 个占位符，毫秒(S)只能用 1 个占位符(是 1-3 位的数字) 
+            // 例子： 
+            // (new Date()).format("yyyy-MM-dd hh:mm:ss.S") ==> 2006-07-02 08:09:04.423 
+            // (new Date()).format("yyyy-M-d h:m:s.S")      ==> 2006-7-2 8:9:4.18 
+            format: function(fmt) {
+                var self = this;
+                fmt = fmt || "yyyy-MM-dd hh:mm:ss.S";
+                var date = this.date
+                var o = {
+                    "y+|Y+": this.year, //年份4位特殊处理
+                    "M+": this.month,
+                    "d+|D+": this.day,
+                    "h+|H+": this.hour,
+                    "m+": this.minute,
+                    "s+": this.second,
+                    "q+": this.quarter,
+                    "S": this.msecond,
+                };
+                _.keys(o).forEach(function(k, i) {
+                    var v = '' + o[k];
+                    fmt = fmt.replace(new RegExp(k, 'g'), function(t) {
+                        return i === 0 ? v.substr(4 - t.length) : t[1] ? self.constructor.zerofill(v) : v;
+                    })
+                });
+                return fmt;
+            },
+            //设置当前时间  ，保持当前日期不变
+            set: function(str) {
+                if (this.constructor.isTimeString(str)) str = this.format("yyyy-MM-dd") + " " + str;
+                return this.constructor.toDate(str);
+            },
+            //当前时间
+            setCurTime: function() {
+                return this.set(this.constructor().format("HH:mm:ss"));
+            },
+            add: function(interval, number, date) {
+                return this.constructor.add(interval, number, date)
+            },
+            utc: function() {
+                return Date.UTC(this.year, this.month - 1, this.day, this.hour, this.minute, this.second, this.msecond)
+            },
+            //时区
+            zone: function() {
+                return (this.time - this.utc()) / 3600000;
+            },
+            diff: function(interval, date1) {
+                return this.constructor.diff(interval, this.date, date1)
+            },
+
+            //
+            // weekOfMonth: function() {
+
+            // },
+
+            //一年中的第几周 WEEK_OF_Year WEEKNUM
+            // 以周一为周首，周日为周末  以完整的一周计算，可能第一周不足7天
+            //此处按7天一周计算 
+            week: function(dateStr) {
+                var day_of_year = 0;
+                var d = dateStr ? this.constructor.toDate(dateStr) : this.date;
+                if (!d) return "";
+                var years = this.year,
+                    month = this.month - 1,
+                    day = this.day,
+                    days = [31, 28, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+                //4年1闰
+                if (Math.round(years / 4) === years / 4) days[1] = 29;
+                days.forEach(function(t, i) {
+                    if (i <= month) day_of_year += day + (i === 0 ? 0 : days[i - 1]);
+                });
+                return Math.ceil(day_of_year / 7);
+            }
+        }
+        _time.prototype.init.prototype = _time.prototype;
+
+
+        var _prototype = {};
 
         //原型扩展
         _prototype.obj = {
@@ -2383,7 +2414,7 @@
                         _cmd(surplus);
                     }
                 _cmd(str);
-                return eval(ps.join(""));
+                return eval(ps.join(''));
             }
         };
 
@@ -2477,7 +2508,7 @@
                 } catch (e) { console.log(e); }
                 // with(Math) {
                 //整数相除
-                if (t2 == 0 && t1 == 0) {
+                if (t2 === 0 && t1 === 0) {
                     result = (this / arg);
 
                 } else {
@@ -2498,8 +2529,6 @@
                     }
 
                 }
-
-
                 result.isInfinity(function() {
                     // console.log((r1 / r2),(t2 - t1))
                     console.log(r1 + " " + r2 + " " + (t2 - t1) + " " + this + " " + arg);
@@ -2510,7 +2539,6 @@
                 // }
 
                 return result;
-                // }
             },
             isInfinity: function(callback) {
                 var fn = function() {
@@ -2533,12 +2561,8 @@
                 return "#" + this;
             },
             brackets: function(ele) {
-
                 if (!ele) {
-                    var es = this.split(",");
-                    return "[" + es.join("],[") + "]";
-
-                    // return "[" + this + "]";
+                    return "[" + this.split(",").join("],[") + "]"; //"[" + this + "]";
                 } else {
                     var id;
                     if (_.isElement(ele)) {
@@ -2551,56 +2575,21 @@
                     var es = this.split(",");
                     return "#" + id + "[" + es.join("],#" + id + "[") + "]" + "," + "#" + id + " [" + es.join("],#" + id + " [") + "]";
                 }
-
             },
             // console.log('hihih {0}, ,{2}'.format('dfasda', '34324343','dffds34324'));
             format: function() {
                 var args = Array.prototype.slice.call(arguments),
-                    len = args.length;
-                var str = this;
-                for (var i = 0, j = len; i < j; i++) {
-                    // str = str.replace(new RegExp('\\{' + i + '\\}', 'g'), arguments[i]);
-                    str = str.replace(/{.*?}/, args[i]);
-                }
+                    str = this;
+                args.forEach(function(t) {
+                    str = str.replace(/{.*?}/, t);
+                });
                 return str;
             },
-
-
-
         };
 
         _prototype.dat = {
-            // var _ = _;
-            // 对Date的扩展，将 Date 转化为指定格式的String 
-            // 月(M)、日(d)、小时(h)、分(m)、秒(s)、季度(q) 可以用 1-2 个占位符， 
-            // 年(y)可以用 1-4 个占位符，毫秒(S)只能用 1 个占位符(是 1-3 位的数字) 
-            // 例子： 
-            // (new Date()).format("yyyy-MM-dd hh:mm:ss.S") ==> 2006-07-02 08:09:04.423 
-            // (new Date()).format("yyyy-M-d h:m:s.S")      ==> 2006-7-2 8:9:4.18 
-            format: function(fmt) { //author: meizz 
-                var $1, o = {
-                    "M+": this.getMonth() + 1, //月份 
-                    "d+|D+": this.getDate(), //日 
-                    "h+|H+": this.getHours(), //小时 
-                    "m+": this.getMinutes(), //分 
-                    "s+": this.getSeconds(), //秒 
-                    "q+": Math.floor((this.getMonth() + 3) / 3), //季度 
-                    "S": this.getMilliseconds() //毫秒 
-                };
-                var key, value;
-                if (/(y+|Y+)/.test(fmt))
-                    $1 = RegExp.$1,
-                    fmt = fmt.replace($1, (this.getFullYear() + "").substr(4 - $1.length));
-                for (var k in o) {
-                    if (new RegExp("(" + k + ")").test(fmt)) {
-                        $1 = RegExp.$1,
-                            // value = String(""+o[key]),
-                            // value = $1.length == 1 ? value : ("00" + value).substr(value.length),
-                            // fmt = fmt.replace($1, value);
-                            fmt = fmt.replace($1, ($1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
-                    }
-                }
-                return fmt;
+            format: function(fmt) {
+                return _time(this).format(fmt);
             }
         };
         _prototype.ele = {
@@ -2610,16 +2599,14 @@
             },
             //兼容jquery  常用方法
             attr: function(key, value) {
-                if (value) {
+                if (!_.isUndefined(value)) {
                     this.setAttribute(key, value);
                     return this;
                 }
                 return this.getAttribute(key);
             },
             remove: function() {
-                if (this.parentNode) {
-                    this.parentNode.removeChild(this)
-                }
+                if (this.parentNode) this.parentNode.removeChild(this)
             },
             empty: function() {
                 var elem,
@@ -2640,7 +2627,7 @@
                 var self = this,
                     keys = key.split(","),
                     len = keys.length;
-                if (len == 1) {
+                if (len === 1) {
                     self.removeAttribute(key);
                 } else {
                     keys.forEach(function(t) {
@@ -2652,25 +2639,16 @@
             html: function(str) {
                 var args = Array.prototype.slice.call(arguments),
                     len = args.length;
-                if (len == 0) {
+                if (len === 0) {
                     return this.innerHTML;
                 } else {
                     this.innerHTML = args[0];
                     return this;
                 }
-
-                // if (_.isUndefined(str)) {
-                //     return this.innerHTML;
-                // } else {
-                //     this.innerHTML = str;
-                //     return this;
-                // }
             },
             //冲突：HTMLScriptElement.text  是一个属性  ，使用_.text代替
             text: function(str) {
-                if (str) {
-                    this.innerText = str;
-                }
+                if (str) this.innerText = str;
                 return this.innerText;
             },
             val: function(value) {
@@ -2678,14 +2656,9 @@
                     this.setAttribute("value", value);
                     return this;
                 }
-                // if (_.contains(["select", "input"], this.tagName.toLowerCase())) {
-
-                if (["select", "input"].indexOf(this.tagName.toLowerCase()) != -1) {
-                    return this.value;
-                }
+                if (!!~["select", "input"].indexOf(this.tagName.toLowerCase())) return this.value;
                 return this.getAttribute("value");
             },
-
             on: function(type, fn) {
                 addEvent(type, this, fn);
                 return this;
@@ -2734,16 +2707,15 @@
                     }))
                 });
 
+                //单位
                 var autounit = function(key, val) {
-                    if (/^0$/.test(val)) {
-                        return val;
-                    }
-                    return keys.indexOf(key) >= 0 ? ("" + val).replace(/^\d+(\.\d+)?$/, function(match) {
+                    if (/^0$/.test(val)) return val;
+                    return !!~keys.indexOf(key) ? ("" + val).replace(/^\d+(\.\d+)?$/, function(match) {
                         return match + "px";
                     }) : val;
                 }
 
-                if (len == 1) {
+                if (len === 1) {
                     if (_.isObject(opt)) {
                         for (key in opt) {
                             // css()
@@ -2753,7 +2725,7 @@
                             // autoprefixer.call(this, key, val);
                         }
                     }
-                } else if (len == 2) {
+                } else if (len === 2) {
                     // prop, val
                     this.style[opt] = args[1];
                     // autoprefixer.call(this, opt, arguments[1]);
@@ -2763,7 +2735,7 @@
             width: function() {
                 var args = Array.prototype.slice.call(arguments),
                     len = args.length;
-                if (len == 1) {
+                if (len === 1) {
                     this.css({ width: args[0] })
                 }
                 return this.offsetWidth;
@@ -2771,7 +2743,7 @@
             height: function() {
                 var args = Array.prototype.slice.call(arguments),
                     len = args.length;
-                if (len == 1) {
+                if (len === 1) {
                     this.css({ height: args[0] })
                 }
                 return this.offsetHeight;
@@ -2779,7 +2751,7 @@
             pos: function(p) {
                 var args = Array.prototype.slice.call(arguments),
                     len = args.length;
-                if (len == 1) {
+                if (len === 1) {
                     return this.css({
                         position: "absolute",
                         top: p.y,
@@ -2798,9 +2770,7 @@
 
                 while ((elem = elem[dir]) && elem.nodeType !== 9) {
                     if (elem.nodeType === 1) {
-                        if (truncate && jQuery(elem).is(until)) {
-                            break;
-                        }
+                        if (truncate && jQuery(elem).is(until)) break;
                         matched.push(elem);
                     }
                 }
@@ -2852,12 +2822,7 @@
                         return this;
 
                 }
-
             },
-            // lastChild:function(elem){
-            //     var args=slice.call(arguments),
-            //     len=args.length;
-            // },
             append: function(elem) {
                 if (_.isElement(elem)) {
                     return this.appendChild(elem);
@@ -2929,12 +2894,10 @@
                 _.each(this, function(item) {
                     if (_.isElement(item)) {
                         var ele = _.autoid(item).query(selector);
-                        if (_.size(ele) >= 1) {
-                            list.push(ele);
-                        }
+                        if (_.size(ele) >= 1) list.push(ele);
                     }
                 });
-                return list.length == 1 ? list[0] : list;
+                return list.length === 1 ? list[0] : list;
             },
             // Array.prototype.each=Array.prototype.forEach.bind(this);
             each: function(fn) {
@@ -2953,7 +2916,18 @@
             random: function() {
                 return this[Math.floor(Math.random() * this.length)];
                 // return _.random.call(this,this);
+            },
+            //乱序
+            shuffle: function() {
+                var len = this.length;
+                for (var i = 0; i < len - 1; i++) {
+                    var index = parseInt(Math.random() * (len - i));
+                    var temp = this[index];
+                    this[index] = this[len - i - 1];
+                    this[len - i - 1] = temp;
+                }
             }
+
 
             // contains: function(a) {
             //     return this.indexOf(a) != -1;
@@ -2987,37 +2961,36 @@
         ].forEach(function(t) {
             _prototype.arr[t] = function() {
                 var args = Array.prototype.slice.call(arguments),
-                    len = args.length;
-                if (this.length == 0) {
-                    return this;
-                } else if (len == 1 && _.isString(args[0])) { //getter
+                    len = args.length,
+                    arr = this;
+                if (arr.length === 0) {
+                    return arr;
+                } else if (len === 1 && _.isString(args[0])) { //getter
                     var results = [];
-                    _.each(this, function(item) {
-                        if (_.isElement(item)) {
-                            results.push(item[t].apply(item, args));
-                        }
+                    arr.forEach(function(el) {
+                        _.isElement(el) && results.push(el[t].apply(el, args));
                     });
                     return results; //为了链式语法，空值返回[]
                 } else { //setter
-                    _.each(this, function(item) {
-                        if (_.isElement(item)) {
-                            item[t].apply(item, args);
-                        }
+                    arr.forEach(function(el) {
+                        _.isElement(el) && el[t].apply(el, args);
                     });
-                    return this;
+                    return arr;
                 }
             }
         });
         //扩展原型  函数  extend prototype
         _.extproto = function(obj) {
-            _.each(Array.prototype.slice.call(arguments, 1), function(source) {
+            var args = Array.prototype.slice.call(arguments),
+                len = args.length;
+            for (var i = 1; i < len; i++) {
+                var source = args[i];
                 if (source) {
                     try {
                         for (var prop in source) {
                             if (_.isObject(source[prop])) {
                                 Object.defineProperty(obj, prop, source[prop]);
                             } else if (_.isFunction(source[prop])) {
-                                // if (!obj.hasOwnProperty(prop)) {
                                 if (!Object.prototype.hasOwnProperty.call(obj, prop)) {
                                     obj[prop] = source[prop];
                                     //禁止被for in 枚举
@@ -3029,9 +3002,8 @@
                                 }
                             } else {
                                 // if (!obj.hasOwnProperty(prop)) {
-                                if (!Object.prototype.hasOwnProperty.call(obj, prop)) {
-                                    obj[prop] = source[prop];
-                                }
+                                if (!Object.prototype.hasOwnProperty.call(obj, prop)) obj[prop] = source[prop];
+
                             }
                         }
 
@@ -3040,28 +3012,33 @@
                     }
 
                 }
-            });
+            }
             return obj;
         };
 
         //原型扩展 
-        _.extproto(Object.prototype, _prototype.obj);
-        _.extproto(Number.prototype, _prototype.num);
-        _.extproto(String.prototype, _prototype.str);
-        _.extproto(Date.prototype, _prototype.dat);
-        _.extproto(Array.prototype, _prototype.arr);
-        if (inBrowser) {
-            _.extproto(Element.prototype, _prototype.ele);
-        }
+        // _.extproto(Object.prototype, _prototype.obj);
+        // _.extproto(Number.prototype, _prototype.num);
+        // _.extproto(String.prototype, _prototype.str);
+        // _.extproto(Date.prototype, _prototype.dat);
+        // _.extproto(Array.prototype, _prototype.arr);
+        // if (inBrowser) {
+        //     _.extproto(Element.prototype, _prototype.ele);
+        // };
 
-
-        // [Object, Number, String, Date, Element, Array].forEach(function(t) {
-        //     var name = t.toString().replace(/function\s(\w+)\(\).+/, function(m, c) {
-        //         return c.toLowerCase().slice(0, 3);
-        //     });
-        //     console.log(name)
-        //     // _.extproto(t.prototype, _prototype[name]);
-        // });
+        ////原型扩展 
+        [Object, Number, String, Date, Array, Boolean, Element].forEach(function(t, i) {
+            var name = t.prototype.constructor.name.toLowerCase().slice(0, 3);
+            _prototype[name] = _prototype[name] || {};
+            _prototype[name].log = function() {
+                console.log(_.stringify(this)); //.valueOf()//原始值
+            }
+            if (6 === 0) { //小程序中不允许扩展dom
+                inBrowser && _.extproto(t.prototype.constructor.prototype, _prototype[name]);
+            } else {
+                _.extproto(t.prototype.constructor.prototype, _prototype[name]);
+            }
+        });
 
 
         /**
@@ -3181,9 +3158,8 @@
                     el.attachEvent('on' + type, listener);
                 }
                 //store events
-                if (!el.events) {
-                    el.events = []
-                }
+                if (!el.events) el.events = [];
+
                 el.events.push({
                     type: type,
                     el: el,
@@ -3210,7 +3186,7 @@
                 }
                 var i = el.events.length;
                 while (i--) {
-                    if (el.events[i].type == type && el.events[i].listener == listener) {
+                    if (el.events[i].type === type && el.events[i].listener === listener) {
                         el.events.splice(i, 1);
                     }
                 }
@@ -3227,7 +3203,6 @@
             _touchstart = isSupportTouch ? "touchstart" : "mousedown",
             _touchend = isSupportTouch ? "touchend" : "mouseup",
             _touchmove = isSupportTouch ? "touchmove" : "mousemove";
-        // var containerWidth = document.documentElement.clientWidth >= 680 ? 680 : document.documentElement.clientWidth;
 
         //事件
         var Events = (function() {
@@ -3241,11 +3216,8 @@
                 filter: function(obj) {
                     return _.filter(storeEvents, function(item) {
                         var flag = true;
-                        for (x in obj) {
-                            if (item[x] != obj[x]) {
-                                flag = false;
-                            }
-                        }
+                        for (x in obj)
+                            if (item[x] !== obj[x]) flag = false;
                         return flag;
                     });
                 },
@@ -3254,19 +3226,11 @@
                 },
                 on: function(type, el, listener, once) {
                     var self = this;
-                    if (!isSupportTouch && type == TAP) {
-                        type = "click";
-                    }
-
-                    // if(type==TAP&&el.nodeName=="input"){
-                    //     type = "click";
-                    // }
-                    // var canDrag = true;
-
+                    if (!isSupportTouch && type === TAP) type = "click";
 
                     switch (type) {
                         case TAP:
-                            var starHandler = function(ev) {
+                            var startHandler = function(ev) {
                                 startPos = _.pos(ev);
                             }
                             var endHandler = function(ev) {
@@ -3288,12 +3252,12 @@
                                     }
                                 }
                             }
-                            addEvent(_touchstart, el, starHandler);
+                            addEvent(_touchstart, el, startHandler);
                             addEvent(_touchend, el, endHandler);
                             break;
                         case LONGTAP: //长按
                             var _longtap;
-                            var starHandler = function(ev) {
+                            var startHandler = function(ev) {
                                 _longtap = setTimeout(function() {
                                     if (_.isFunction(listener)) {
                                         listener.call(el, el, ev);
@@ -3310,7 +3274,7 @@
                             var endHandler = function(ev) {
                                 _longtap && clearTimeout(_longtap);
                             }
-                            addEvent(_touchstart, el, starHandler);
+                            addEvent(_touchstart, el, startHandler);
                             addEvent(_touchend, el, endHandler);
                             break;
                         case DRAG:
@@ -3332,18 +3296,16 @@
                             }
 
                             var _posInRange = function(pos, range) {
-                                // var pos=
                                 var x = _.min(pos.x, range.right);
                                 x = _.max(x, range.left);
                                 var y = _.min(pos.y, range.bottom);
                                 y = _.max(y, range.top);
-
                                 return {
                                     left: x,
                                     top: y
                                 }
                             }
-                            var starHandler = function(ev) {
+                            var startHandler = function(ev) {
                                 startPos = _.pos(ev);
                                 offset = _.pos(el);
                                 el.css({ position: "absolute", cursor: "move" });
@@ -3361,8 +3323,8 @@
                                         left = _.max(0, left);
                                         top = _.min(top, maxTop);
                                         top = _.max(0, top);
-                                        if (type != "drag-y") el.css({ left: left + "px" });
-                                        if (type != "drag-x") el.css({ top: top + "px" });
+                                        if (type !== "drag-y") el.css({ left: left + "px" });
+                                        if (type !== "drag-x") el.css({ top: top + "px" });
                                     })()
                             }
                             var endHandler = function(ev) {
@@ -3383,7 +3345,7 @@
                             addEvent("mouseout", el, function(ev) {
                                 el.css({ cursor: "normal" })
                             });
-                            addEvent(_touchstart, el, starHandler);
+                            addEvent(_touchstart, el, startHandler);
                             addEvent(_touchmove, document, moveHandler);
                             addEvent(_touchend, document, endHandler);
                             break;
@@ -3391,7 +3353,6 @@
                             var _handler = function(ev) {
                                 if (_.isFunction(listener)) {
                                     listener.call(el, el, ev);
-
                                 } else if (_.isArray(listener)) {
                                     listener.forEach(function(t) {
                                         t.call(el, el, ev);
@@ -3406,7 +3367,7 @@
                     }
                 },
                 off: function(type, el, listener) {
-                    if (TAP == type) {
+                    if (TAP === type) {
                         removeEvent(_touchstart, el);
                         removeEvent(_touchend, el);
                     } else {
@@ -3424,9 +3385,7 @@
             init: function(options) {
                 var self = this;
                 if (!options) {
-                    if (options == false) {
-                        self.offEvent();
-                    }
+                    if (options === false) self.offEvent();
                     return;
                 }
                 var es = [];
@@ -3437,15 +3396,12 @@
                         listener = opt.listener || opt.callback,
                         once = opt.once || false; //事件只运行一次，运行一次就自行remove
                     if (_.isElement(el)) {
-                        if (el.nodeName.toLowerCase() == "input" && type == TAP) {
-                            type = "click"
-                        }
-                        if (clear) {
-                            self.clear({
-                                el: el,
-                                type: type
-                            });
-                        }
+                        if (el.nodeName.toLowerCase() === "input" && type === TAP) type = "click";
+                        clear && self.clear({
+                            el: el,
+                            type: type
+                        });
+
                         es.push({
                             type: type,
                             el: el,
@@ -3454,21 +3410,7 @@
                         })
                     } else if (_.isArray(el)) {
                         el.forEach(function(t) {
-                            // opt.el=t;
-                            _option(_.extend({}, opt, { el: t }));
-                            // if (clear) {
-                            //     self.clear({
-                            //         el: t,
-                            //         type: type
-                            //     });
-                            // }
-                            // es.push({
-                            //     type: type,
-                            //     el: t,
-                            //     listener: listener,
-                            //     once: once
-                            // })
-
+                            _option(_.clone(opt, { el: t }));
                         });
                     }
                 }
@@ -3605,21 +3547,19 @@
                 var token = this.text.charAt(this.pos);
                 if (step) {
                     token = "";
-                    for (var i = 0; i <= step; i++) {
-                        token += this.text.charAt((this.pos + i) >= this.max ? this.max : (this.pos + i));
-                    }
+                    for (var i = 0; i <= step; i++) token += this.text.charAt((this.pos + i) >= this.max ? this.max : (this.pos + i));
                 }
                 return token;
             },
             eof: function() {
-                return this.peek() == '';
+                return this.peek() === '';
             },
             next: function(current) {
                 if (current && current !== this.ch) {
                     error("Expected '" + current + "' instead of '" + this.ch + "'");
                 }
                 this.ch = this.text.charAt(this.pos++);
-                if (this.ch == '\n') {
+                if (this.ch === '\n') {
                     this.line++;
                     this.col = 0;
                 } else {
@@ -3629,8 +3569,7 @@
                 return this.ch;
             },
             back: function() {
-                this.ch = this.text.charAt(this.pos--);
-                return this.ch;
+                return this.ch = this.text.charAt(this.pos--);
             },
             error: function(m) {
                 var token = "",
@@ -3671,7 +3610,6 @@
                             this.back(); //回退
                             return value;
                         }
-
                         if (ch === "\n") {
                             value = "";
                             break;
@@ -3707,7 +3645,6 @@
                             return this._parseValue();
 
                         }
-
                         break;
                 }
             },
@@ -3715,10 +3652,10 @@
                 this._skipWhite();
                 var obj = {},
                     key;
-                if ("{" == this.ch) {
+                if ("{" === this.ch) {
                     while (this.next()) {
                         this._skipWhite();
-                        if (this.ch == "}") {
+                        if (this.ch === "}") {
                             this.next();
                             return obj;
                         }
@@ -3737,10 +3674,10 @@
             _parseArr: function() {
                 this._skipWhite()
                 var arr = [];
-                if ("[" == this.ch) {
+                if ("[" === this.ch) {
                     while (this.next()) {
                         this._skipWhite();
-                        if (this.ch == "]") {
+                        if (this.ch === "]") {
                             this.next();
                             return arr;
                         }
@@ -3769,7 +3706,7 @@
             _parseKey: function() {
                 var value = this.ch;
                 while (this.next()) {
-                    if (this.ch == ":") {
+                    if (this.ch === ":") {
                         this.next();
                         return this._removeQuote(value);
                     }
@@ -3781,9 +3718,9 @@
                 this._skipWhite();
                 var value = "",
                     starFlag = this.ch;
-                if ("\"\'".indexOf(starFlag) >= 0) {
+                if (!!~"\"\'".indexOf(starFlag)) {
                     while (this.next()) {
-                        if (starFlag == this.ch) {
+                        if (starFlag === this.ch) {
                             this.next();
                             return value;
                         }
@@ -3802,9 +3739,7 @@
                 if (/[\d\.-]/.test(this.ch)) {
                     var value = this.ch;
                     while (this.next()) {
-                        if (",}]".indexOf(this.ch) >= 0) {
-                            return value = +value;
-                        }
+                        if (!!~",}]".indexOf(this.ch)) return value = +value;
                         value += this.ch;
                     }
                     return value;
@@ -3813,8 +3748,7 @@
             _parseValue: function() {
                 var value = this.ch;
                 while (this.next()) {
-                    if (",}]".indexOf(this.ch) >= 0) {
-                        // this.next();
+                    if (!!~",}]".indexOf(this.ch)) {
                         return this._removeQuote(value);
                     }
                     value += this.ch;
@@ -3828,7 +3762,6 @@
         //调试
         // var log = window.log = _.log = console.log.bind(console);
         var debug = _.debug = function(options) {
-
             return new debug.prototype.init(options);
         }
         debug.prototype = {
@@ -3853,7 +3786,7 @@
                         act: "append",
                         template: '<div class="_item">{=result}</div>',
                         data: {
-                            result: arg.length == 1 ? arg[0] : arg
+                            result: arg.length === 1 ? arg[0] : arg
                         },
                         callback: function() {
                             this.el.query("._item").removeAttr("style").last().css({ color: 'red' }).scrollIntoView();
@@ -3900,61 +3833,84 @@
             init: function(args) {
                 var len = args.length;
                 this.index = 0; //默认第一个
-                this.arr = [];
+                this.values = [];
 
                 if (_.isArray(args[0])) {
-                    this.arr = args[0];
+                    this.values = args[0];
                 } else if (_.isObject(args[0])) {
                     for (var key in args[0]) {
                         var obj = {}
                         obj[key] = args[0][key]
-                        this.arr.push(obj);
+                        this.values.push(obj);
                     }
                 } else {
-                    this.arr.push(args[0]);
+                    this.values.push(args[0]);
                 }
                 if (len >= 2) {
                     if (_.isNumber(args[0])) {
                         var start = args[0],
                             end = args[1];
-                        for (var i = start; i <= end; i++) {
-                            this.arr.push(i);
-                        }
+                        for (var i = start; i <= end; i++) this.values.push(i);
                     } else {
                         this.index = args[1]
                     }
                 }
-                if (len == 3) {
-                    this.text = args[2];
-                }
-                this.length = this.arr.length;
+                if (len === 3) this.text = args[2];
+                this.length = this.values.length;
             },
             next: function() {
-                this.index = this.index >= this.arr.length - 1 ? 0 : this.index + 1;
-                return this.arr[this.index];
+                return this.values[this.index = this.index >= this.values.length - 1 ? 0 : this.index + 1];
             },
             prev: function() {
-                this.index = this.index <= 0 ? this.arr.length - 1 : this.index - 1;
-                return this.arr[this.index];
+                return this.values[this.index = this.index <= 0 ? this.values.length - 1 : this.index - 1];
             },
             current: function() {
-                if (this.index == -1) { this.index = 0; }
-                return this.arr[this.index];
+                return this.values[this.index = this.index === -1 ? 0 : this.index];
             },
             val: function() {
                 return this.current();
             },
             first: function() {
-                return this.length > 0 ? this.arr[0] : null;
+                return this.length > 0 ? this.values[0] : null;
             },
             last: function() {
-                return this.length > 0 ? this.arr[this.length - 1] : null;
+                return this.length > 0 ? this.values[this.length - 1] : null;
             },
             text: function(str) {
-                this.text = str
+                this.text = str;
+            },
+            attr: function(opt) {
+                for (var k in opt) this[k] = opt[k];
+                return this;
             }
         }
         cycle.prototype.init.prototype = cycle.prototype;
+
+        _.sliderCycle = function(options) {
+            var min = options.min,
+                max = options.max,
+                step = options.step,
+                value = options.value,
+                values = [],
+                i = 0,
+                t = min,
+                index = 0;
+            //判断小数位数
+            // var n=step.toString().split(".")[1].length;
+            var n = 0;
+            step.toString().replace(/\d+(?:\.(\d+))?/, function(m, f) {
+                if (f) n = f.length;
+            });
+
+            while (t <= max) {
+                values.push(t);
+                if (t === value) index = i;
+                t = Number((t + step).toFixed(n));
+                i++;
+            }
+            return _.cycle(values, index).attr(options);
+        };
+
 
         //polyfill  requestAnimationFrame
         inBrowser && (function() {
@@ -3982,91 +3938,445 @@
 
         var PIx2 = Math.PI * 2; //- 0.0001;
 
-        //弧度
-        _.radian = function(a) {
+        //弧度radian
+        _.rad = function(a) {
+            a %= 360;
             return a * Math.PI / 180
+        };
+        //弧度转角度
+        _.deg = function(rad) {
+            return rad * (180 / Math.PI);
         };
         //正玄
         _.sin = function(a) {
+            a %= 360;
             return Math.sin(a * Math.PI / 180);
         };
         //余玄
         _.cos = function(a) {
+            a %= 360;
             return Math.cos(a * Math.PI / 180);
         };
         //正切
         _.tan = function(a) {
+            a %= 360;
             return Math.tan(a * Math.PI / 180);
         }
         _.atan = function(a) {
+            a %= 360;
             return Math.atan(a * Math.PI / 180);
         }
         //获取斐波那契数列
         //第三个数开始，每个数都是前两个数之和
         _.fibonacci = function(n) {
-            if (n == 1) return [0];
-            if (n == 2) return [0, 1];
+            if (n === 1) return [0];
+            if (n === 2) return [0, 1];
             var arr = [0, 1];
-            for (var i = 0; i < n - 2; i++) {
-                arr.push(arr[i] + arr[i + 1])
+            while (n-- - 2) arr.push(arr[arr.length - 1] + arr[arr.length - 2]);
+            // for (var i = 0; i < n - 2; i++) arr.push(arr[i] + arr[i + 1])
+            return arr;
+        }
+
+
+        //延迟队列
+        var _queue = _.queue = function(fn) {
+            return new _queue.prototype.init(fn)
+        }
+        _queue.prototype = {
+            constructor: _queue,
+            init: function(fn) {
+                this.dataStore = [];
+                this.speeds = {
+                    slow: 600,
+                    fast: 200,
+                    _default: 400
+                };
+                fn && this.enqueue(fn)
+            },
+            enqueue: function(fn) {
+                this.dataStore.push(fn);
+            },
+            dequeue: function() {
+                return this.dataStore.shift();
+            },
+            exequeue: function() {
+                var fn = this.dequeue();
+                fn && fn.call(this, this.exequeue);
+            },
+            delay: function(fn, time) {
+                var self = this;
+                time = _.isNumber(time) ? time : time in this.speeds ? this.speeds[time] : this.speeds._default;
+                this.enqueue(function(next) {
+                    setTimeout(function() {
+                        fn && fn();
+                        next && next.call(self);
+                    }, time);
+                })
+                self.timeout && clearTimeout(self.timeout);
+                self.timeout = setTimeout(function() {
+                    self.exequeue();
+                }, 0)
             }
-            return arr
+
         }
-        //点
-        //直角坐标 xy Coordinate
-        //极坐标Polar Coordinate
-        //复合坐标系
-        //原点x,y在直角坐标定位，用r ,a在极坐标系中作图。
-        //输入：ox,oy,r,a
-        //输出： r a   x y  o(x,y)
-        var _point = _.point = function(opt, coordinate) {
-            return new _point.prototype.init(opt, coordinate)
+        _queue.prototype.init.prototype = _queue.prototype;
+
+        var Easing = {
+            //定义域和值域均为[0, 1], 传入自变量x返回对应值y
+            //先加速后减速
+            ease: function(x) {
+                // return -0.5*Math.cos(Math.PI * (2 - x)) + 0.5;
+                if (x <= 0.5) return 2 * x * x;
+                else if (x > 0.5) return -2 * x * x + 4 * x - 1;
+            },
+
+            // 初速度为0 ,一直加速
+            easeIn: function(x) {
+                return x * x;
+            },
+
+            //先慢慢加速1/3, 然后突然大提速, 最后减速
+            ease2: function(x) {
+                return x < 1 / 3 ? x * x : -2 * x * x + 4 * x - 1;
+            },
+
+            //初速度较大, 一直减速, 缓冲动画
+            easeOut: function(x) {
+                return Math.pow(x, 0.8);
+            },
+
+            //碰撞动画
+            collision: function(x) {
+                var a, b; //a, b代表碰撞点的横坐标
+                for (var i = 1, m = 20; i < m; i++) {
+                    a = 1 - (4 / 3) * Math.pow(0.5, i - 1);
+                    b = 1 - (4 / 3) * Math.pow(0.5, i);
+                    if (x >= a && x <= b) {
+                        return Math.pow(3 * (x - (a + b) / 2), 2) + 1 - Math.pow(0.25, i - 1);
+                    }
+                }
+            },
+
+            //弹性动画
+            elastic: function(x) {
+                return -Math.pow(1 / 12, x) * Math.cos(Math.PI * 2.5 * x * x) + 1;
+            },
+
+            //匀速动画
+            linear: function(x) {
+                return x;
+            },
+
+            //断断续续加速减速
+            wave: function(x) {
+                return (1 / 12) * Math.sin(5 * Math.PI * x) + x;
+            },
+
+            //先向反方向移动一小段距离, 然后正方向移动, 并超过终点一小段, 然后回到终点
+            opposite: function(x) {
+                return (Math.sqrt(2) / 2) * Math.sin((3 * Math.PI / 2) * (x - 0.5)) + 0.5;
+            }
+
         }
-        _point.prototype = {
-            constructor: _point,
-            init: function(opt, coordinate) {
-                //默认坐标 ra 和xy
-                this.coordinate = _.isUndefined(coordinate) ? "ra" : coordinate;
-                var x = opt.x || 0,
-                    y = opt.y || 0,
-                    r = opt.r || 0;
-                var a = _.isUndefined(opt.a) ? _.random(360) : opt.a;
-                //极坐标原点 
-                this.o = {
-                    x: x,
-                    y: y
+
+        var _tween = _.tween = function(options) {
+            return new _tween.prototype.init(options);
+        }
+
+        // 补间动画     直线运动 匀速 非匀速   曲线运动  路径动画
+        _tween.prototype = {
+            constructor: _tween,
+            init: function(options) {
+                this._start = options.start;
+                this._end = options.to;
+                this.callback = options.callback;
+                this.duration = options.duration; //Math.ceil(options.duration / 17);
+                this._repeat = options.repeat;
+                this._yoyo = options.yoyo;
+                this.type = options.type || "linear";
+                // this.step = 0;
+                this._deta = {}
+                for (var key in this._end) {
+                    this._deta[key] = this._end[key] - this._start[key] || 0;
                 }
-                this.r = r;
-                this.a = a; //theta
+                this._delayTime = options.delay || 0;
+                this._startTime = +new Date(); // Date.now();
+                this._startTime += this._delayTime;
+                this.update()
+            },
+            callTween: function(time) {
+                var k = (time - this._startTime) / this.duration;
+                k = (this.duration === 0 || k > 1) ? 1 : k;
 
-
-                if (opt.path == "square") {
-                    this.x = r * _.atan(a);
-                    this.y = r * _.tan(a);
-
-                    a = a % 360;
-
-                    if (a <= 45 && a >= 0 || a >= 315 && a <= 360) {
-                        this.x = r;
+                var vk;
+                if (_.isObject(this.type)) {
+                    vk = {};
+                    for (var key in this._deta) { //this.type
+                        vk[key] = Easing[this.type[key] || "linear"](k);
                     }
-                    if (a >= 45 && a <= 135) {
-                        this.y = r;
-                    }
-                    if (a >= 135 && a <= 225) {
-                        this.x = -r
-                    }
-                    if (a >= 225 && a <= 315) {
-                        this.y = -r
-                    }
-
-                    this.x += this.o.x;
-                    this.y += this.o.y;
-
-                } else { //circle
-                    var p = this.xy(r, a, this.o);
-                    this.x = p.x;
-                    this.y = p.y;
+                } else {
+                    var fn = Easing[this.type];
+                    vk = fn(k);
                 }
+
+                //重复
+                if (this._repeat) {
+                    if (k === 1) {
+                        this._startTime = time;
+                        if (isFinite(this._repeat)) {
+                            this._repeat--;
+                        }
+
+                        if (this._yoyo) { // start end替换
+                            var temp = this._start;
+                            this._start = this._end;
+                            this._end = temp;
+                            for (var key in this._end) {
+                                this._deta[key] = this._end[key] - this._start[key] || 0;
+                            }
+
+                        }
+                    }
+                }
+                var obj = {};
+                for (var key in this._deta) {
+                    // var vk = curve[this.type[key]](k);
+                    var v;
+                    if (_.isObject(vk)) {
+                        v = vk[key]
+                    } else {
+                        v = vk;
+                    }
+                    obj[key] = v * this._deta[key] + this._start[key];
+                }
+                return obj
+            },
+            update: function() {
+                var self = this;
+                // this.step++;
+                var time = +new Date();
+                var obj = this.callTween.call(this, time)
+
+                if (time - this._startTime <= this.duration) {
+                    this.callback(obj)
+                    // requestAnimationFrame.call(this,this.update);
+                    setTimeout(function() {
+                        self.update.call(self);
+                    }, 17)
+                } else {
+                    this.callback(obj);
+                }
+            }
+        }
+        _tween.prototype.init.prototype = _tween.prototype;
+
+        //向量  空间计算工具
+        var _vector = _.vector = function(opt) {
+            return new _vector.prototype.init(opt)
+        }
+        _vector.prototype = {
+            constructor: _vector,
+            init: function(opt) {
+                this.x = opt.x || 0;
+                this.y = opt.y || 0;
+                this.z = opt.z || 0;
+            },
+            // reset:function(){
+            //     return this.constructor(this.opt);
+            // },
+            //相等 equals
+            equal: function(v) {
+                return ((v.x === this.x) && (v.y === this.y));
+            },
+            clone: function() {
+                return this.constructor({
+                    x: this.x,
+                    y: this.y,
+                    z: this.z
+                });
+            },
+            //负向量 转180度  
+            //negated
+            neg: function() {
+                this.x = -this.x;
+                this.y = -this.y;
+                this.z = -this.z;
+                return this;
+            },
+            //法向量 normal vector 垂直向量 
+            //Vector norm
+            norm: function() {
+                return this.constructor({
+                    x: -this.y,
+                    y: this.x
+                }); //-this.y, this.x
+            },
+            //向量相加
+            //Translate vector
+            //translate(v1, v2):= v1.add(v2)
+            add: function(v) {
+                this.x += v.x;
+                this.y += v.y;
+                return this;
+            },
+            //向量相减
+            sub: function(v) {
+                this.x -= v.x;
+                this.y -= v.y;
+                return this;
+            },
+            //缩放 scalar
+            scale: function(s) {
+                this.x *= s;
+                this.y *= s;
+                return this;
+            },
+            //取模 向量长度  勾股定理
+            //修改长度，改变向量的大小
+            abs: function(len) {
+                if (_.isUndefined(len))
+                    // return Math.sqrt(this.x * this.x + this.y * this.y);
+                    return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+                var abs = this.abs();
+                if (abs !== 0 && len !== abs) {
+                    this.scale(len / abs);
+                }
+                return this;
+            },
+
+            //方向 向量的角度
+            deg: function(deg) {
+                if (_.isUndefined(deg))
+                    return this.radToDeg(Math.atan2(this.y, this.x));
+
+                var r = this.abs();
+                this.x = r * Math.cos(this.degToRad(deg));
+                this.y = r * Math.sin(this.degToRad(deg));
+                return this;
+            },
+            //方向 向量的弧度
+            rad: function(rad) {
+                if (_.isUndefined(rad))
+                    return Math.atan2(this.y, this.x);
+
+                var r = this.abs();
+                this.x = r * Math.cos(rad);
+                this.y = r * Math.sin(rad);
+                return this;
+            },
+            //向量点积
+            //Scale vector
+            //scale(v1, factor):= v1.mul(factor)
+            //Rotate vector around center
+            //rotate(v, angle):= v.mul({abs: 1, arg: angle})
+            //Rotate vector around a point
+            //rotate(v, p, angle):= v.sub(p).mul({abs: 1, arg: angle}).add(p)
+            mul: function(v) {
+                return this.x * v.x + this.y * v.y;
+            },
+            //夹角 根据两个向量夹角计算  Included angle
+            ia: function(v) {
+                var theta = this.mul(v) / (this.abs() * v.abs());
+                return Math.acos(theta);
+            },
+            //是否垂直 Normal to
+            isNorm: function(v) {
+                return this.mul(v) === 0;
+            },
+            //角度转弧度
+            degToRad: function(deg) {
+                return deg * (Math.PI / 180);
+            },
+            //弧度转角度
+            radToDeg: function(rad) {
+                return rad * (180 / Math.PI);
+            },
+            //向量的绕Z轴旋转
+            rotate: function(deg) {
+                var ca = _.cos(deg); //Math.cos(this.degToRad(deg));
+                var sa = _.sin(deg); //Math.sin(this.degToRad(deg));
+                var x = this.x,
+                    y = this.y;
+                var rx = x * ca - y * sa;
+                var ry = x * sa + y * ca;
+                this.x = rx;
+                this.y = ry;
+                return this;
+            },
+            //三维向量的叉积，向量积
+            cross: function(v) {
+                var x = this.x,
+                    y = this.y,
+                    z = this.z;
+                this.x = y * v.z - z * v.y;
+                this.y = z * v.x - x * v.z;
+                this.z = x * v.y - y * v.x;
+                return this;
+            },
+            // 绕XY轴旋转
+            rotateXY: function(a, b) {
+                var ca = Math.cos(this.degToRad(a)),
+                    sa = Math.sin(this.degToRad(a)),
+                    cb = Math.cos(this.degToRad(b)),
+                    sb = Math.sin(this.degToRad(b));
+
+                var x = this.x,
+                    y = this.y,
+                    z = this.z,
+                    rz = y * sa + z * ca;
+
+                this.y = y * ca - z * sa;
+                this.z = x * -sb + rz * cb;
+                this.x = x * cb + rz * sb;
+                return this;
+            },
+            //透视比率 perspectiveRatio
+            pr: function(viewDist) {
+                viewDist = viewDist ? viewDist : 300;
+                return viewDist / (this.z + viewDist);
+            },
+            //投射到屏幕上的二维点  project
+            proj: function(pr) {
+                pr = pr ? pr : this.pr();
+                this.x *= pr;
+                this.y *= pr;
+                this.z = 0;
+                return this;
+            },
+            //转成极坐标
+            toPolar: function(o) {
+                var a = this.deg(),
+                    r = this.abs();
+                return o ? {
+                    a: a,
+                    r: r,
+                    o: o
+                } : {
+                    a: a,
+                    r: r,
+                }
+            },
+            toP: function(o) {
+                return this.toPolar(o);
+            }
+        }
+        _vector.prototype.init.prototype = _vector.prototype;
+
+        // 极坐标点
+        //输入：r,a ,o(x,y)
+        //输出：x y  
+        var _pointPolar = _.pointPolar = function(opt) {
+            return new _pointPolar.prototype.init(opt)
+        }
+        _pointPolar.prototype = {
+            constructor: _pointPolar,
+            init: function(opt) {
+                var a = this.a = opt.a || 0,
+                    r = this.r = opt.r || 0,
+                    o = this.o = opt.o || { x: 0, y: 0 };
+                var p = this.xy(r, a, o);
+                this.x = p.x;
+                this.y = p.y;
             },
             //极坐标转xy坐标
             xy: function(r, a, o) {
@@ -4075,91 +4385,339 @@
                     y: o.y + r * _.sin(a)
                 }
             },
-            //距离  勾股定律
+            //向量 vector 以this为原点坐标 表示向量 p
+            toVector: function(p) {
+                return p ? _vector({
+                    x: p.x - this.x,
+                    y: p.y - this.y
+                }) : _vector({
+                    x: this.x - this.o.x,
+                    y: this.y - this.o.y
+                })
+            },
+            toV: function(p) {
+                return this.toVector(p);
+            },
+            //距离  勾股定律 向量取模 distance
+            //distance(v1, v2):= v1.sub(v2).abs()
             distance: function(p) {
-                return Math.pow(Math.pow(this.x - p.x, 2) + Math.pow(this.y - p.y, 2), 1 / 2)
+                return this.toV(p).abs();
+            },
+            dist: function(p) {
+                return this.distance(p);
+            },
+            transform: function(opt) {
+                return this.constructor(_.extendOwn({}, this, opt));
+            },
+            clone: function(opt) {
+                return this.transform(opt)
             },
 
-            //中点
-            middle: function(p, ratio) {
-                var p = p || this.o;
-                var ratio = _.isUndefined(ratio) ? 1 : ratio;
-
-                if (this.coordinate == "xy") {
-                    var x = p.x * ratio / (ratio + 1) + this.x * 1 / (ratio + 1) + this.o.x;
-                    var y = p.y * ratio / (ratio + 1) + this.y * 1 / (ratio + 1) + this.o.y;
-                    return {
-                        x: x,
-                        y: y
-                    }
-                }
-
-                //位移原点o
-                var x = (p.x - this.x) * ratio / (ratio + 1) + this.o.x
-                var y = (p.y - this.y) * ratio / (ratio + 1) + this.o.y
-                var opt = _.extendMe({}, this, {
-                    x: x,
-                    y: y
-                });
-                return _point(opt);
+            //(x,y)关于y=x的对称点是(y,x)
+            //关于y=-x的对称点为 （-y,-x）
+            //对称点 y=x是 线段（x,y）,(y,x)的垂直平分线
+            //斜率k1*k2=-1 垂直平分线
+            //中垂线是线段的一条对称轴
+            //斜率 slope
+            slope: function(p) {
+                return (this.y - p.y) / (this.x - p.x);
             },
-
-            //镜像 镜像点
-            mirror: function(p) {
-                var p = p || this.o;
-                if (this.coordinate == "xy") {
-                    return {
-                        x: 2 * p.x - this.x,
-                        y: 2 * p.y - this.y
-                    }
+            //中点 middle, 求this和p的中点， p{x,y}
+            mid: function(p) { //, ratio
+                var v = this.toV(p).scale(0.5);
+                return this.clone(v.toP());
+            },
+            //均分点meanSplit。分割n次，分割成n+1段
+            split: function(p, n) {
+                var ps = [];
+                for (var i = 1; i <= n; i++) {
+                    var v = this.toV(p).scale(i / (n + 1));
+                    ps.push(this.clone(v.toP()));
                 }
+                return ps;
+            },
+            //镜像 镜像点，以p为镜像原点
+            mirror: function(p, ratio) {
+                var v = this.toV(p);
+                if (ratio) v.scale(ratio);
+                return this.clone(v.toP(p));
+            },
+            //经过点的平行线 parallel lines
+            //经过t点的平行线
+            // _parallel: function(p, t, k) {
+            //     var v = this.toV(p);
+            //     return v.scale(k).add(t);
+            // },
+            //经过t点的垂线
+            //k为0时，中间控制点落在这条线段上，k为1时，中间控制点与直线的距离为这条线段的长度
+            //curveness曲率
+            // _vertical: function(p, t, k) {
+            //     var v = this.toV(p);
+            //     return v.norm().scale(k).add(t);
+            // },
 
-                var opt = _.extendMe({}, this, {
-                    x: 2 * (p.x - this.x) + this.o.x,
-                    y: 2 * (p.y - this.y) + this.o.x
-                });
-                return _point(opt);
+            //经过点的垂线
+
+            //两点确定的直线上 移动距离
+            //k=tanθ=sinA/cosA
+            translate: function(p, d) {
+                var v = this.toV(p).abs(d);
+                return this.clone(v.toP());
+            },
+            trans: function(p, d) {
+                return this.translate(p, d);
+            },
+            //vertical split line  ,垂点，曲率
+            //垂直均分线，垂线上的点与垂点距离 
+            vertical: function(p, d) {
+                var v = this.toV(p).norm().abs(d);
+                return this.clone(v.toP());
+            },
+            norm: function(p, d) {
+                return this.vertical(p, d);
             },
             //平移
-            translate: function(x, y) {
-                if (this.coordinate == "xy") {
-                    return {
-                        x: this.x + x || 0,
-                        y: this.y + y || 0
-                    }
+            // _translateXY: function(x, y) {
+            //     var o2 = {
+            //         x: this.o.x + x || 0,
+            //         y: this.o.y + y || 0
+            //     }
+            //     return this.clone({ o: o2 });
+            // },
+            // _translate: function(k, d, o) {
+            //     var r = Math.sqrt(Math.pow(k, 2) + 1);
+            //     var sina = k / r;
+            //     var cosa = 1 / r;
+            //     var o2 = {};
+            //     o2.x = k * d * cosa + o.x;
+            //     o2.y = k * d * sina + o.y;
+            //     return this.clone({ o: o2 })
+            // },
+            //旋转
+            rotate: function(a) {
+                return this.clone({ a: (this.a + a) % 360 });
+            },
+            scale: function(e) {
+                return this.clone({ r: this.r * e });
+            },
+            //投射点
+            proj: function(p, pr) {
+                var v = this.toV(p).proj(pr);
+                return this.clone(v.toP());
+            },
+            //透视比
+            pr: function(p, d) {
+                var v = this.toV(p)
+                return v.pr(d);
+            }
+        }
+        _pointPolar.prototype.init.prototype = _pointPolar.prototype;
+
+        //点
+        //直角坐标 xy Coordinate
+        var _point = _.point = function(opt) {
+            return new _point.prototype.init(opt);
+        }
+        _point.prototype = {
+            constructor: _point,
+            init: function(opt) {
+                this.x = opt.x;
+                this.y = opt.y;
+                // this.r = opt.r;
+                this.color = opt.color;
+                this.vx = Math.random() * 2 - 1;
+                this.vy = Math.random() * 2 - 1;
+                //range
+
+                this.left = opt.left;
+                this.right = opt.right;
+                this.top = opt.top;
+                this.bottom = opt.bottom;
+            },
+            move: function() {
+                this.x += this.vx;
+                this.y += this.vy;
+                // this.a=this.a*0.9;
+                // this.vy+=0.22; //加速下落
+                // this.vy += 0.01 * this.vx * this.vx; //*this.vx
+
+                // this.vx+=0.41*this.vy
+
+
+                if (this.x < this.left || this.x > this.right) {
+                    this.vx *= -1;
                 }
-                var opt = _.extendMe({}, this, {
-                    x: this.o.x + x || 0,
-                    y: this.o.y + y || 0
+                if (this.y < this.top || this.y > this.bottom) {
+                    this.vy *= -1;
+                }
+
+                return this;
+            },
+        }
+        _point.prototype.init.prototype = _point.prototype;
+
+
+
+        //顶点  极坐标,等角切分
+        //当r相同时  半径变化比率rRation=1  为正多边形
+        //1 ,.05，两个数循环。形成星形  ，凹多边形
+        //渐渐变大或变小 ，形成 螺旋线 
+        //不等角切分 等距r  形成矩形  (未处理) 
+        var _vertex = _.vertex = function(options) {
+            return new _vertex.prototype.init(options)
+        }
+        _vertex.prototype = {
+            constructor: _vertex,
+            init: function(options) {
+                if (options) {
+                    this.po = this.centerPoint(options);
+                    this.vs = this.vertices(options);
+                }
+                return this;
+            },
+            //圆心
+            centerPoint: function(opt) {
+                var o = {
+                    x: opt.x,
+                    y: opt.y
+                }
+                return _pointPolar({ o: o });
+            },
+            //顶点 polygon 多边形
+            vertices: function(opt) {
+                var shape = opt.group || opt.shape,
+                    r = opt.r || 100,
+                    a = opt.a || 0,
+                    x = opt.x,
+                    y = opt.y,
+                    rRatio = opt.rRatio || 1,
+                    aRatio = opt.aRatio || 1,
+                    turns = opt.turns || 1,
+                    num = opt.num || 3;
+                var po = this.po;
+
+                //变化类型：加速 匀速
+                var rRatioType = opt.rRatioType;
+                // this.aRatioType = op.aRatioType;
+
+                switch (shape) {
+                    case "star":
+                        rRatioType = "ac";
+                        rRatio = [rRatio, 1 / rRatio]
+                        break;
+                    case "spiral":
+                        r = 0.01;
+                        turns = 30;
+                        break;
+                }
+                var vs = [];
+                var rRatioCycle = _.cycle(rRatio || 1);
+                var rn = r;
+                var an;
+                for (var i = 0; i < num * turns; i++) {
+                    switch (rRatioType) {
+                        case "cv": //case "constantvelocity": //匀速螺线 阿基米德螺线
+                            rn += r * (rRatioCycle.next() - 1);
+                            break;
+                        case "ac": //加速螺旋 case "acceleration":
+                            rn = i === 0 ? r : i === 1 ? r * rRatioCycle.val() : rn * rRatioCycle.next();
+                            break;
+                    }
+
+                    // switch (aRatioType) {
+                    //     case "cv":
+                    //     case "constantvelocity":
+                    //         // a += opt.a * (aRatio.next() - 1);
+                    //         a=i * 360 / num + opt.a,
+                    //         break;
+                    //     case "acc":
+                    //     case "acceleration": //加速螺旋
+                    //         // a = a == 0 ? opt.a * rRatio.val() : opt.a * rRatio.next();/
+                    //         a=i * 360 / num + opt.a,
+                    //         break;
+                    // }
+                    an = i * 360 / num + a;
+                    var p = po.clone({ a: an, r: rn });
+                    vs.push(p);
+                }
+                return vs;
+            },
+            //内接多边形 顶点
+            invertices: function(vs) {
+                var vs = vs || this.vs,
+                    len = vs.length;
+                if (len < 2 || vs[0].dist(vs[1]) < 10) return false;
+                return vs.map(function(t, i) {
+                    return t.mid(vs[i + 1 < len ? i + 1 : 0]);
                 })
-                return _point(opt);
+            },
+            regularVertices: function(opt) {
+                var num = opt.num;
+                var po = this.po;
+                //夹角
+                var ia = 360 / num;
+                var vs = [p];
+                for (var i = 0; i < num; i++) {
+                    vs.push(p = po.rotate(ia));
+                }
+                return vs;
+            },
+            //变形
+            transform: function(opt) {
+                return this.vs.map(function(t) {
+                    return t.transform(opt);
+                })
+            },
+            //可以改变   r a o，其他参数无效
+            clone: function(opt) {
+                return this.vs.map(function(t) {
+                    return t.clone(opt);
+                })
             },
             //旋转
             rotate: function(a) {
-                if (this.coordinate == "xy") {
-                    return this.xy(this.r, a, this.o);
-                }
-                var opt = _.extendMe({}, this, {
-                    a: this.a + a,
-                    x: this.o.x,
-                    y: this.o.y
+                return this.vs.map(function(t) {
+                    return t.rotate(a);
                 })
-                return _point(opt);
             },
-            scale: function(e) {
-                if (this.coordinate == "xy") {
-                    return this.xy(this.r * e, 0, this.o)
+            //内切三角形  递归
+            intriangle: function(vs) {
+                var self = this;
+                var vsGroup = [];
+                (function _intriangle(vs) {
+                    var vs2 = self.invertices(vs);
+                    if (vs2) {
+                        vsGroup.push(vs2);
+                        vs.map(function(t, i) {
+                            var vs3 = [t, vs2[i], vs2[i === 0 ? vs2.length - 1 : i - 1]]
+                            _intriangle(vs3)
+                        });
+                    }
+                })(vs);
+                return vsGroup
+            },
+            //螺旋
+            spiral: function(opt) {
+                var self = this;
+                var po = this.po || this.centerPoint(opt),
+                    vs = [po],
+                    turns = opt.turns || 1,
+                    r = opt.r;
+                for (var i = 0; i < turns; i += 2) {
+                    [
+                        [r * i, 0],
+                        [0, r * i],
+                        [-r * (i + 1), 0],
+                        [0, -r * (i + 1)]
+                    ].forEach(function(t) {
+                        vs.push(po.translateXY.apply(po, t));
+                    })
                 }
-                var opt = _.extendMe({}, this, {
-                    r: this.r * e
-                })
-                return _point(opt);
+                return vs;
             },
-            clone: function() {
-                return _point({ x: this.o.x, y: this.o.y, r: this.r, a: this.a });
-            }
+
         }
-        _point.prototype.init.prototype = _point.prototype;
+        _vertex.prototype.init.prototype = _vertex.prototype;
 
 
 
@@ -4179,135 +4737,162 @@
                     this.context = draw.context;
                 }
                 if (!opt) return;
+                //图形合并
+                [{ k: "line", num: 2 }, { k: "triangle", num: 3 }, { k: "square", num: 4 }].forEach(function(t) {
+                    if (t.k === opt.shape) {
+                        opt.shape = "polygon";
+                        opt.num = t.num;
+                    }
+                });
+                var shape = _.isUndefined(opt.shape) ? "polygon" : opt.shape;
                 var x = _.isUndefined(opt.x) ? this.canvas.width / 2 : opt.x;
                 var y = _.isUndefined(opt.y) ? this.canvas.height / 2 : opt.y;
                 var a = _.isUndefined(opt.a) ? 0 : opt.a;
-                var vx = _.isUndefined(opt.vx) ? 1 : opt.vx;
-                var vy = _.isUndefined(opt.vx) ? 1 : opt.vy;
                 x += opt.offsetX || 0;
                 y += opt.offsetY || 0;
 
 
-
-                var opt = this.opt = _.extend({}, opt, {
+                var opt = this.opt = _.clone(opt, {
+                    shape: shape,
                     width: opt.r,
                     height: opt.r,
-                    //range
-                    top: 0,
-                    left: 0,
-                    right: this.canvas.width,
-                    bottom: this.canvas.height,
                     x: x,
                     y: y,
                     a: a,
-                    vx: vx,
-                    vy: vy
                 });
-
-                if (_.isArray(opt)) {
-                    opt.forEach(function(t) {
-                        self.setup(t);
-                    })
-                } else {
-                    self.setup(opt);
-                }
+                self.setup(opt);
             },
             setup: function(opt) {
-                var self = this;
                 var opt = opt || this.opt;
-
                 var shape = opt.shape;
-                if (_.isString(shape)) {
-                    shape = shape.split("|");
+                if (this[shape]) {
+                    if (opt.fractalMirror) {
+                        return this.fractalMirror(opt);
+                    }
+                    if (opt.fractal) {
+                        return this.fractal(opt);
+                    }
+                    if (opt.fractalIn) {
+                        return this.fractalIn(opt);
+                    } else {
+                        //重新计算vs
+                        this._vertex(opt);
+                        return this[shape].call(this, opt);
+                    }
+                } else {
+                    console.log(+"not support:" + shape)
                 }
-                shape.forEach(function(t) {
-                    self[t] && self[t](opt);
+            },
+            _vertex: function(opt) {
+                var vertex = this.vertex = _.vertex(opt);
+                this.vs = vertex.vs;
+                this.po = vertex.po;
+            },
+            //分形 逐级缩小
+            fractal: function(opt) {
+                var self = this;
+                this.setup(_.clone(opt, { fractal: false }));
+                var fractalRatio = opt.fractalRatio || 0.618;
+                var r = opt.r * fractalRatio; //ratio增大，计算量大，会致死锁，设置最大level5
+                var minR = opt.minR || 5;
+                var fractalLevel = opt.fractalLevel || 0;
+                var maxLevel = _.isUndefined(opt.maxLevel) ? 5 : opt.maxLevel;
+                fractalLevel++;
+                var fractal = fractalLevel >= maxLevel || r < minR ? false : true;
+                this.vs.forEach(function(t) {
+                    var opt2 = _.clone(opt, { x: t.x, y: t.y, r: r, fractal: fractal, fractalLevel: fractalLevel });
+
+                    // var v=t.toVector().scale(1+fractalRatio);
+                    // // var v=t.toVector();
+                    // // var v2=v.clone().scale(fractalRatio).rotate(30);
+                    // // v=v.add(v2);
+                    // var p=_pointPolar(v.toPolar(t.o));
+                    // var opt2 = _.clone(opt, { x: p.x, y: p.y, r: r, fractal: fractal, fractalLevel: fractalLevel });
+                    self.setup(opt2);
+                });
+            },
+            //分形  逐级放大
+            fractalIn: function(opt) {
+                var self = this;
+                this.setup(_.clone(opt, { fractalIn: false }));
+                var fractalLevel = opt.fractalLevel || 0;
+                var maxLevel = _.isUndefined(opt.maxLevel) ? 5 : opt.maxLevel;
+                fractalLevel++;
+                if (fractalLevel >= maxLevel) return;
+                var vs = this.vs;
+                if (vs.length < 2) return;
+                var v = vs[0].toVector().add(vs[1].toVector()); //计算上级r a，相连的向量和
+                var opt = _.clone(opt, v.toP(), { fractalLevel: fractalLevel })
+                self.setup(opt);
+            },
+            //顶点镜像分形
+            fractalMirror: function(opt) {
+                this.setup(_.clone(opt, { fractalMirror: false }));
+                var fractalLevel = opt.fractalLevel || 0;
+                var maxLevel = _.isUndefined(opt.maxLevel) ? 5 : opt.maxLevel;
+                fractalLevel++;
+                if (fractalLevel >= maxLevel) return;
+                var vertex = _.vertex(opt);
+                var vs = vertex.vs;
+                var po = vertex.po;
+                var fractalRatio = opt.fractalRatio || 0.618;
+                var minR = opt.minR || 5;
+                vs.forEach(function(t, i) {
+                    var o = po.mirror(t, fractalRatio);
+                    if (o.r < minR) {
+                        return
+                    }
+                    var opt2 = _.clone(opt, { r: o.r, x: o.x, y: o.y, a: o.a + 180, fractalLevel: fractalLevel }); //,showMirror: showMirror
+                    self.shape(opt2);
                 })
-            },
-            //旋转
-            rotate: function(speed) {
-                this.opt.a += speed || this.opt.speed || 1;
-                return this;
-            },
-            //反弹
-            bounce: function() {
-                if (this.opt.x < this.opt.left + this.opt.width) { //碰到左边的边界
-                    this.opt.x = this.opt.width;
-                    this.opt.vx = -this.opt.vx;
-                } else if (this.opt.y < this.opt.top + this.opt.height) {
-                    this.opt.y = this.opt.height;
-                    this.opt.vy = -this.opt.vy;
-                } else if (this.opt.x > this.opt.right - this.opt.width) {
-                    this.opt.x = this.opt.right - this.opt.width;
-                    this.opt.vx = -this.opt.vx;
-                } else if (this.opt.y > this.opt.bottom - this.opt.height) {
-                    this.opt.y = this.opt.bottom - this.opt.height;
-                    this.opt.vy = -this.opt.vy;
-                }
-            },
-            //移动
-            move: function() {
-                this.opt.x += this.opt.vx || 1;
-                this.opt.y += this.opt.vy || 1;
-                if (this.opt.bounce) {
-                    this.bounce()
-                }
-                return this;
             },
             color: function(colorful) {
                 if (colorful) {
                     if (this.opt.fill) {
                         this.opt.color = _.rgba();
                     } else {
-                        this.opt.color = _.rgb(); //_.hsl();小程序不支持
+                        this.opt.color = _.rgb();
                     }
                 }
                 return this;
             },
             //平移
-            translate: function(x, y) {
-                var opt = _.extend({}, this.opt, {
-                    x: this.opt.x + x,
-                    y: this.opt.y + y,
-                    offsetX: 0,
-                    offsetY: 0
-                });
-                return this.draw.shape(opt);
-            },
-            regularVertices: function(opt) {
-                var p = _.point(opt)
-                var num = opt.num;
-                //夹角
-                var ia = 360 / num;
-                var vs = [p];
-                for (var i = 0; i < num; i++) {
-                    vs.push(p = p.rotate(ia));
-                }
-                return vs;
-            },
+            // translate: function(x, y) {
+            //     var opt = _.clone(this.opt, {
+            //         x: this.opt.x + x,
+            //         y: this.opt.y + y,
+            //         offsetX: 0,
+            //         offsetY: 0
+            //     });
+            //     return this.draw.shape(opt);
+            // },
+            // regularVertices: function(opt) {
+            //     var p = _.point(opt)
+            //     var num = opt.num;
+            //     //夹角
+            //     var ia = 360 / num;
+            //     var vs = [p];
+            //     for (var i = 0; i < num; i++) {
+            //         vs.push(p = p.rotate(ia));
+            //     }
+            //     return vs;
+            // },
             regularPolygon: function(opt) {
-                var vs = this.regularVertices(opt);
+                var vs = _.vertex().regularVertices(opt);
                 this.draw.link(vs, opt);
             },
             spiral: function(opt) {
-                var p = _.point(opt),
-                    vs = [p],
-                    turns = opt.turns,
-                    r = opt.r;
-                for (var i = 0; i < turns; i += 2) {
-                    vs.push(p = p.translate(r * i, 0))
-                    vs.push(p = p.translate(0, r * i))
-                    vs.push(p = p.translate(-r * (i + 1), 0))
-                    vs.push(p = p.translate(0, -r * (i + 1)))
-                }
+                var vs = _.vertex().spiral(opt);
                 this.draw.link(vs, opt);
             },
             //斐波那契数列 螺旋
             fibonacci: function(opt) {
                 var num = opt.num;
                 var fb = _.fibonacci(num);
+                var sequence = opt.group.sequence;
+                var clockwise = sequence === "clockwise" ? true : false;
 
-                var clockwise = opt.clockwise;
+                // var clockwise = opt.clockwise;
                 var ctx = this.context;
                 var x = opt.x,
                     y = opt.y,
@@ -4390,7 +4975,7 @@
                     }
                 }
 
-                this.draw.render(_.extend({}, opt, { closed: false }))
+                this.draw.render(_.clone(opt, { closed: false }))
                 return this;
             },
             //螺旋
@@ -4409,103 +4994,53 @@
             //     this.render(opt);
             //     return this;
             // },
-            //顶点  极坐标,等角切分
-            //当r相同时  半径变化比率rRation=1  为正多边形
-            //1 ,.05，两个数循环。形成星形  ，凹多边形
-            //渐渐变大或变小 ，形成 螺旋线 
-            //不等角切分 等距r  形成矩形  (未处理) 
+            //顶点
             vertices: function(opt) {
-                var shape = opt.shape,
-                    r = opt.r || 100,
-                    a = opt.a || 0,
-                    x = opt.x,
-                    y = opt.y,
-                    rRatio = opt.rRatio || 1,
-                    aRatio = opt.aRatio || 1,
-                    turns = opt.turns || 1,
-                    num = opt.num || 3;
-                //变化类型：加速 匀速
-                var rRatioType = opt.rRatioType;
-                // this.aRatioType = op.aRatioType;
-
-                switch (shape) {
-                    case "star":
-                        rRatioType = "ac";
-                        rRatio = [rRatio, 1 / rRatio]
-                        break;
-                    case "spiral":
-                        r = 0.01;
-                        turns = 30;
-                        break;
-                }
-                var vs = [];
-                var rRatioCycle = _.cycle(rRatio || 1);
-                var rn = r;
-                var an;
-                for (var i = 0; i < num * turns; i++) {
-                    switch (rRatioType) {
-                        case "cv": //case "constantvelocity": //匀速螺线 阿基米德螺线
-                            rn += r * (rRatioCycle.next() - 1);
-                            break;
-                        case "ac": //加速螺旋 case "acceleration":
-                            rn = i == 0 ? r : i == 1 ? r * rRatioCycle.val() : rn * rRatioCycle.next();
-                            break;
-                    }
-
-                    // switch (aRatioType) {
-                    //     case "cv":
-                    //     case "constantvelocity":
-                    //         // a += opt.a * (aRatio.next() - 1);
-                    //         a=i * 360 / num + opt.a,
-                    //         break;
-                    //     case "acc":
-                    //     case "acceleration": //加速螺旋
-                    //         // a = a == 0 ? opt.a * rRatio.val() : opt.a * rRatio.next();/
-                    //         a=i * 360 / num + opt.a,
-                    //         break;
-                    // }
-                    an = i * 360 / num + a;
-                    var p = _.point(_.extend({}, opt, {
-                        a: an,
-                        r: rn
-                    }))
-                    vs.push(p);
-                }
-                return vs;
-            },
-            //内接多边形 顶点
-            invertices: function(vs) {
-                var vs2 = [];
-                var len = vs.length;
-                if (vs[0].distance(vs[1]) < 10) {
-                    return false;
-                }
-                vs.forEach(function(t, i) {
-                    var p;
-                    if (i == len - 1) {
-                        p = t.middle(vs[0])
-                    } else {
-                        p = t.middle(vs[i + 1])
-                    }
-                    vs2.push(p);
+                var self = this;
+                var vs = this.vs; //|| _.vertex(opt).vs;
+                vs.forEach(function(t) {
+                    self.circle(_.clone(opt, { x: t.x, y: t.y, r: 3, text: "" }))
                 })
-                return vs2;
-            },
 
+                //方法二
+                // var shapeGroup = vs.map(function(t) {
+                //     return {shape: _.clone(opt, { x: t.x, y: t.y, r: 3, text: "", shape: "circle" })}
+                // })
+                // this.draw.setup(shapeGroup)
+            },
+            //文本
+            text: function(opt) {
+                var ctx = this.context;
+                var x = opt.x,
+                    y = opt.y,
+                    r = opt.r;
+                var text = opt.text || opt.num;
+                var color = opt.color || "#000";
+                ctx.fillStyle = color;
+                ctx.font = r + "px Verdana";
+                var measure = ctx.measureText(text);
+                ctx.fillText(text, x - measure.width / 2, y + r / 2);
+            },
+            //圆形
             circle: function(opt) {
                 var ctx = this.context;
                 var x = opt.x,
                     y = opt.y,
                     r = opt.r;
+                var sa = opt.sa || 0,
+                    ea = opt.ea || Math.PI * 2;
+
                 ctx.beginPath();
-                ctx.arc(x, y, r, 0, Math.PI * 2, true);
+                ctx.arc(x, y, r, sa, ea, true);
                 ctx.closePath();
                 this.draw.render(opt);
                 var text = opt.text;
                 if (!_.isUndefined(text)) {
                     ctx.fillStyle = "#000";
                     ctx.font = "12px Verdana";
-                    ctx.fillText(text, x - 4, y + 5);
+                    var measure = ctx.measureText(text);
+                    ctx.fillText(text, x - measure.width / 2, y + r / 2);
+                    // ctx.fillText(text, x - 4, y + 5);
 
                     // mPaint.setTextAlign(Paint.Align.CENTER);
                     // Paint.FontMetrics fm = mPaint.getFontMetrics();
@@ -4547,8 +5082,8 @@
                 ctx.closePath();
                 this.draw.render(opt);
                 ctx.restore();
+                return this;
             },
-
             //sector扇形
             sector: function(opt) {
                 var ctx = this.context;
@@ -4588,7 +5123,7 @@
                 //     this[shape] && this[shape](opt.shape)
 
                 //     var r2 = opt.shape.r * opt.shape.rRatio;
-                //     opt.shape = _.extend({}, opt.shape, { r: r2 });
+                //     opt.shape = _.clone(opt.shape, { r: r2 });
                 //     this[shape] && this[shape](opt)
                 // } else {
                 //     // var opt = this.default(opt.shape);
@@ -4617,23 +5152,7 @@
             },
             //多边形
             polygon: function(opt) {
-                var vs = this.vertices(opt);
-                return this.draw.link(vs, opt);
-            },
-            //线条
-            line: function(opt) {
-                opt.num = 2;
-                return this.polygon(opt);
-            },
-            //三角形
-            triangle: function(opt) {
-                opt.num = 3;
-                return this.polygon(opt);
-            },
-            //正方形
-            square: function(opt) {
-                opt.num = 4;
-                return this.polygon(opt);
+                return this.draw.link(this.vs, opt);
             },
             //矩形
             rectangle: function(opt) {
@@ -4657,120 +5176,85 @@
                     opt.rRatio = [0.5, 2];
                 }
                 opt.rRatioType = "ac";
+                this.vs = _.vertex(opt).vs;
                 return this.polygon(opt);
             },
-            //五角星
+            //星星
             star: function(opt) {
                 opt.shape = "star"
-                this.polygon(opt); //|| (3 - 4 * Math.pow(self.sin(18), 2)) //正五角星2.61803
-
-                // var self = this;
-                // var num = opt.num || 5; //num of edge
-                // var a = opt.a; //offset
-                // var ratio = opt.ratio || (3 - 4 * Math.pow(self.sin(18), 2)) //正五角星2.61803
-                // var vs = [];
-                // for (var i = 0; i < num; i++) {
-                //     var p1 = self.point(_.extend({}, opt, {
-                //         a: i * 360 / num + a
-                //     }))
-                //     vs.push(p1);
-                //     var p2 = self.point(_.extend({}, opt, {
-                //         a: i * 360 / num + a + 180 / num,
-                //         r: opt.r / ratio
-                //     }))
-                //     vs.push(p2);
-                // }
-                // this.link(vs, opt)
+                this.vs = _.vertex(opt).vs;
+                this.polygon(opt);
                 return this;
             },
-            //对角线
-            diagonal: function(opt) {
-                var vs = this.vertices(opt);
-                var vsGroup = [];
-                var len = vs.length;
-                for (var i = 0; i < len - 2; i++) {
-                    for (var j = i + 2; j < len; j++) {
-                        if (!(i == 0 && j == len - 1)) {
-                            vsGroup.push([vs[i], vs[j]]);
-                        }
-                    }
+            //正五角星
+            pentagram: function(opt) {
+                var num = opt.num || 5, //num of edge
+                    // a = opt.a, //offset 
+                    r = opt.r,
+                    ratio = opt.ratio || (3 - 4 * Math.pow(_.sin(18), 2)), //正五角星2.61803
+                    vs = this.vs,
+                    vs2 = [];
+                for (var i = 0; i < num; i++) {
+                    var p1 = vs[i];
+                    var p2 = p1.clone({
+                        a: p1.a + 180 / num,
+                        r: r / ratio
+                    });
+                    vs2.push(p1);
+                    vs2.push(p2);
                 }
-                this.draw.linkGroup(vsGroup, _.extend({}, opt, { showVertices: false }));
-                return this.draw.link(vs, opt);
-            },
-            //斑马
-            zebra: function(opt) {
-                var vs = this.vertices(opt);
-                var x = opt.x,
-                    y = opt.y;
-                var vsGroup = _.slice(vs, 2).map(function(t) {
-                    return t.concat([{ x: x, y: y }])
-                })
-                this.draw.linkGroup(vsGroup, _.extend({}, opt, { fill: true, showVertices: false, showExcircle: false }));
-                return this.draw.link(vs, opt);
+                return this.draw.link(vs2, opt);
             },
             //交叉线
             cross: function(opt) {
                 var num = opt.num;
                 var vsGroup = [];
-                var opt = _.extend({}, opt, { num: opt.num * 2 });
-                var vs = this.vertices(opt);
-                for (var i = 0; i < num; i++) {
+                var vertex = this.vertex;
+                var opt = _.clone(opt, { num: opt.num * 2 });
+                // var vs = _.vertex(opt).vs; //改变num 需要重新计算
+                var vs = vertex.vertices(opt)
+                for (var i = 0; i < opt.num; i++) {
                     vsGroup.push([vs[i], vs[i + num]]);
                 }
                 return this.draw.linkGroup(vsGroup, opt);
             },
-            //射线  等角射线
-            ray: function(opt) {
-                var vs = this.vertices(opt);
-                var x = opt.x,
-                    y = opt.y;
-                var vsGroup = [];
-                if (opt.fill) {
-                    var num = opt.num;
-                    for (var i = 0; i < num; i += 2) {
-                        vsGroup.push([{ x: x, y: y }, vs[i], i == num - 1 ? vs[0] : vs[i + 1]])
-                    }
-                } else {
-                    vsGroup = vs.map(function(v, i) {
-                        return [{ x: x, y: y }, v];
-                    })
-                }
-                return this.draw.linkGroup(vsGroup, opt);
-            },
-            //花瓣
-            flower: function(opt) {
+            //玫瑰花
+            rose: function(opt) {
                 var self = this;
-                var vsGroup = [];
-                var vs = this.vertices(opt);
-                vsGroup.push(vs);
+                var vertex = this.vertex;
+                var vs = vertex.vs;
+                var vsGroup = [vs];
+
                 var level = 0;
-                (function _flower(vs) {
-                    if (level > 4) {
+                var turns = opt.turns || 3;
+                (function _rose(vs) {
+                    if (level >= turns) {
                         return;
                     }
-                    var r = opt.r / Math.pow(2, level++);
-                    var vs2 = self.vertices(_.extend({}, opt, { r: r }));
+                    var r = opt.r / Math.pow(2, ++level);
+                    var vs2 = vertex.clone({ r: r });
                     vsGroup.push(vs2);
+                    //断线
                     vs.map(function(t, i) {
-                        var vs3 = [t, vs2[i == vs2.length - 1 ? 0 : i + 1]];
+                        var vs3 = [t, vs2[i + 1 === vs2.length ? 0 : i + 1]];
                         vsGroup.push(vs3);
                     });
-                    _flower(vs2);
+                    _rose(vs2);
                 })(vs);
+
                 return self.draw.linkGroup(vsGroup, opt);
             },
             //太阳花
             sunflower: function(opt) {
-                var interval = opt.interval;
+                var interval = opt.interval || 2;
                 var vsGroup = [];
-                var vs = this.vertices(opt);
+                var vs = this.vs;
                 var len = vs.length;
 
                 for (var i = 0; i < len; i++) {
                     var vs2 = [];
-                    vs2.push(vs[i])
-                    vs2.push(vs[(i + interval) % len])
+                    vs2.push(vs[i]);
+                    vs2.push(vs[(i + interval) % len]);
                     vsGroup.push(vs2);
                 }
                 return this.draw.linkGroup(vsGroup, opt);
@@ -4778,30 +5262,65 @@
             //谢尔宾斯基三角形
             sierpinski: function(opt) {
                 var self = this;
-                var vsGroup = [];
-                var vs = this.vertices(opt);
-                vsGroup.push(vs);
+                var vertex = this.vertex;
+                var vs = vertex.vs;
+                var vsGroup = [vs];
+
                 //内切三角形
                 (function _intriangle(vs) {
-                    var vs2 = self.invertices.call(self, vs);
+                    var vs2 = vertex.invertices(vs);
                     if (vs2) {
                         vsGroup.push(vs2);
                         vs.map(function(t, i) {
-                            var vs3 = [t, vs2[i], vs2[i == 0 ? vs2.length - 1 : i - 1]]
+                            var vs3 = [t, vs2[i], vs2[i === 0 ? vs2.length - 1 : i - 1]]
                             _intriangle(vs3)
                         });
                     }
                 })(vs);
                 return self.draw.linkGroup(vsGroup, opt);
             },
+            //谢尔宾斯基地毯
+            carpet: function(opt) {
+                var self = this;
+                var vertex = this.vertex;
+                var vs = vertex.vs;
+                var vsGroup = [vs];
+                var num = opt.num;
+
+                (function _carpet(opt) {
+                    var r = opt.r;
+                    if (r < 5) {
+                        return
+                    }
+                    var vertex = _.vertex(opt);
+                    var r2 = r / 3;
+                    var vs2 = vertex.clone({ r: r2 });
+                    vsGroup.push(vs2)
+                    var r3 = r * 2 / 3;
+                    var vs3 = vertex.clone({ r: r3 });
+                    var vs4 = [],
+                        len = vs3.length;
+                    vs3.forEach(function(t, i) {
+                        vs4.push(t);
+                        vs4.push(t.mid(vs3[i + 1 === len ? 0 : i + 1]));
+                    })
+                    vs4.forEach(function(t) {
+                        var opt2 = _.clone(opt, { r: r2, x: t.x, y: t.y })
+                        _carpet(opt2)
+                    })
+
+                })(opt);
+                return self.draw.linkGroup(vsGroup, opt);
+            },
+
             //内切 多边形
             inpolygon: function(opt) {
                 var self = this;
-                var vsGroup = [];
-                var vs = this.vertices(opt);
-                vsGroup.push(vs);
+                var vertex = this.vertex;
+                var vs = vertex.vs;
+                var vsGroup = [vs];
                 (function _inpolygon(vs) {
-                    var vs2 = self.invertices.call(self, vs);
+                    var vs2 = vertex.invertices(vs);
                     if (vs2) {
                         vsGroup.push(vs2);
                         _inpolygon(vs2)
@@ -4809,21 +5328,332 @@
                 })(vs);
                 return self.draw.linkGroup(vsGroup, opt);
             },
-            
             //顶点镜像
-            mirror: function(opt) {
-                var vsGroup = [];
-                var vs = this.vertices(opt);
-                vsGroup.push(vs);
-                vs.forEach(function(t) {
-                    var vs2 = []
-                    vs.forEach(function(t2) {
-                        vs2.push(t2.mirror(t));
+            // mirror: function(opt) {
+            //     var vsGroup = [];
+            //     // var vs = _.vertex(opt).vs;
+            //     var vs=this.vs;
+            //     vsGroup.push(vs);
+            //     vs.forEach(function(t) {
+            //         var vs2 = [];
+            //         vs.forEach(function(t2) {
+            //             vs2.push(t2.mirror(t));
+            //         })
+            //         vsGroup.push(vs2);
+            //     });
+            //     return this.draw.linkGroup(vsGroup, opt);
+            // },
+            //轴对称
+            axialMirror: function(opt) {
+                var self = this;
+                var vertex = this.vertex;
+                var vs = vertex.vs;
+                var po = vertex.po;
+                var vsGroup = [vs];
+                var a = opt.a,
+                    num = opt.num,
+                    r = opt.r;
+                var an,
+                    rn = 2 * r * _.cos(180 / num);
+                vs.forEach(function(t, i) {
+                    var p = po.clone({
+                        a: t.a + 180 / num,
+                        r: rn
+                    })
+                    var vs2 = vertex.clone({
+                        o: {
+                            x: p.x,
+                            y: p.y
+                        }
                     })
                     vsGroup.push(vs2);
                 });
                 return this.draw.linkGroup(vsGroup, opt);
             },
+            //蜂巢
+            comb: function(opt) {
+                var self = this;
+                var vsGroup = [];
+                opt.num = 6;
+                var vertex = this.vertex;
+                var vs = vertex.vs;
+                var po = vertex.po;
+                vsGroup.push(vs);
+                var a = opt.a,
+                    num = opt.num,
+                    r = opt.r;
+                var _comb1 = function(n) {
+                    var rn = 2 * n * r * _.cos(180 / num);
+                    vs.forEach(function(t, i) {
+                        var p = po.clone({
+                            a: t.a + 180 / num,
+                            r: rn
+                        })
+                        var vs2 = vertex.clone({
+                            o: {
+                                x: p.x,
+                                y: p.y
+                            }
+                        })
+                        vsGroup.push(vs2);
+                    });
+
+                };
+                var _comb2 = function(n) {
+                    var rn = 2 * n * r + r; //3 * r 
+                    vs.forEach(function(t, i) {
+
+                        var p = po.clone({
+                            a: t.a,
+                            r: rn
+                        })
+                        var vs2 = vertex.clone({
+                            o: {
+                                x: p.x,
+                                y: p.y
+                            }
+                        })
+                        vsGroup.push(vs2);
+                    });
+                };
+                [1, 2, 3].forEach(function(n) {
+                    _comb1(n);
+                    _comb2(n);
+                });
+
+
+                return this.draw.linkGroup(vsGroup, opt);
+
+            },
+            // 勒洛三角形  reuleaux triangle
+            reuleaux: function(opt) {
+                var self = this;
+                var vertex = this.vertex;
+                var vs = vertex.vs;
+                this.draw.link(vs, opt);
+                //边长
+                var r = 2 * opt.r * _.sin(180 / opt.num);
+                vs.forEach(function(t) {
+                    self.circle(_.clone(opt, { x: t.x, y: t.y, r: r, text: "" }))
+                });
+            },
+            //佛珠
+            beads: function(opt) {
+                var self = this;
+                var vs = this.vs;
+                var len = vs.length;
+                var r = opt.r * _.sin(180 / opt.num);
+                vs.forEach(function(t, i) {
+                    var p = t.mid(vs[i + 1 < len ? i + 1 : 0]);
+                    self.circle(_.clone(opt, { x: p.x, y: p.y, r: r, text: "" }));
+                })
+                this.draw.link(vs, opt);
+            },
+            // 科赫曲线  雪花曲线 todo
+            kohn: function(opt) {
+                var self = this;
+                var vs = this.vs;
+                // return this.draw.link(vs, opt)
+
+                var _kohn = function(p, p1) {
+                    var ps = p.split(p1, 2);
+                    var d = ps[0].dist(ps[1]) / Math.sqrt(2);
+                    var m = ps[0].mid(ps[1]);
+                    var p2 = m.vertical(ps[1], d);
+                    ps.splice(1, 0, p2);
+                    var ps2 = [p].concat(ps);
+                    ps2.push(p1)
+                    // return ps2;
+                    if (d < 10) {
+                        return ps2
+                    }
+
+                    var ps3 = [];
+                    var len = ps2.length;
+
+                    ps2.forEach(function(t, i) {
+                        if (i + 1 < len) {
+                            var ps = _kohn(t, ps2[i + 1])
+                            if (i === len - 2) {
+                                ps3 = ps3.concat(ps);
+                            } else {
+                                ps3 = ps3.concat(ps.slice(0, ps.length - 1));
+                            }
+                        }
+                    });
+                    return ps3;
+                }
+
+                // var vs2 = _kohn(vs[0], vs[1]);
+                // var vs2=[];
+                var vsGroup = [];
+                var len = vs.length;
+                vs.forEach(function(t, i) {
+                    // if (i + 1 < vs.length) {
+                    var t2 = vs[i + 1 === len ? 0 : i + 1];
+                    vsGroup.push(_kohn(t, t2));
+                    // self.draw.point({
+                    //     x: t.x,
+                    //     y: t.y,
+                    //     text: i
+                    // })
+                    // self.draw.link(_kohn(t, t2), opt)
+                    // }
+                });
+                this.draw.linkGroup(vsGroup, opt)
+            },
+            //等角射线
+            ray: function(opt) {
+                var vs = this.vs,
+                    len = vs.length,
+                    po = this.po,
+                    vsGroup = [];
+                if (opt.fillInterval) {
+                    for (var i = 0; i < len; i += 2) {
+                        vsGroup.push([po, vs[i], vs[i + 1 === len ? 0 : i + 1]])
+                    }
+                } else {
+                    vsGroup = vs.map(function(v, i) {
+                        return [po, v];
+                    })
+                    opt.fill && vsGroup.push(vs);
+                }
+                return this.draw.linkGroup(vsGroup, opt);
+            },
+            //射线分形
+            rayFractal: function(opt) {
+                var vertex = _.vertex(opt);
+                var vs = vertex.vs,
+                    len = vs.length,
+                    po = vertex.po,
+                    vsGroup = [];
+                var self = this;
+
+                var _ray = function(opt) {
+                    var vertex = _.vertex(opt);
+                    var vs = vertex.vs,
+                        len = vs.length,
+                        po = vertex.po;
+                    var vsGroup = [];
+                    if (opt.fillInterval) {
+                        for (var i = 0; i < len; i += 2) {
+                            vsGroup.push([po, vs[i], vs[i + 1 === len ? 0 : i + 1]])
+                        }
+                    } else {
+                        vs.forEach(function(v, i) {
+                            vsGroup.push([po, v]);
+                        })
+                        opt.fill && vsGroup.push(vs);
+                    }
+                    self.draw.linkGroup(vsGroup, opt);
+                }
+                vs.forEach(function(t) {
+                    _ray(_.clone(opt, { x: t.x, y: t.y }))
+                })
+            },
+
+            // 顶点变形
+            transform: function() {
+                var self = this;
+                var speed = 1;
+                var vs = this.vs;
+                vs.forEach(function(t) {
+                    _.extend(t, {
+                        vx: (Math.random() * 2 - 1) * speed,
+                        vy: (Math.random() * 2 - 1) * speed,
+
+                    })
+                });
+
+                (function _move() {
+                    vs.forEach(function(t) {
+                        t.x += t.vx;
+                        t.y += t.vy;
+                    });
+                    // self.draw.clear();
+                    self.draw.link(vs);
+                    setTimeout(_move, 100);
+                })()
+            },
+            //一笔画 画饼
+            pie: function(opt) {
+                var vertex = this.vertex,
+                    vs = vertex.vs,
+                    len = vs.length,
+                    po = this.po;
+                var ctx = this.context;
+                ctx.beginPath();
+                var n = 2;
+                vs.forEach(function(t, i) {
+                    if (opt.showVertices)
+                        ctx.fillText('' + i, t.x, t.y); //+':'+parseInt(t.a)
+                    var t1 = vs[i + n - 1 >= len ? i + n - 1 - len : i + n - 1];
+                    if (i % n === 0)
+                        ctx.arc(po.x, po.y, opt.r, _.rad(t1.a), _.rad(t.a), true);
+                });
+                ctx.closePath();
+                this.draw.render(opt);
+            },
+            //太阳
+            sun: function(opt) {
+                var vertex = this.vertex,
+                    vs = vertex.vs,
+                    len = vs.length,
+                    po = vertex.po;
+                if (len < 3) return;
+
+                var vs2 = vs.map(function(t, i) {
+                    var t2 = vs[i + 1 === len ? 0 : i + 1];
+                    var v = t.toVector().add(t2.toVector());
+                    return t.clone(v.toP());
+                });
+
+                var vs3 = [];
+                vs.forEach(function(t, i) {
+                    vs3.push(t);
+                    vs3.push(vs2[i])
+                })
+                this.draw.link(vs.concat(vs3), opt);
+            },
+            //风车
+            windmill: function(opt) {
+                var vertex = this.vertex,
+                    vs = vertex.vs,
+                    len = vs.length,
+                    po = vertex.po;
+                if (len < 3) return;
+                var v;
+
+                var vs2 = vs.map(function(t, i) {
+                    var t2, t3;
+                    if (i + 1 === len) {
+                        t2 = vs[0];
+                        t3 = vs[1]
+                    } else if (i + 2 === len) {
+                        t2 = vs[i + 1];
+                        t3 = vs[0]
+                    } else {
+                        t2 = vs[i + 1];
+                        t3 = vs[i + 2];
+                    }
+                    v = t.toVector(t2).add(t.toVector(t3));
+                    return t.clone(v.toP());
+                });
+                var vs3 = [];
+                vs.forEach(function(t, i) {
+                    vs3.push(t);
+                    vs3.push(vs2[i])
+                })
+                this.draw.link(vs.concat(vs3), opt);
+                //分形放大
+                // opt.level=_.isUndefined(opt.level)?1:opt.level;
+                // opt.level++;
+                // if (opt.level > 5) return;
+                // this.setup(_.clone(opt, v.toP()))
+            },
+
+
+
         }
         _shape.prototype.init.prototype = _shape.prototype;
 
@@ -4838,68 +5668,62 @@
                 this.context = draw.context;
                 this.canvas = draw.canvas;
 
-                var x = opt.shape.x,
-                    y = opt.shape.y,
-                    r = opt.shape.r,
+                var r = opt.shape.r,
                     color = opt.shape.color,
                     shape = opt.shape.shape || "circle";
                 var colorful = opt.group.colorful;
-                var speed = opt.motion.speed || 3;
-                // var identifier = opt.motion.identifier;
 
+                var x = _.isUndefined(opt.group.x) ? this.canvas.width / 2 : opt.group.x;
+                var y = _.isUndefined(opt.group.y) ? this.canvas.height / 2 : opt.group.y;
 
                 var sr = r;
-                var width=r, height=r;
+                var width = r,
+                    height = r;
 
-                if (opt.group.switch == "on") {
-                    if (["mirror", "surround"].indexOf(opt.group.group) != -1) {
-                        // sr += opt.sr
+                if (opt.group) {
+                    if (!!~["mirror", "surround"].indexOf(opt.group.group)) {
                         width = opt.group.sr + r;
                         height = opt.group.sr + r
                     }
-                    // sr=_.min(sr,canvas.width/2-10)
                 }
 
-                // if(width>=this.canvas.width||height>=this.canvas.height){
-                //     opt.motion.bounce=false;
-                // }
-                
-
-                if (opt.motion.switch == "on") {
-                    opt.group.animate = false;
-                    if(_.isUndefined(opt.group.a))opt.group.a=0;
-                }
+                if (_.isUndefined(opt.group.a)) opt.group.a = 0;
                 var colorArr = [];
                 var interval = opt.group.interval || 1;
-                if (colorful) {
-                    for (var i = 0; i < 360 / interval; i++) {
-                        colorArr.push(_.rgba())
-                    }
+
+                switch (colorful) {
+                    case "random":
+                        //随机色
+                        for (var i = 0; i < 360 / interval; i++) {
+                            colorArr.push(_.rgba())
+                        }
+                        break;
+                    case "gradient":
+                        //渐变色
+                        colorArr = _.gradientColor(_.rgb(), _.rgb(), 360 / interval);
+                        break;
+
+                    case "singleGradient":
+                        //单色渐变
+                        colorArr = _.gradientColor(_.deepColor(), "#ffffff", 360 / interval);
+                    case "solid": //单色
+                        break;
+                    default:
+                        break;
                 }
-                opt.group = _.extend({}, opt.group, {
-                    speed: speed,
-                    // vx: (Math.random() * 2 - 1) * speed,
-                    // vy: (Math.random() * 2 - 1) * speed,
-                    // a: 0,
+                opt.group = _.clone(opt.group, {
                     width: width,
                     height: height,
-                    range: {
-                        top: 0,
-                        left: 0,
-                        right: this.canvas.width,
-                        bottom: this.canvas.height
-                    },
-                    colorArr: colorArr
-                })
-
-
-
-                this.opt = _.extend({}, opt);
+                    x: x,
+                    y: y,
+                    colorArr: colorArr,
+                });
+                this.opt = opt; //_.clone(opt);
                 this.setup();
             },
             //图形
-            shape: function(opt) {
-                this.draw.shape(opt.shape)
+            shape: function(optShape) {
+                return this.draw.shape(optShape); //opt.shape
             },
             color: function(opt) {
                 var colorful = opt.group.colorful;
@@ -4909,59 +5733,149 @@
                     if (fill) {
                         opt2.color = _.rgba();
                     } else {
-                        opt2.color = _.rgb(); //_.hsl();//小程序不支持 hsl
+                        opt2.color = _.rgb();
                     }
                 }
                 return opt2;
             },
             setup: function(opt) {
                 var opt = opt || this.opt;
-                if (opt.group.switch == "on") {
-                    this[opt.group.group](opt)
-                } else {
-                    this.shape(opt);
-                }
-            },
-            //旋转
-            rotate: function() {
-                this.opt.group.a += this.opt.group.speed;
-                return this;
-            },
-            //反弹
-            bounce: function() {
-                
-                var g = this.opt.group
-                if (g.x < g.range.left + g.width) { //碰到左边的边界
-                    g.x = g.width;
-                    g.vx = -g.vx;
-                } else if (g.y < g.range.top + g.height) {
-                    g.y = g.height;
-                    g.vy = -g.vy;
-                } else if (g.x > g.range.right - g.width) {
-                    g.x = g.range.right - g.width;
-                    g.vx = -g.vx;
-                } else if (g.y > g.range.bottom - g.height) {
-                    g.y = g.range.bottom - g.height;
-                    g.vy = -g.vy;
-                }
-            },
-            //移动
-            move: function() {
-                var g = this.opt.group;
-                g.x += g.vx;
-                g.y += g.vy;
-                if (this.opt.motion.bounce) {
-                    this.bounce()
-                }
-                return this;
-            },
+                if (opt.group) {
+                    //重新计算vs
+                    var vertex = this.vertex = _.vertex(opt.group);
+                    this.vs = vertex.vs;
+                    this.po = vertex.po;
 
+                    return this.groups = this[opt.group.group](opt)
+                } else {
+                    return this.shape(opt.shape);
+                }
+            },
+            //多边形
+            polygon: function(opt) {
+                var self = this,
+                    groups = this.vs,
+                    po = this.po,
+                    len = groups.length;
+                var vertex = _.vertex(opt.shape);
+                var vsGroup = [];
+                var seq = opt.group.sequence; //顺时针逆时针
+                switch (seq) {
+                    case "clockwise":
+                        break;
+                    case "anticlockwise":
+                        groups.reverse();
+                        break;
+                    case "shuffle":
+                        groups.shuffle();
+                        break;
+                }
+                return groups.map(function(t, i) {
+                    opt.shape = _.clone(opt.shape, { x: t.x, y: t.y, easing: false })
+                    var drawShape, vs;
+                    if (opt.group.animate && opt.group.easing === "none") { //动画
+                        opt.shape.delay = i === 0 ? false : opt.group.animationInterval; //true
+                        drawShape = self.shape(opt.shape);
+                        vs = vertex.clone({ o: { x: t.x, y: t.y } });
+                    } else {
+                        drawShape = self.shape(opt.shape);
+                        vs = drawShape.vs;
+                    }
+
+                    //半径
+                    if (opt.group.showRadius) {
+                        self.draw.link([po, t], opt.group);
+                    }
+
+                    //中心相连
+                    if (opt.group.link) { //连接线
+                        for (var j = i; j < len - 1; j++) {
+                            self.draw.link([t, groups[j + 1]], opt.group);
+                        }
+                    }
+                    //相邻连线 neighbor
+                    if (opt.group.neighborLink) { //连接线
+                        self.draw.link([t, groups[i + 1 === len ? 0 : i + 1]]);
+                    }
+                    //顶点相连
+                    if (opt.group.vertexLink) {
+                        var vs0, vs2;
+                        if (i === 0) {
+                            vsGroup.push(vs);
+                        } else if (i + 1 < len) {
+                            vs2 = vsGroup.pop();
+                            vs.forEach(function(t, i) {
+                                self.draw.link([t, vs2[i]], opt.group);
+                            });
+                        } else if (i + 1 === len) {
+                            vsGroup.forEach(function(t2) {
+                                vs.forEach(function(t, i) {
+                                    self.draw.link([t, t2[i]], opt.group);
+                                });
+
+                            })
+                        }
+                        vsGroup.push(vs);
+                    }
+                    //显示圆心编号
+                    if (opt.group.identifierCenter) {
+                        self.draw.point({ x: t.x, y: t.y, text: i })
+                    }
+
+                    //锥线
+                    if (opt.group.conic) {
+                        vs.forEach(function(t) {
+                            self.draw.link([po, t], opt.group);
+                        });
+                    }
+                    return drawShape;
+                });
+            },
+            //分形
+            fractal: function(opt) {
+                var self = this;
+                var po = { x: opt.group.x, y: opt.group.y };
+                var vertex = _.vertex(_.clone(opt.shape, po));
+                var vs = vertex.vs; //组合顶点
+                vs.forEach(function(t) {
+                    opt.shape = _.clone(opt.shape, { x: t.x, y: t.y })
+                    self.shape(opt.shape);
+                });
+            },
+            // 锥形
+            cone: function(opt) {
+                var self = this;
+
+                var groups = this.vs;
+                var po = this.po;
+                var len = groups.length;
+
+                var vsGroup = [];
+                groups.forEach(function(t) {
+                    opt.shape = _.clone(opt.shape, { x: t.x, y: t.y })
+                    var drawShape = self.shape(opt.shape);
+                    var vs = drawShape.vs;
+                    vs.forEach(function(s) {
+                        vsGroup.push([s, po]);
+                    });
+                })
+                this.draw.linkGroup(vsGroup, opt.shape);
+            },
+            //柱形
+            pillar: function(opt) {
+                opt.group.num = 2;
+                opt.group.vertexLink = true;
+                var vertex = this.vertex = _.vertex(opt.group);
+                this.vs = vertex.vs;
+                this.po = vertex.po;
+                return this.polygon(opt);
+            },
             //环形
             ring: function(opt) {
-                this.shape(opt);
-                var r2 = opt.shape.r * opt.shape.rRatio;
-                opt.shape = _.extend({}, opt.shape, { r: r2 });
-                this.shape(opt);
+                this.shape(opt.shape);
+                var r2 = opt.shape.r * 0.618; //opt.shape.rRatio;
+                // opt.shape = _.clone(opt.shape, { r: r2 });
+                this.shape(_.clone(opt.shape, { r: r2 }));
                 // this.draw.shape(opt.shape);
                 // this[shape] && this[shape](opt)
 
@@ -4971,7 +5885,7 @@
                 //     this[shape] && this[shape](opt.shape)
 
                 //     var r2 = opt.shape.r * opt.shape.rRatio;
-                //     opt.shape = _.extend({}, opt.shape, { r: r2 });
+                //     opt.shape = _.clone(opt.shape, { r: r2 });
                 //     this[shape] && this[shape](opt)
                 // } else {
                 //     var opt = this.default(opt.shape);
@@ -4998,25 +5912,27 @@
                 var x = opt.group.x,
                     y = opt.group.y;
 
-                var sr = opt.group.sr; //环绕半径
-                if (_.isUndefined(sr)) {
-                    sr = r;
+                var gr = opt.group.r; //环绕半径
+                if (_.isUndefined(gr)) {
+                    gr = r;
                     r = r / 3;
                 }
-                var clockwise = opt.group.clockwise; //顺时针逆时针
+                // var clockwise = opt.group.clockwise; //顺时针逆时针
+                var sequence = opt.group.sequence;
+                var clockwise = sequence === "clockwise" ? true : false;
                 var sAngle, eAngle;
 
-                var sa=opt.group.a||0;
+                var sa = opt.group.a || 0;
 
                 if (clockwise) {
-                    sAngle = sa+360;
+                    sAngle = sa + 360;
                     eAngle = sa; //0;
                     if (spiral) {
                         sAngle = sAngle * spiral;
                     }
                 } else {
-                    sAngle = sa ;//0;
-                    eAngle = sa+360
+                    sAngle = sa; //0;
+                    eAngle = sa + 360
                     if (spiral) {
                         eAngle = eAngle * spiral;
                     }
@@ -5051,13 +5967,23 @@
                     }
 
                     var opt2 = {
-                        x: x + sr * _.sin(a),
-                        y: y + sr * _.cos(a),
-                        r: r,
-                        color: opt.group.colorArr[index++]
+                        x: x + gr * _.sin(a),
+                        y: y + gr * _.cos(a),
+                        r: r
                     }
-                    opt.shape = _.extend({}, opt.shape, opt2) //, self.color(opt)
-                    self.shape(opt);
+                    //颜色
+                    if (opt.group.colorArr.length > index) {
+                        opt2.color = opt.group.colorArr[index++];
+                    }
+
+                    opt.shape = _.clone(opt.shape, opt2);
+
+                    self.shape(opt.shape);
+                    //显示半径
+                    if (opt.group.showRadius) {
+                        self.draw.link([{ x: x, y: y }, { x: opt.shape.x, y: opt.shape.y }]);
+                    }
+
                     if (opt.group.animate) { //动画
                         setTimeout(_surround, animationInterval)
                     } else {
@@ -5065,6 +5991,18 @@
                     }
                 })();
 
+
+                //显示圆心
+                if (opt.group.showCenter) {
+                    self.draw.shape({
+                        shape: "circle",
+                        r: 3,
+                        x: x,
+                        y: y,
+                        color: opt.group.colorArr[0], //_.rgb(),
+                        fill: true
+                    });
+                }
                 return self;
             },
             //同心
@@ -5077,8 +6015,8 @@
                     if (r <= 0) {
                         return;
                     }
-                    opt.shape=_.extend({}, opt.shape, self.color(opt), { r: r });
-                    self.shape(opt);
+                    opt.shape = _.clone(opt.shape, self.color(opt), { r: r });
+                    self.shape(opt.shape);
                     r = r - interval;
                     if (opt.group.animate) {
                         setTimeout(_concentric, animationInterval)
@@ -5090,13 +6028,9 @@
             },
             //外切圆
             excircle: function(opt) {
-                this.shape(opt);
-                // var shape = opt.shape || "polygon";
-                // this[shape](opt);
-                opt.shape=_.extend({},opt.shape,{shape:"circle",text:""})
-                this.shape(opt);
-
-                // this.circle(opt);
+                this.shape(opt.shape);
+                opt.shape = _.clone(opt.shape, { shape: "circle", text: "" })
+                this.shape(opt.shape);
                 return this;
             },
             //平铺
@@ -5110,7 +6044,11 @@
                 var my = h % r;
                 var animate = opt.group.animate;
                 var animationInterval = opt.group.animationInterval || 5;
-                var clockwise = opt.group.clockwise;
+                var sequence = opt.group.sequence;
+                var clockwise = sequence === "clockwise" ? true : false;
+                // var clockwise = opt.group.clockwise;
+                var rotation = opt.group.rotation; //自转
+                var sa = opt.group.a || 0;
 
 
                 var top = r + my / 2;
@@ -5122,14 +6060,16 @@
                 } else {
                     opt.shape.x = right;
                 }
-
+                if (rotation) { //自转
+                    opt.shape.a = sa
+                }
+                var index = 0;
                 (function _repeat() {
                     if (clockwise) {
                         if (opt.shape.x > w) {
                             return;
                         }
                         if (opt.shape.y > h) {
-
                             opt.shape.y = top;
                             opt.shape.x += 2 * r;
                         }
@@ -5142,8 +6082,12 @@
                             opt.shape.x -= 2 * r;
                         }
                     }
-                    opt.shape=_.extend({}, opt.shape, self.color(opt));
-                    self.shape.call(self, opt);
+                    if (opt.group.colorArr.length > index) {
+                        opt.shape.color = opt.group.colorArr[index++];
+                    }
+
+                    opt.shape = _.clone(opt.shape); //, self.color(opt)
+                    self.shape.call(self, opt.shape);
                     opt.shape.y += 2 * r;
                     if (animate) {
                         setTimeout(_repeat, animationInterval);
@@ -5153,6 +6097,30 @@
                 })();
                 return self;
             },
+            // 顶点变形
+            transform: function() {
+                var self = this;
+                var speed = 1;
+                var vs = this.vs;
+                vs.forEach(function(t) {
+                    _.extend(t, {
+                        vx: (Math.random() * 2 - 1) * speed,
+                        vy: (Math.random() * 2 - 1) * speed,
+
+                    })
+                });
+
+                (function _move() {
+                    vs.forEach(function(t) {
+                        t.x += t.vx;
+                        t.y += t.vy;
+                    });
+                    self.draw.clear();
+                    self.polygon(self.opt)
+                    setTimeout(_move, 100);
+                })()
+            }
+
 
             // repeatX: function(opt) {
             //     opt.group.repeatX = true;
@@ -5195,6 +6163,8 @@
 
 
         //运动
+        //rotate move zoom  gravitate  jiggle  float circle ellips
+        //组合运动 rotate_zoom
         var _motion = _.motion = function(draw, opt) {
             return new _motion.prototype.init(draw, opt);
         }
@@ -5204,123 +6174,418 @@
             init: function(draw, opt) {
                 var self = this;
                 this.draw = draw;
-                this.mode = opt.motion.mode;
+                this.motion = opt.motion.motion || "move";
                 this.link = opt.motion.link;
-                this.speed = opt.motion.speed || 1;
-                var num = opt.motion.num;
-                var colorful = opt.motion.colorful;
+                this.shadow = opt.motion.shadow;
 
-                if (opt.motion.switch == "on") {
-                    opt.shape.animate = false
-                }
+                var speed = opt.motion.speed || 1,
+                    zoomSpeed = opt.motion.zoomSpeed || 1,
+                    num = opt.motion.num || 1,
+                    colorful = opt.motion.colorful,
+                    bounce = opt.motion.bounce,
+                    click = opt.motion.click;
+
+
+                var screenWidth = this.draw.canvas.width,
+                    screenHeight = this.draw.canvas.height;
+
+
                 this.groups = [];
-                for (var i = 0; i < num; i++) {
-                    opt.id = i;
-                    var t;
-                    if (opt.group.switch == "on") {
-                        this.mode = _.camelCase(opt.motion.mode, "group");
+                this.a = 0;
+                this.r = opt.motion.r || 100;
+                //中心点
+                this.centerX = screenWidth / 2;
+                this.centerY = screenHeight / 2;
 
-                        opt.group = _.extend({}, opt.group, {
-                            vx: (Math.random() * 2 - 1) * opt.motion.speed || 1,
-                            vy: (Math.random() * 2 - 1) * opt.motion.speed || 1,
-                            bounce: opt.motion.bounce
-                        });
-                        t = draw.group(opt);
-                    } else {
-                        opt.shape = _.extend({}, opt.shape, {
-                            vx: (Math.random() * 2 - 1) * opt.motion.speed || 1,
-                            vy: (Math.random() * 2 - 1) * opt.motion.speed || 1,
-                            bounce: opt.motion.bounce
-                        });
-                        t = draw.shape(opt.shape);
-                        t.color(colorful)
-                    }
-                    this.groups.push(t);
-                };
+                var follow = _.isUndefined(opt.motion.follow) ? true : opt.motion.follow;
 
-                this.movie();
+
+                //速度随机
+                var _randomV = function(t) {
+                    return _.clone(t, {
+                        vx: (Math.random() * 2 - 1) * speed,
+                        vy: (Math.random() * 2 - 1) * speed,
+                        bounce: bounce,
+                        speed: speed,
+                        zoomState: "in",
+                        followSpeed: 0.01 + Math.random() * 0.04,
+                        follow: follow,
+                        click: click,
+                        mass: t.r * t.r,
+                        //range
+                        top: 0,
+                        left: 0,
+                        right: screenWidth,
+                        bottom: screenHeight,
+                        animate: false,
+                        lightState: 1,
+                        zoomSpeed: zoomSpeed
+                    });
+                }
+
+                if (_.isArray(opt.shape)) {
+                    opt.shape.forEach(function(t) {
+                        t = _randomV(t);
+                        var item = draw.shape(t);
+                        item.color(colorful)
+                        self.groups.push(item);
+                    })
+                } else {
+                    for (var i = 0; i < num; i++) {
+                        opt.id = i;
+                        var t;
+                        if (opt.group) {
+                            opt.group = _randomV(opt.group);
+                            t = draw.group(opt);
+                        } else {
+                            opt.shape = _randomV(opt.shape);
+                            t = draw.shape(opt.shape);
+                            t.color(colorful)
+                        }
+                        this.groups.push(t);
+                    };
+                }
+                this.len = this.groups.length;
+                this.setup();
             },
-            //旋转
-            // rotate: function(draw, opt) {
-            //     var self = this;
-            //     (function _movie() {
-            //         opt.shape.a += speed;
-            //         draw.clear();
-            //         draw.shape(opt.shape);
-            //         self.id = requestAnimationFrame(_movie);
-            //     })();
-            // },
-            movie: function() {
+            setup: function() {
                 var self = this;
                 var vsGroup = [];
                 var groups = self.groups;
                 var len = groups.length;
-                var mode = self.mode;
-                self.draw.clear();
+                var motion = self.motion;
+                if (self.shadow) {
+                    self.draw.shadow();
+                } else {
+                    self.draw.clear();
+                }
 
                 groups.forEach(function(t, i) {
-                    switch (mode) {
-                        case "rotation":
-                        case "rotationGroup": //旋转
-                            t.rotate(self.speed).setup();
-                            break;
-                        case "move":
-                        case "moveGroup": //移动
-                            t.move().setup();
-                            break;
-                        default: //移动
-                            t.move().setup();
-                            break;
-                    }
-                    if (self.link) { //连接线
+                    motion.split("_").forEach(function(m) {
+                        self[m] && self[m](t.opt);
+                        self.follow(t.opt);
+                    });
+                    t.setup();
 
-
+                    if (self.link) { //连接线，相互连接
                         for (var j = i; j < len - 1; j++) {
                             var vs;
-                            if (mode == "moveGroup") {
-                                vs = [t.opt.group, groups[j + 1].opt.group];
+                            var t2 = groups[j + 1];
+                            if (t.opt.group) {
+                                vs = [t.opt.group, t2.opt.group];
                             } else {
-                                vs = [t.opt, groups[j + 1].opt];
+                                vs = [t.opt, t2.opt];
                             }
-
                             self.draw.link(vs);
-                            // vsGroup.push(vs);
-
-                            // if (t.meet(groups[j + 1])) {
-                            //     console.log("反弹")
-                            // }
-
-                            //距离
-                            // var d = self.distance.apply(self, vs);
-                            // if (d < vs[0].r + vs[1].r) {
-                            //     console.log("撞到了" + [i, j + 1]);
-                            //     //反弹 能量相互
-                            //     // var tmp = vs.slice(0);
-                            //     // t.vx = tmp[1].vx * -1;
-                            //     // t.vy = tmp[1].vy * -1;
-                            //     // groups[j + 1].vx = tmp[0].vx * -1;
-                            //     // groups[j + 1].vy = tmp[0].vy * -1;
-                            // }
+                            // self.collide(t.opt,t2.opt);
+                            //碰撞
                         }
                     }
                 });
-                // self.link&&self.draw.linkGroup(vsGroup);
                 self.draw.canvas.callback && self.draw.canvas.callback.call(self.draw.context, self.draw.context);
 
                 if (inBrowser) {
-                    self.id = requestAnimationFrame(self.movie.bind(self));
+                    self.id = requestAnimationFrame(self.setup.bind(self));
                 } else {
-                    self.id = setTimeout(self.movie.bind(self), 17)
+                    self.id = setTimeout(self.setup.bind(self), 17)
                 }
-
-
             },
+            //停止
             stop: function() {
                 if (inBrowser) {
                     this.id && cancelAnimationFrame(this.id);
                 } else {
                     this.id && clearTimeout(this.id);
                 }
+            },
+            //移动跟随 followmove
+            follow: function(opt) {
+                var mouse = this.draw.mouse;
+                //移动中心点
+                if (!!~["circle", "ellipse"].indexOf(this.motion)) { //"spiral",
+                    var self = this;
+                    (function(opt) {
+                        if (opt.follow && mouse) { //移动跟随
+                            var dx = mouse.x - self.centerX;
+                            var dy = mouse.y - self.centerY;
+                            self.centerX += (dx * opt.followSpeed);
+                            self.centerY += (dy * opt.followSpeed);
+                        } else if (opt.click && mouse) { //点击重绘
+                            self.centerX = mouse.x
+                            self.centerY = mouse.y
+                        }
+                    })(opt.group || opt)
+
+                } else {
+                    (function(opt) {
+                        if (opt.follow && mouse) {
+                            var dx = mouse.x - opt.x
+                            var dy = mouse.y - opt.y
+                            opt.x += (dx * opt.followSpeed);
+                            opt.y += (dy * opt.followSpeed);
+                        } else if (opt.click && mouse) {
+                            opt.x = mouse.x
+                            opt.y = mouse.y
+                        }
+                    })(opt.group || opt)
+                }
+            },
+            //移动
+            move: function(opt) {
+                (function(opt) {
+                    opt.x += opt.vx || 1;
+                    opt.y += opt.vy || 1;
+                })(opt.group || opt);
+                this.bounce(opt);
+            },
+            //正弦函数运动公式 y = sin(x)
+            sineMove: function(opt) {
+                var self = this;
+
+                (function(opt) {
+                    opt.x += opt.vx > 0 ? 1 : -1;
+                    opt.y += _.sin(self.a) * self.r * (opt.vy > 0 ? 1 : -1);
+                    self.a += opt.speed;
+                })(opt.group || opt);
+                this.bounce(opt);
+            },
+            //反弹
+            bounce: function(opt) {
+                (function(opt) {
+                    if (opt.bounce) { //碰壁反射 
+                        if (opt.x < opt.left + opt.width) { //碰到左边的边界
+                            opt.x = opt.width;
+                            opt.vx = -opt.vx;
+                        } else if (opt.y < opt.top + opt.height) {
+                            opt.y = opt.height;
+                            opt.vy = -opt.vy;
+                        } else if (opt.x > opt.right - opt.width) {
+                            opt.x = opt.right - opt.width;
+                            opt.vx = -opt.vx;
+                        } else if (opt.y > opt.bottom - opt.height) {
+                            opt.y = opt.bottom - opt.height;
+                            opt.vy = -opt.vy;
+                        }
+                    } else { //左出右进  左进右出
+                        if (opt.vx < 0 && opt.x < opt.left - opt.width) { //碰到左边的边界
+                            opt.x = opt.right + opt.r;
+                        } else if (opt.vy < 0 && opt.y < opt.top - opt.height) {
+                            opt.y = opt.bottom + opt.r;
+                        } else if (opt.vx > 0 && opt.x > opt.right + opt.width) {
+                            opt.x = opt.left - opt.r;
+                        } else if (opt.vy > 0 && opt.y > opt.bottom + opt.height) {
+                            opt.y = opt.top - opt.r;
+                        }
+                    }
+                })(opt.group || opt);
+            },
+            //碰撞
+            collide: function(opt1, opt2) {
+
+                (function(opt1, opt2) {
+                    var dx = opt1.x - opt2.x,
+                        dy = opt1.y - opt2.y,
+                        dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < opt2.r + opt1.r) {
+                        //calculate angle, sine, and cosine
+                        var angle = Math.atan2(dy, dx),
+                            sin = Math.sin(angle),
+                            cos = Math.cos(angle),
+                            //rotate opt2's position
+                            x0 = 0,
+                            y0 = 0,
+                            //rotate opt1's position
+                            x1 = dx * cos + dy * sin,
+                            y1 = dy * cos - dx * sin,
+                            //rotate opt2's velocity
+                            vx0 = opt2.vx * cos + opt2.vy * sin,
+                            vy0 = opt2.vy * cos - opt2.vx * sin,
+                            //rotate opt1's velocity
+                            vx1 = opt1.vx * cos + opt1.vy * sin,
+                            vy1 = opt1.vy * cos - opt1.vx * sin,
+                            //collision reaction
+                            vxTotal = vx0 - vx1;
+
+                        vx0 = ((opt2.mass - opt1.mass) * vx0 + 2 * opt1.mass * vx1) /
+                            (opt2.mass + opt1.mass);
+                        vx1 = vxTotal + vx0;
+                        x0 += vx0;
+                        x1 += vx1;
+                        //rotate positions back
+                        var x0Final = x0 * cos - y0 * sin,
+                            y0Final = y0 * cos + x0 * sin,
+                            x1Final = x1 * cos - y1 * sin,
+                            y1Final = y1 * cos + x1 * sin;
+                        //adjust positions to actual screen positions
+                        opt1.x = opt2.x + x1Final;
+                        opt1.y = opt2.y + y1Final;
+                        opt2.x = opt2.x + x0Final;
+                        opt2.y = opt2.y + y0Final;
+                        //rotate velocities back
+                        opt2.vx = vx0 * cos - vy0 * sin;
+                        opt2.vy = vy0 * cos + vx0 * sin;
+                        opt1.vx = vx1 * cos - vy1 * sin;
+                        opt1.vy = vy1 * cos + vx1 * sin;
+                    }
+
+                })(opt1.group || opt1, opt2.group || opt2)
+
+
+            },
+            //变形
+            transform: function(opt) {
+                (function(opt) {
+                    opt.num += opt.speed;
+                })(opt.group || opt)
+            },
+            //旋转
+            rotate: function(opt) {
+                (function(opt) {
+                    opt.a += opt.speed;
+                })(opt.group || opt)
+            },
+            //飘忽不定
+            jiggle: function(opt) {
+                (function(opt) {
+                    opt.x += Math.random() * 2 - 1;
+                    opt.y += Math.random() * 2 - 1;
+                })(opt.group || opt)
+                this.bounce(opt)
+            },
+            //漂浮
+            float: function(opt) {
+                // 负相关
+                var deta = Math.random() * 2 - 1;
+                (function(opt) {
+                    opt.vx += deta;
+                    opt.vy -= deta;
+                    opt.x += opt.vx || 1;
+                    opt.y += opt.vy || 1;
+
+                })(opt.group || opt);
+                this.bounce(opt)
+            },
+            //曲线
+            curve: function(opt) {
+                (function(opt) {
+                    opt.x += opt.vx || 1;
+                    opt.y += opt.vy || 1;
+                    opt.vy += 0.01 * opt.vx * opt.vx;
+                })(opt.group || opt)
+                this.bounce(opt)
+            },
+            //重力运动 
+            gravitate: function(opt) {
+                (function(opt) {
+                    opt.vy += 0.22; //加速下落
+                    opt.vx *= 0.998; //地面摩擦
+                    if (opt.y > opt.bottom - opt.height) {
+                        opt.vy *= 0.96; //地面反弹减速
+                    }
+                    opt.bounce = true;
+                })(opt.group || opt);
+                this.move(opt)
+            },
+            //缩放
+            zoom: function(opt) {
+                var minR = opt.minR || 1;
+                var maxR = opt.maxR || opt.right / 2;
+                var speed = opt.zoomSpeed || opt.speed || 1;
+                (function(opt) {
+                    if (opt.r >= maxR) {
+                        opt.zoomState = "out";
+                    } else if (opt.r <= minR) {
+                        opt.zoomState = "in";
+                    }
+                    if (opt.zoomState === "in") {
+                        opt.r += speed
+                    } else {
+                        opt.r -= speed
+                    }
+                })(opt.group || opt);
+            },
+            //放大
+            zoomin: function(opt) {
+                (function(opt) {
+                    opt.r += opt.speed || 1
+                })(opt.group || opt)
+            },
+            //放大
+            zoomout: function(opt) {
+                (function(opt) {
+                    opt.r -= opt.speed || 1
+                })(opt.group || opt)
+            },
+            //绕圈
+            circle: function(opt) {
+                var self = this;
+                (function(opt) {
+                    opt.x = self.centerX + _.sin(self.a) * self.r;
+                    opt.y = self.centerY + _.cos(self.a) * (self.r);
+                    self.a += opt.speed * 0.1;
+                })(opt.group || opt)
+            },
+            //螺旋
+            spiral: function(opt) {
+                var self = this;
+                this.circle(opt);
+                self.r += self.swell || 1;
+                (function(opt) {
+                    if (opt.x + opt.r > opt.right || opt.y + opt.r > opt.bottom) {
+                        self.swell = -1;
+                    } else if (self.r < 1) {
+                        self.swell = 1;
+                    }
+                })(opt.group || opt)
+            },
+            //椭圆
+            ellipse: function(opt) {
+                var self = this;
+                (function(opt) {
+                    opt.x = self.centerX + Math.sin(self.a) * self.r;
+                    opt.y = self.centerY + Math.cos(self.a) * (self.r) * 2;
+                    self.a += opt.speed;
+                })(opt.group || opt)
+            },
+
+            //发光
+            light: function(opt) {
+                (function(opt) {
+                    if (opt.shadowBlur >= 20) {
+                        self.lightState = -1
+
+                    } else if (opt.shadowBlur <= 0) {
+                        self.lightState = 1
+                    }
+
+                    opt.shadowBlur += opt.speed * self.lightState;
+                })(opt.group || opt)
+            },
+            //跳动发光
+            throbLight: function(opt) {
+                var minR = opt.minR || 1;
+                var maxR = opt.maxR || opt.right / 2;
+                var maxShadowBlur = opt.maxShadowBlur || 10;
+                var minShadowBlur = opt.minShadowBlur || 0;
+                var speed = opt.speed || 1;
+                var blurSpeed = speed * (maxShadowBlur - minShadowBlur) / (maxR - minR);
+                (function(opt) {
+                    if (opt.r >= maxR) {
+                        opt.zoomState = "out";
+                        opt.shadowBlur = maxShadowBlur
+                    } else if (opt.r <= minR) {
+                        opt.zoomState = "in";
+                        opt.shadowBlur = minShadowBlur
+                    }
+                    if (opt.zoomState === "in") {
+                        opt.r += speed;
+                        opt.shadowBlur += blurSpeed
+                    } else {
+                        opt.r -= speed;
+                        opt.shadowBlur -= blurSpeed
+                    }
+                })(opt.group || opt);
             }
         }
         _motion.prototype.init.prototype = _motion.prototype;
@@ -5332,21 +6597,18 @@
                 data: {},
                 methods: {
                     autoNext: function(item, ev) {
-                        // var k = this[0],
-                        // x = this[1];
                         if (inBrowser) {
                             var k = item.closest(".tab-body-item").attr("name");
                             var x = item.name;
                             var checked = item.checked;
                             optCycle.data[k][x].auto = checked;
                             console.log(x, checked)
-
                         }
                     }
                 },
                 filters: {
                     toggle: function(val) {
-                        return val == true ? "是" : "否"
+                        return val === true ? "是" : "否"
                     },
                     color: function(val) {
                         if (inBrowser)
@@ -5355,183 +6617,62 @@
                     }
                 }
             };
-
-            //开关
-            var _switch = function(item, k) {
-                var val;
-                if (inBrowser) {
-                    var bd = item.closest(".tab-body-item").query(".switchBody")
-                    if (item.hasClass('on')) {
-                        val = "off";
-                        [item, bd].removeClass("on").addClass("off");
-                    } else {
-                        val = "on";
-                        [item, bd].removeClass("off").addClass("on");
-                    }
-                    if (k == "motion") {
-                        if (val == "on") {
-                            _.show("#stopBtn");
-                        } else {
-                            _.hide("#stopBtn");
-                        }
-                    }
-                } else {
-                    val = this == "on" ? "off" : "on";
-                }
-                return val;
-            };
-            var _toggle = function(k, x) {
-                optCycle.methods[_.camelCase("next", k, x)] = (function(item, ev) {
-                    var k = this[0],
-                        x = this[1];
-                    var value;
-                    // if (x.indexOf("random") == 0) {
-                    //     var y = x.substr(6).toLowerCase();
-                    //     x = "random";
-                    //     value = optCycle.data[k][x][y] = !optCycle.data[k][x][y];
-                    // } else {
-                    //     if (optCycle.data[k][x]) {
-                    //         value = optCycle.data[k][x].value = !optCycle.data[k][x].value;
-                    //     }
-                    // }
-                    if (optCycle.data[k][x]) {
-                        value = optCycle.data[k][x].value = !optCycle.data[k][x].value;
-                    }
-
-                    if (inBrowser) {
-                        item && item.html(optCycle.filters.toggle(value));
-                        var iPos = _.pos(item);
-                        var w = iPos.width;
-                        var h = iPos.height;
-                        var div2 = document.createElement("div")
-                        var background = "rgba(0,0,0,0.1)";
-                        div2.css({ width: w, height: h, top: 0, left: 0, position: "absolute", background: background });
-                        item.appendChild(div2);
-                        setTimeout(function() {
-                            div2.remove();
-                        }, 200)
-                    }
-                    return optCycle
-                }).bind([k, x])
-            };
-            var _next = function(k, x) {
-                optCycle.methods[_.camelCase("next", k, x)] = (function(item, ev) {
-                    var k = this[0],
-                        x = this[1];
-                    var c = optCycle.data[k][x];
-                    if (_.isString(c)) {
-                        optCycle.data[k][x] = _switch.call(optCycle.data[k][x], item, k);
-                    } else if (_.isObject(c)) {
-
-                        if (inBrowser) {
-                            var iPos = _.pos(item);
-                            var ePos = _.pos(ev);
-                            var w = iPos.width;
-                            var h = iPos.height;
-                            var offset = ePos.x - iPos.x;
-                            var div2 = document.createElement("div");
-                            var div = document.createElement("div");
-                            var background = "rgba(0,0,0,0.1)"; // _.rgba().replace(/,[^,]*?\)/, ",0.1)"); //
-                            if (offset > w / 2) {
-                                c.next();
-                                div2.css({ width: w / 2, height: h, top: 0, left: w / 2, position: "absolute", background: background });
-                                div.addClass("rightArrow");
-                                div.pos({ x: w - 20, y: (h - 20) / 2 });
-                            } else {
-                                c.prev();
-                                div.addClass("leftArrow");
-                                div.pos({ x: 20, y: (h - 20) / 2 });
-                                div2.css({ width: w / 2, height: h, top: 0, left: 0, position: "absolute", background: background });
-                            }
-                            var val = c.val();
-                            if (["color", "lineColor"].indexOf(x) >= 0) {
-                                val = optCycle.filters.color(val);
-                            }
-                            item && item.html(_.isObject(val) ? val.text : val);
-                            item.appendChild(div2);
-                            item.appendChild(div);
-
-                            setTimeout(function() {
-                                div.remove();
-                                div2.remove();
-                            }, 200)
-
-                            // console.log(val);
-
-                        } else {
-                            c.next();
-                            console.log(c.val());
-                        }
-                    }
-                }).bind([k, x]);
-            };
-
             for (var k in optJson) {
                 var o = optJson[k];
                 if (_.isObject(o)) {
                     optCycle.data[k] = {};
                     for (var x in o) {
                         var val = o[x];
-                        // if (x == "random") {
-                        //     optCycle.data[k][x] = val;
-                        //     for (var y in val) {
-                        //         _toggle(k, _.camelCase(x, y), val[y]);
-                        //     }
-                        // } else 
-                        if (x == "switch") {
+                        if (x === "switch") {
                             optCycle.data[k][x] = val;
-                            _next(k, x);
-
                         } else {
+                            var type = val.type;
+                            var c = null;
+                            switch (type) {
+                                case "picker":
+                                    c = _.cycle(val.values, val.index || 0);
+                                    break;
+                                case "slider":
+                                    c = _.sliderCycle(val);
+                                    break;
+                                case "color":
+                                case "color_rgba":
+                                case "color_rgb":
+                                    var colorArr = [],
+                                        len = val.length || 15;
+                                    while (len--) {
+                                        if (type === "color_rgba") {
+                                            colorArr.push(_.rgba());
+                                        } else if (type === "color_rgb") {
 
-                            if (_.isBoolean(val)) {
-                                optCycle.data[k][x] = val;
-                                _toggle(k, x, val);
-
-                            } else if (_.isObject(val)) {
-                                var type = val.type;
-                                if (_.isBoolean(val.value)) {
-                                    optCycle.data[k][x] = val;
-                                    _toggle(k, x, val);
-                                } else {
-
-                                    if (["cycle", "color", "switch"].indexOf(type) >= 0) {
-                                        var c;
-                                        switch (type) {
-                                            case "cycle":
-                                                c = _.cycle(val.value, val.index || 0);
-                                                break;
-                                            case "color":
-                                                var colorArr = [],
-                                                    len = 15;
-                                                while (len--) colorArr.push(_.color());
-                                                c = _.cycle(colorArr, 0);
-                                                break;
-                                            case "switch":
-                                                c = _.cycle(["on", "off"], 0)
-                                                break;
-                                            case "boolean":
-                                                c = _.cycle([true, false]);
-                                                break;
-                                        }
-                                        if (c) {
-                                            if (val.text) c.text(val.text);
-                                            if (val.auto) c.auto = val.auto;
-                                            optCycle.data[k][x] = c;
-                                            _next(k, x);
-
+                                            colorArr.push(_.rgb());
                                         } else {
-                                            console.log(val, [k, x]);
+                                            colorArr.push(_.color());
                                         }
-
-                                    } else {
-                                        // optCycle.data[k][x]=val.value
-
                                     }
-
-                                }
-                            } else if (_.isString(val)) {
-                                optCycle.data[k][x] = val;
+                                    c = _.cycle(colorArr, 0);
+                                    break;
+                                case undefined:
+                                    if (_.isBoolean(val)) {
+                                        c = _.cycle([{ key: true, text: "是" }, { key: false, text: "否" }], val ? 0 : 1);
+                                        c.type = "toggle";
+                                        c.value = val;
+                                    } else if (_.isObject(val)) {
+                                        if (_.isBoolean(val.value)) {
+                                            c = _.cycle([{ key: true, text: "是" }, { key: false, text: "否" }], val.value ? 0 : 1)
+                                            c.type = "toggle";
+                                            c.value = val.value;
+                                        }
+                                    } else if (_.isString(val)) {
+                                        optCycle.data[k][x] = val;
+                                    }
+                                    break;
+                            }
+                            if (c) {
+                                if (val.text) c.text = val.text;
+                                if (val.auto) c.auto = val.auto;
+                                if (val.type) c.type = val.type;
+                                optCycle.data[k][x] = c;
                             }
                         }
                     }
@@ -5544,24 +6685,20 @@
                 for (var k in optCycle.data) {
                     var o = optCycle.data[k];
                     if (_.isObject(o)) {
+                        if (!!~["group", "motion"].indexOf(k)) {
+                            if (o.switch === "off") {
+                                continue;
+                            }
+                        }
                         opt[k] = {};
                         for (var x in o) {
                             var val = o[x];
-                            // if (x == "random") {
-                            //     for (var y in val) {
-                            //         if (val[y]) {
-                            //             optCycle.data[k][y].next(); //random()
-                            //         }
-                            //     }
-                            // } else {
-
                             if (_.isBoolean(val)) {
                                 opt[k][x] = val;
                             } else if (_.isObject(val)) {
                                 if (_.isBoolean(val.value)) {
                                     opt[k][x] = val.value;
                                     if (val.auto) { //自动变值下一个
-                                        // val.next && val.next();
                                         val.value = !val.value;
                                     }
                                 } else {
@@ -5573,7 +6710,6 @@
                             } else if (_.isString(val)) {
                                 opt[k][x] = val;
                             }
-                            // }
                         }
                     }
                 }
@@ -5582,7 +6718,7 @@
 
             //view data
             optCycle.viewData = function() {
-                var data = optCycle.data; //optCycle.init();
+                var data = optCycle.data;
                 var _viewData = { tabs: [] };
                 for (var k in data) {
                     var tab = { key: k, items: [], switch: "none", active: false }; //random: [],
@@ -5591,51 +6727,34 @@
                     if (_.isObject(o)) {
                         for (var x in o) {
                             var val = o[x];
-                            // if (x == "random") {
-                            //     for (var y in val) {
-                            //         var item = { key: y, value: val[y], text: y, method: _.camelCase("next", k, "Random", y) };
-                            //         if (optCycle.data[k][y].text) {
-                            //             item.text = optCycle.data[k][y].text;
-                            //         }
-                            //         if (_.isBoolean(val[y])) {
-                            //             item.value = optCycle.filters.toggle(val[y]);
-                            //         }
-                            //         tab.random.push(item);
-                            //     }
-                            // } else 
-                            if (x == "text") {
+                            if (x === "text") {
                                 tab[x] = val;
-                            } else if (x == "switch") {
+                            } else if (x === "switch") {
                                 tab[x] = val;
                                 tab[x + "Method"] = _.camelCase("next", k, x);
-                            } else if (x == "active") {
+                            } else if (x === "active") {
                                 tab[x] = val;
                             } else {
-                                var item = { key: x, value: val, text: x, method: _.camelCase("next", k, x) };
+                                var item = { key: x, value: val, text: x, id: k + "_" + x }; //method: _.camelCase("next", k, x),
                                 if (_.isBoolean(val)) {
                                     item.filter = "toggle";
                                     item.value = optCycle.filters.toggle(val);
                                 } else if (_.isNumber(val)) {
                                     item.filter = "string";
                                 } else if (_.isObject(val)) {
+                                    item = _.extendOwn(item, val);
                                     if (_.isBoolean(val.value)) {
                                         item.value = optCycle.filters.toggle(val.value);
                                     } else {
                                         if (_.isObject(val.val())) {
-                                            item.value = val.val().text ? val.val().text : val.val();
+                                            item.value = 'text' in val.val() ? val.val().text : val.val();
                                         } else {
-                                            if (["color", "lineColor"].indexOf(item.key) >= 0) {
+                                            if (!!~["color", "lineColor", "background", "shadowColor"].indexOf(item.key)) {
                                                 item.value = optCycle.filters.color(val.val());
                                             } else {
                                                 item.value = val.val();
                                             }
                                         }
-                                    }
-                                    if (val.text) {
-                                        item.text = val.text;
-                                    }
-                                    if (val.auto) {
-                                        item.auto = val.auto;
                                     }
                                 } else {
                                     item.filter = x;
@@ -5651,15 +6770,15 @@
         };
 
         //画图 
-        //把基础图形组合起来，然后还可以动
+        //基础图形组合，加动画
         var draw = _.draw = function(options, canvas) {
             return new draw.prototype.init(options, canvas);
         }
-
         draw.prototype = {
             constructor: draw,
             init: function(options, canvas) { // componentInstance
                 var self = this;
+
                 if (canvas) {
                     this.canvas = canvas;
                     if (inBrowser) {
@@ -5669,87 +6788,198 @@
                     }
                 } else {
                     if (inBrowser) {
-                        this.canvas = document.createElement("canvas");
+                        if (options.el) {
+                            var el = _.$(options.el);
+                            if (el.nodeName.toLowerCase() === "canvas") {
+                                this.canvas = el;
+                            } else {
+                                this.canvas = document.createElement("canvas");
+                                el.appendChild(this.canvas);
+                            }
+                        } else if (options.canvasid) {
+                            this.canvas = _.$("#" + options.canvasid);
+                            if (this.canvas.length === 0) {
+                                this.canvas = document.createElement("canvas");
+                                this.canvas.id = options.canvasid;
+                            }
+                        } else if (options.container || options.containerid) {
+                            this.container = options.container ? _.$(options.container) : options.containerid ? _.$("#" + options.containerid) : document.documentElement;
+                            if (this.container.length === 0) {
+                                console.log("not found container:" + options.container);
+                            } else {
+                                if (this.container.$("canvas").length === 0) {
+                                    this.canvas = document.createElement("canvas");
+                                    this.container.appendChild(this.canvas);
+                                } else {
+                                    this.canvas = this.container.$("canvas");
+                                }
+                            }
+                        } else {
+                            this.canvas = document.createElement("canvas");
+                        }
+
+
+
                         this.context = this.canvas.getContext("2d");
+
+                        var isDragging = false;
+                        var startHnadler = function(item, ev) {
+                            var offset = _.pos(item);
+                            var pos = _.pos(ev);
+                            var mouse = self.mouse = {
+                                x: pos.x - offset.x,
+                                y: pos.y - offset.y
+                            }
+                            if (self.opt) {
+                                if (!self.opt.motion) {
+                                    self.opt.shape.begin && self.clear();
+                                    if (self.opt.shape) self.opt.shape = _.extend(self.opt.shape, { x: mouse.x, y: mouse.y });
+                                    if (self.opt.group) self.opt.group = _.extend(self.opt.group, { x: mouse.x, y: mouse.y });
+                                    self.setup.call(self, self.opt);
+                                }
+                            }
+                            isDragging = true;
+                        }
+                        var moveHandler = function(item, ev) {
+                            if (isDragging) {
+                                var offset = _.pos(item);
+                                var pos = _.pos(ev);
+                                self.mouse = {
+                                    x: pos.x - offset.x,
+                                    y: pos.y - offset.y
+                                }
+                            }
+                        }
+                        var endHandler = function(item, ev) {
+                            isDragging = false;
+
+                        }
+
+                        //事件
+                        toucher([{
+                            el: this.canvas,
+                            type: "touchstart",
+                            callback: function(item, ev) {
+                                startHnadler(item, ev);
+                            }
+                        }, {
+                            el: this.canvas,
+                            type: "touchmove",
+                            callback: function(item, ev) {
+                                moveHandler(item, ev);
+                            }
+                        }, {
+                            el: this.canvas,
+                            type: "mousedown",
+                            callback: function(item, ev) {
+                                startHnadler(item, ev)
+                            }
+                        }, {
+                            el: this.canvas,
+                            type: "mousemove",
+                            callback: function(item, ev) {
+                                moveHandler(item, ev);
+                            }
+                        }, {
+                            el: this.canvas,
+                            type: "mouseup",
+                            callback: function(item, ev) {
+                                endHandler(item, ev)
+                            }
+                        }])
                     }
                 }
 
                 if (_.isObject(options)) {
-                    options.a = options.a || options.angle;
-                    this.attr(options);
-                    var color = options["background"] || options["background-color"];
-                    var src = options["background-image"];
-                    var size = options["background-size"];
-                    var position = options["background-position"];
-                    var repeat = options["background-repeat"];
+                    this.options = options;
+                    if (options.scale) this._scale = options.scale;
+                    //比率
+                    if (options.ratio) this.ratio(options.ratio);
 
-                    // this.background
-
-                    this.background({
-                        color: color,
-                        src: src,
-                        size: size,
-                        position: position,
-                        repeat: repeat
+                    //大小
+                    ["width", "height"].forEach(function(t) {
+                        if (options[t]) self.canvas[t] = options[t];
                     });
-                    this.callback = options.callback;
-                }
 
+
+                    var bg = {};
+                    [{
+                            k: "color",
+                            v: "background-color"
+                        },
+                        {
+                            k: "color",
+                            v: "background"
+                        },
+                        {
+                            k: "src",
+                            v: "background-image"
+                        },
+                        {
+                            k: "size",
+                            v: "background-size"
+                        },
+                        {
+                            k: "position",
+                            v: "background-position"
+                        },
+                        {
+                            k: "repeat",
+                            v: "background-repeat"
+                        }
+                    ].forEach(function(t) {
+                        if (options[t.v]) bg[t.k] = options[t.v]
+                    });
+                    this.background(bg);
+                    this.callback = options.callback;
+                    this.queue = _queue();
+                }
                 return this;
             },
             //比率
             ratio: function(key) {
-                var screen = {
-                    w: document.documentElement.clientWidth,
-                    h: document.documentElement.clientHeight
-                }
-                var w = screen.w,
-                    h = screen.h;
+                var container = this.container || document.documentElement;
+                var _scale = this._scale || 1;
+                var w = container.clientWidth,
+                    h = container.clientHeight;
                 if (_.isString(key)) {
-                    if (key.indexOf(":") >= 0) {
+                    if (!!~key.indexOf(":")) {
                         key.replace(/(\d+):(\d+)/, function(match, x, y) {
                             h = w * y / x;
                         });
-                    } else {
+                    } else if (!isNaN(parseFloat(key))) {
                         h = w * parseFloat(key);
                     }
                 } else if (_.isNumber(key)) {
                     h = w * key;
                 }
-                this.canvas.setAttribute('width', w);
-                this.canvas.setAttribute('height', h);
+                this.width = w * _scale;
+                this.height = h * _scale;
+                this.canvas.setAttribute('width', this.width);
+                this.canvas.setAttribute('height', this.height);
+                this.o = {
+                    x: this.width / 2,
+                    y: this.height / 2
+                }
                 return this;
 
             },
             fullscreen: function() {
                 return this.ratio("fullscreen");
             },
-
-            attr: function(opt) {
-                for (var key in opt) {
-                    //比率
-                    if ("ratio" == key) {
-                        this.ratio(opt[key])
-                    }
-                    if (["width", "height"].indexOf(key) >= 0) {
-                        this.canvas[key] = opt[key];
-                    }
-                }
-                return this;
-            },
             background: function(opt) {
-                var self = this;
-                var canvas = self.canvas;
-                var ctx = self.context;
-                var src = opt.src,
+                var self = this,
+                    canvas = self.canvas,
+                    ctx = self.context,
+                    src = opt.src,
                     size = opt.size,
                     position = opt.position,
                     repeat = opt.repeat,
-                    color = opt.color;
+                    color = opt.color,
+                    callback = opt.callback;
 
 
                 if (color) {
-                    // ctx.fillStyle = color;
                     self.setFillStyle(color);
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                 }
@@ -5762,10 +6992,10 @@
 
                     switch (size) {
                         case "cover": //等比例缩放 盖住cover   auto原图 
-                            var zoom = _.max(canvasWidth / imgWidth, canvasHeight / imgHeight);
-                            var newImgWidth = imgWidth * zoom,
+                            var zoom = _.max(canvasWidth / imgWidth, canvasHeight / imgHeight),
+                                newImgWidth = imgWidth * zoom,
                                 newImgHeight = imgHeight * zoom;
-                            if (position == 'center') {
+                            if (position === 'center') {
                                 var x = zoom <= 1 ? (canvasWidth - newImgWidth) / 2 : -(canvasWidth - newImgWidth) / 2,
                                     y = zoom <= 1 ? (canvasHeight - newImgHeight) / 2 : -(canvasHeight - newImgHeight) / 2;
                                 ctx.drawImage(img, x, y, newImgWidth, newImgHeight);
@@ -5774,10 +7004,10 @@
                             }
                             break;
                         case "contain": //等比例缩放 框内contain 
-                            var zoom = _.min(canvasWidth / imgWidth, canvasHeight / imgHeight);
-                            var newImgWidth = imgWidth * zoom,
+                            var zoom = _.min(canvasWidth / imgWidth, canvasHeight / imgHeight),
+                                newImgWidth = imgWidth * zoom,
                                 newImgHeight = imgHeight * zoom;
-                            if (position == 'center') {
+                            if (position === 'center') {
                                 var x = (canvasWidth - newImgWidth) / 2,
                                     y = (canvasHeight - newImgHeight) / 2;
                                 ctx.drawImage(img, x, y, newImgWidth, newImgHeight);
@@ -5785,22 +7015,21 @@
                                 ctx.drawImage(img, 0, 0, newImgWidth, newImgHeight);
                             }
 
-                            if (repeat == "repeat") {
+                            if (repeat === "repeat") {
                                 _.zipImg({
                                     img: img,
                                     zoom: zoom,
                                     callback: function() {
                                         var bg = ctx.createPattern(this, 'repeat');
-                                        // ctx.fillStyle = bg;
                                         self.setFillStyle(bg);
-                                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                                        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
                                         ctx.fill();
                                     }
                                 });
                             }
                             break;
                         case "stretch": //stretch 拉伸铺满
-                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
                             break;
                         case "auto":
                             ctx.drawImage(img, 0, 0);
@@ -5809,8 +7038,51 @@
                             ctx.drawImage(img, 0, 0);
                             break;
                     }
-                })
+
+                    callback && callback();
+                });
                 return this;
+            },
+            toImage: function() {
+                return this.canvas.toDataURL('image/jpeg');
+            },
+            toButton: function(type) {
+                return this.toElement({
+                    className: "btn",
+                    type: type
+                });
+            },
+            toElement: function(opt) {
+                var tag = opt.tag || opt.nodeName || "div";
+                var div = document.createElement(tag);
+                div.className = opt.class || opt.className;
+                switch (opt.type) {
+                    case "img":
+                        var img = document.createElement("img");
+                        img.src = this.toImage();
+                        div.appendChild(img);
+                        break;
+                    case "background":
+                        div.style.backgroundImage = 'url(' + this.toImage() + ')';
+                        break;
+                    case "canvas":
+                        var canvas = this.canvas;
+                        var draw = _.draw(this.options);
+                        var imgData = this.context.getImageData(0, 0, canvas.width, canvas.height);
+                        draw.context.putImageData(imgData, 0, 0);
+                        div.appendChild(draw.canvas);
+                        break;
+                    default:
+                        div.appendChild(this.canvas);
+                        break;
+                }
+                return div;
+            },
+            save: function() {
+                this.context.save();
+            },
+            restore: function() {
+                this.context.restore();
             },
             //样式   小程序写法 setXXX
             setFillStyle: function(color) {
@@ -5831,6 +7103,27 @@
                 ctx.lineWidth = lineWidth;
                 ctx.setLineWidth && ctx.setLineWidth(lineWidth);
             },
+            setShadowBlur: function(shadowBlur) {
+                var ctx = this.context;
+                var shadowBlur = _.isUndefined(shadowBlur) ? 10 : shadowBlur;
+                ctx.shadowBlur = shadowBlur;
+                ctx.setShadowBlur && ctx.setShadowBlur(shadowBlur);
+
+                ctx.shadowColor = "black";
+            },
+            setShadowColor: function(shadowColor) {
+                var ctx = this.context;
+                var shadowColor = _.isUndefined(shadowColor) ? 10 : shadowColor;
+                ctx.shadowColor = shadowColor;
+                ctx.setShadowColor && ctx.setShadowColor(shadowColor);
+            },
+            // miter (默认) round (圆形) bevel (斜角)
+            setLineJoin: function(lineJoin) {
+                var ctx = this.context;
+                var lineJoin = _.isUndefined(lineJoin) ? "miter" : lineJoin;
+                ctx.lineJoin = lineJoin;
+                ctx.setLineJoin && ctx.setLineJoin(lineJoin);
+            },
             fill: function(opt) {
                 var ctx = this.context;
                 if (opt) {
@@ -5838,6 +7131,8 @@
                         opt.color = _.rgba();
                     }
                     if (opt.fill) {
+                        opt.shadowBlur && this.setShadowBlur(opt.shadowBlur);
+                        opt.shadowColor && this.setShadowColor(opt.shadowColor);
                         this.setFillStyle(opt.color);
                         ctx.fill();
                     }
@@ -5847,154 +7142,316 @@
             stroke: function(opt) {
                 var ctx = this.context;
                 if (opt) {
-                    this.setLineWidth(opt.lineWidth);
-                    if (opt.randomColor) {
-                        opt.color = _.rgb(); //_.hsl();小程序不支持
-                    }
-                    if (_.isUndefined(opt.stroke) || opt.stroke) {
+                    if (opt.lineWidth == 0) {
+                        return this;
+                    } else {
+                        this.setLineJoin(opt.lineJoin);
+                        this.setLineWidth(opt.lineWidth);
+                        if (opt.randomColor) {
+                            opt.color = _.rgb();
+                        }
                         this.setStrokeStyle(opt.lineColor || opt.color);
                         ctx.stroke();
                     }
+
                 } else {
                     ctx.stroke();
                 }
                 return this;
             },
             render: function(opt) {
-                this.fill(opt).stroke(opt);
-                return this
+                return this.fill(opt).stroke(opt);
             },
             //图形闭合
             closePath: function(opt) {
                 var ctx = this.context;
                 if (opt) {
                     var closed = _.isUndefined(opt.closed) ? true : opt.closed;
-                    if (closed) {
-                        ctx.closePath();
-                    }
+                    if (closed) ctx.closePath();
                 } else {
                     ctx.closePath();
                 }
+                return this;
             },
             //新开画布
             beginPath: function(opt) {
                 var ctx = this.context;
                 if (opt) {
                     var begin = _.isUndefined(opt.begin) ? true : opt.begin;
-                    if (begin) {
-                        ctx.beginPath();
-                    }
+                    if (begin) ctx.beginPath();
                 } else {
                     ctx.beginPath();
                 }
+                return this;
             },
+            shadow: function() {
+                var canvas = this.canvas,
+                    ctx = this.context,
+                    bg = this.opt.motion.background,
+                    color = 'rgba(0,0,0,0.05)';
+                if (bg) color = _.colorRgb(bg, 0.05);
 
-            clear: function(color) {
-                var canvas = this.canvas;
-                var ctx = this.context;
-                this.setFillStyle(color || "#ffffff");
+                //光影效果
+                this.setFillStyle(color);
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
+                return this;
+            },
+            clear: function(color) {
+                var canvas = this.canvas,
+                    ctx = this.context;
+                if (color) {
+                    //ctx.fillStyle = 'rgba(0,0,0,0.05)'; //光影效果
+                    this.setFillStyle(color || this.options.background || "#ffffff");
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+                return this;
             },
             //中心点
             central: function() {
-                var canvas = this.canvas;
                 return {
-                    x: canvas.width / 2,
-                    y: canvas.height / 2
+                    x: this.canvas.width / 2,
+                    y: this.canvas.height / 2
                 }
             },
             //默认参数
             default: function(opt) {
-                var canvas = this.canvas;
+                var self = this;
                 if (opt) {
-                    // if (opt.randomA) {
-                    //     opt.a = _.random(360);
-                    // }
-                    // if (opt.randomShape) {
-                    //     opt.shape = _.random(["polygon", "circle", "start", "ray", "ring"])
-                    // }
-                    // if (opt.randomNum) {
-                    //     opt.num = _.between(3, 20);
-                    // }
-                    // if (opt.randomR) {
-                    //     opt.r = _.between(30, 80);
-                    // }
-                    return _.extend({}, this.default(), opt);
+                    if (_.isArray(opt)) {
+                        return opt.map(function(t) {
+                            return _.clone(self.default(), t);
+                        })
+                    } else {
+                        return _.clone(this.default(), opt);
+                    }
+
                 } else {
                     return {
-                        x: canvas.width / 2,
-                        y: canvas.height / 2,
+                        x: this.canvas.width / 2,
+                        y: this.canvas.height / 2,
                         r: 10,
                         color: _.color()
                     }
                 }
             },
+            //短参数 映射
+            shortName: function(opt) {
+                opt && [{ k: "n", v: "num" },
+                    { k: "s", v: "shape" },
+                    { k: "showR", v: "showRadius" },
+                    { k: "showV", v: "showVertices" },
+                    { k: "showC", v: "showCenter" },
+                    { k: "showEC", v: "showExcircle" },
+                    { k: "showIC", v: "showIncircle" },
+                    { k: "showD", v: "showDiagonal" },
+                    { k: "showM", v: "showMirror" },
+                ].forEach(function(t) {
+                    if (!_.isUndefined(opt[t.k])) opt[t.v] = opt[t.k];
+                });
+                return opt;
+            },
+            //虚线  todo
+            // dashLine: function(p1, p2) {
+
+            //     var k = (p2.y - p1.y) / (p2.x - p1.x) //斜率k     正 负 0  
+            //     var b = p1.y - k * p1.x //常数b 
+
+            //     var step = 10
+            //     // var xi = x1 + i;
+            //     // var yi = k * xi + b;
+
+            //     //      var xj=x1+i+1     //控制步长决定绘制的是虚线还是实线  
+            //     // var yj=k*xj+b;  
+
+
+            // },
             //连线
             link: function(vs, opt) {
                 var self = this;
                 var ctx = this.context;
                 this.beginPath(opt);
-                vs.forEach(function(t, i) {
-                    if (t) {
-                        if (i == 0) {
-                            ctx.moveTo(t.x, t.y);
-                        } else {
-                            ctx.lineTo(t.x, t.y);
+                if (opt && opt.dashed) {
+                    //虚线
+                    var len = vs.length;
+                    vs.forEach(function(t, i) {
+                        var t2 = vs[i + 1 === len ? 0 : i + 1];
+                        var d = t.dist(t2);
+                        var ps = t.split(t2, Math.floor(d / 5));
+                        ps.unshift(t);
+                        ps.push(t2);
+                        ps.forEach(function(t, i) {
+                            if (i % 2 === 0) {
+                                ctx.moveTo(t.x, t.y);
+                            } else {
+                                ctx.lineTo(t.x, t.y);
+                            }
+                        })
+                    })
+                } else {
+                    //实线
+                    vs.forEach(function(t, i) {
+                        if (t) {
+                            if (i === 0) {
+                                ctx.moveTo(t.x, t.y);
+                            } else {
+                                ctx.lineTo(t.x, t.y);
+                            }
                         }
-                    }
-                })
+                    })
+                }
+
                 self.closePath(opt);
                 self.render(opt);
 
                 if (opt) {
                     //显示外切圆
-                    if (opt.showExcircle) {
-                        opt.text = "";
-                        self.shape().circle(opt);
-                        // _.shape(this).circle(opt);
-                    }
+                    if (opt.showExcircle) this.excircle(opt);
+                    //显示内切圆
+                    if (opt.showIncircle) this.incircle(opt);
                     //显示半径
-                    if (opt.showRadius) {
-                        var x = opt.x,
-                            y = opt.y;
-                        ctx.beginPath();
-                        vs.forEach(function(t) {
-                            ctx.moveTo(x, y);
-                            ctx.lineTo(t.x, t.y)
-                        })
-                        self.render(opt);
-                    }
-
+                    if (opt.showRadius) this.radius(vs, opt);
                     //显示顶点
-                    if (opt.showVertices) {
-                        var animate = opt.animate,
-                            animationInterval = opt.animationInterval || 200;
-                        var verticesIdentifier = opt.verticesIdentifier;
-                        var _shape = self.shape();
-                        var verticesColor = _.rgb();
-                        vs.forEach(function(t, i) {
-                            t.fill = true;
-                            if (verticesIdentifier) {
-                                t.r = 10
-                                t.text = i + 1;
-                                t.color = "rgba(0,0,0,0.2)"
-                            } else {
-                                t.color = verticesColor;
-                                t.r = 3;
-                            }
-                            if (animate) {
-                                setTimeout(function() {
-                                    _shape.circle(t);
-                                }, animationInterval * i)
-                            } else {
-                                _shape.circle(t);
-                            }
-                        });
-                    }
-
+                    if (opt.showVertices || opt.identifierVertices) this.vertices(vs, opt);
+                    //显示圆心
+                    if (opt.showCenter) this.centerPoint(opt)
+                    //对角线
+                    if (opt.showDiagonal) this.diagonal(vs, opt)
+                    //间隔填色
+                    if (opt.fillInterval) this.zebra(vs, opt);
+                    //顶点镜像
+                    if (opt.showMirror) this.mirror(vs, opt);
                 }
                 return this;
             },
+            // 外切圆
+            excircle: function(opt) {
+                return this.shape(_.clone(opt, { shape: "circle", text: "" }));
+            },
+            //内切圆
+            incircle: function(opt) {
+                var r = opt.r * _.cos(180 / opt.num);
+                return this.shape(_.clone(opt, { shape: "circle", r: r, text: "" }));
+            },
+            //旁切圆
+            escribedcircle: function(opt) {
+
+            },
+            //则该三角形内切圆圆心坐标：
+            // [ax1+bx2+cx3] / [a+b+c]， [ay1+by2+cy3] / [a+b+c]
+            //半径 r=s/p  s=p(p-a)(p-b)([-c])^1/2
+            // incircle: function(opt) {
+            //     // var vs = this.vertices(opt);
+            //     // var num=3,d=[],p=0;
+            //     // for (var i = 0; i < num; i++) {
+            //     //     d[i]=this.dist(vs[i],vs[i>=num?0:i+1]);
+            //     //     p +=d[i];
+            //     // }
+            //     // p=p/2;
+            // },
+            //半径
+            radius: function(vs, opt) {
+                var ctx = this.context;
+                var x = opt.x,
+                    y = opt.y;
+                ctx.beginPath();
+                vs.forEach(function(t) {
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(t.x, t.y)
+                })
+                this.render(opt);
+            },
+            //顶点
+            vertices: function(vs, opt) {
+                var _shape = self.shape();
+                var verticesColor = _.rgb();
+
+                var animate = opt.animate,
+                    animationInterval = opt.animationInterval || 200;
+
+                vs.forEach(function(t, i) {
+                    t.fill = true;
+                    if (opt.identifierVertices) {
+                        t.r = 10
+                        t.text = i + 1;
+                        t.color = "rgba(0,0,0,0.2)"
+                    } else {
+                        t.color = verticesColor;
+                        t.r = 3;
+                    }
+                    if (animate) {
+                        setTimeout(function() {
+                            _shape.circle(t);
+                        }, animationInterval * i)
+                    } else {
+                        _shape.circle(t);
+                    }
+                });
+
+            },
+            //圆心
+            centerPoint: function(opt) {
+                return this.shape().circle({
+                    r: 3,
+                    x: opt.x,
+                    y: opt.y,
+                    color: _.rgb(), //verticesColor,
+                    fill: true
+                });
+            },
+            //对角线
+            diagonal: function(vs, opt) {
+                var vs = vs || this.vertices(opt);
+                var vsGroup = [];
+                var len = vs.length;
+                for (var i = 0; i < len - 2; i++) {
+                    for (var j = i + 2; j < len; j++) {
+                        if (!(i === 0 && j === len - 1)) {
+                            vsGroup.push([vs[i], vs[j]]);
+                        }
+                    }
+                }
+                return this.linkGroup(vsGroup, _.clone(opt, { showVertices: false }));
+                // return this.draw.link(vs, opt);
+            },
+            //间隔填色
+            zebra: function(vs, opt) {
+                var vs = vs || this.vertices(opt);
+                var x = opt.x,
+                    y = opt.y;
+                var vsGroup = _.slice(vs, 2).map(function(t) {
+                    return t.concat([{ x: x, y: y }])
+                })
+                return this.linkGroup(vsGroup, _.clone(opt, { fill: true, showVertices: false, showExcircle: false, fillInterval: false }));
+                // return this.draw.link(vs, opt);
+            },
+            //顶点镜像
+            mirror: function(vs, opt) {
+                var self = this;
+                // var vsGroup = [];
+                // var vs = vs || this.vertices(opt);
+                // vs.forEach(function(t) {
+                //     var vs2 = []
+                //     vs.forEach(function(t2) {
+                //         t2.mirror && vs2.push(t2.mirror(t));
+                //     })
+                //     vsGroup.push(vs2);
+                // });
+                // this.linkGroup(vsGroup, _.clone(opt, { showMirror: false }));
+
+
+
+                var vertex = _.vertex(opt)
+                var po = vertex.po;
+                vs.forEach(function(t, i) {
+                    var o = po.mirror(t);
+                    self.shape(_.clone(opt, { x: o.x, y: o.y, a: o.a + 180, showMirror: false }));
+                })
+
+
+            },
+
             linkGroup: function(vsGroup, opt) {
                 var self = this;
                 // console.log("图形个数：" + vsGroup.length)
@@ -6003,10 +7460,12 @@
                 // }
                 // self.callback && self.callback(result);
                 if (opt && opt.animate) { //动画
+                    _.extend(opt, { animate: false })
+                    var animationInterval = opt.animationInterval || 0;
                     vsGroup.forEach(function(t, i) {
                         setTimeout(function() {
-                            self.link(t, opt)
-                        }, 200 * i);
+                            self.link(t, opt);
+                        }, animationInterval * i);
                     })
                 } else {
                     vsGroup.forEach(function(t) {
@@ -6015,51 +7474,113 @@
                 }
                 return self;
             },
+            //打点
+            point: function(opt) {
+                return this.shape(_.clone({
+                    s: "circle",
+                    r: 6,
+                    color: "rgba(0,0,0,0.2)",
+                    fill: true,
+                }, opt))
+            },
             //图形
             shape: function(opt) {
-                return _.shape(this, opt);
+                var self = this;
+                if (_.isArray(opt)) return opt.map(function(t) {
+                    return self.shape(t)
+                });
+
+                opt = self.shortName(opt);
+                opt = self.default(opt);
+                if (opt.animate && opt.easing) {
+                    _tween({
+                        start: { x: opt.x, y: 0, a: opt.a - 180 },
+                        to: { x: opt.x, y: opt.y, a: opt.a },
+                        duration: opt.animationInterval || 2000,
+                        type: opt.easing, //动画类型
+                        callback: function(o) {
+                            self.clear();
+                            self.shape(_.clone(opt, o, { easing: false }));
+                        }
+                    });
+                }
+                if (opt.delay) { //延迟动画
+                    return self.queue.delay(function() {
+                        self.shape(_.clone(opt, { delay: false }));
+                    }, opt.delay)
+                }
+                var s = _.shape(self, opt);
+                if (opt.disappear) {
+                    this.disappear(opt);
+                }
+                return s;
             },
             //图形组合
             group: function(opt) {
-                opt.group = this.default(opt.group);
-                opt.shape = this.default(opt.shape);
                 var t;
-                if (opt.group.switch == "on") {
-                    t = _shapeGroup(this, opt);
+                if (opt.group) {
+                    opt.group = this.shortName(opt.group);
+                    opt.group = this.default(opt.group);
+
+                    if (opt.group.animate && opt.group.easing && opt.group.easing !== "none") {
+                        _tween({
+                            start: { r: opt.group.r + 100, a: opt.group.a - 180 },
+                            to: { r: opt.group.r, a: opt.group.a },
+                            duration: opt.group.animationInterval || 2000,
+                            type: opt.group.easing, //动画类型
+                            callback: function(o) {
+                                _.extend(opt.group, o, { easing: false }); //{ x: o.x, y: o.y,a }
+                                self.clear();
+                                t = _shapeGroup(self, opt);
+                            }
+                        });
+                    } else {
+                        t = _shapeGroup(this, opt);
+                    }
                 } else {
-                    t = _shape(this, opt.shape);
+                    t = this.shape(opt.shape);
                 }
                 this.canvas.callback && this.canvas.callback.call(this.context, this.context);
+
                 return t;
             },
             //运动
             motion: function(opt) {
                 var self = this;
+                opt.motion = this.shortName(opt.motion);
+
+                //模拟鼠标点击，改变位置
+                var _randomMouse = function() {
+                    self.mouse = {
+                        x: self.canvas.width * Math.random(),
+                        y: self.canvas.height * Math.random()
+                    }
+                    self.mouseTimmer = setTimeout(_randomMouse, opt.motion.simulateInterval || 1000)
+                }
+                self.mouseTimmer && clearTimeout(self.mouseTimmer);
+                opt.motion.simulate && _randomMouse();
                 return _motion(this, opt);
             },
+            setup: function(opt) {
+                self = this;
+                if (_.isArray(opt)) return opt.map(function(t) {
+                    return self.setup.call(self, t);
+                });
 
-
-            //路径
-            path: function(opt) {
-                var self = this;
-                var opt = self.default(opt);
-                // var x = opt.x,
-                //     y = opt.y,
-                //     r = opt.r,
-                //     color = opt.color,
-                //     shape = opt.shape || "circle";
-
-                // self[shape](opt);
+                this.opt = opt;
+                this.motionCache && this.motionCache.stop();
+                if (opt.motion) return this.motionCache = this.motion(opt);
+                return this.group(opt);
+            },
+            stop: function() {
+                this.motionCache && this.motionCache.stop();
             },
             verticesGroup: function(opt) {
                 var self = this;
-                var path = self.vertices(opt.group); //path
-                var vsGroup = []
-                path.forEach(function(t) {
-                    var vs = self.vertices(_.extend({}, opt.shape, { x: t.x, y: t.y }));
-                    vsGroup.push(vs);
+                var vs = self.vertices(opt.group);
+                return vs.map(function(t) {
+                    return self.vertices(_.clone(opt.shape, { x: t.x, y: t.y }));
                 })
-                return vsGroup;
             },
 
             //于Canvas(画布)的translate(平移)、scale(缩放) 、rotate(旋转) 、skew(错切)
@@ -6075,26 +7596,32 @@
                 var direction = opt.direction || 0; //平移方向
                 var x = opt.x,
                     y = opt.y;
+                var po = _.pointPolar({
+                    o: {
+                        x: opt.x,
+                        y: opt.y
+                    }
+                })
                 for (var i = 0; i < step; i++) {
-                    var p = _.point(_.extend(opt, {
+                    var p = po.clone({
                         r: interval,
                         a: direction
-                    }))
-                    vs.push(p)
+                    });
+                    vs.push(p);
                 }
                 return vs;
             },
-            translateX: function(opt, tx) {
+            // translateX: function(opt, tx) {
 
-            },
-            translateY: function(opt, ty) {
+            // },
+            // translateY: function(opt, ty) {
 
-            },
-            //相似图形 ， 变大小
-            scale: function() {
-                //context.scale(scalewidth,scaleheight);
+            // },
+            // //相似图形 ， 变大小
+            // scale: function() {
+            //     //context.scale(scalewidth,scaleheight);
 
-            },
+            // },
 
             //格子
             grid: function(opt) {
@@ -6117,31 +7644,78 @@
                 return this.linkGroup(vsGroup, opt);
             },
 
+            // 反转颜色
+            reverse: function() {
+                var canvas = this.canvas;
+                var ctx = this.context;
+                var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-
-
-            //旁切圆
-            escribedcircle: function(opt) {
-
+                for (var i = 0; i < imgData.data.length; i += 4) {
+                    imgData.data[i] = 255 - imgData.data[i];
+                    imgData.data[i + 1] = 255 - imgData.data[i + 1];
+                    imgData.data[i + 2] = 255 - imgData.data[i + 2];
+                    imgData.data[i + 3] = 255;
+                }
+                ctx.putImageData(imgData, 0, 0);
             },
-            //则该三角形内切圆圆心坐标：
-            // [ax1+bx2+cx3] / [a+b+c]， [ay1+by2+cy3] / [a+b+c]
-            //半径 r=s/p  s=p(p-a)(p-b)([-c])^1/2
-            incircle: function(opt) {
-                // var vs = this.vertices(opt);
-                // var num=3,d=[],p=0;
-                // for (var i = 0; i < num; i++) {
-                //     d[i]=this.distance(vs[i],vs[i>=num?0:i+1]);
-                //     p +=d[i];
-                // }
-                // p=p/2;
+            //粒子
+            getPixels: function() {
+                var canvas = this.canvas;
+                var ctx = this.context;
+                var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                var cols = 100,
+                    rows = 100;
+                var s_width = parseInt(imgData.width / cols);
+                var s_heihgt = parseInt(imgData.height / rows);
+
+                console.log(imgData.data.length)
+                var ps = []
+                for (var i = 0; i < cols; i++) { //imgData.width
+                    for (var j = 0; j < rows; j++) { //imgData.height
+                        var pos = j * s_heihgt * imgData.width + i * s_width
+                        var r = imgData.data[pos * 4],
+                            g = imgData.data[pos * 4 + 1],
+                            b = imgData.data[pos * 4 + 2],
+                            a = imgData.data[pos * 4 + 3], //alpha 通道 (0-255; 0 是透明的，255 是完全可见的)
+                            x = i * s_width, //+ (Math.random() - 0.5) * 20,
+                            y = j * s_heihgt; //+ (Math.random() - 0.5) * 20,
+                        var color = "rgba(" + [r, g, b, Math.round(10 * a / 255) / 10].join(",") + ")";
+                        if (a > 10) {
+                            var p1 = _.point({
+                                x: x,
+                                y: y,
+                                color: color,
+                                r: 1
+                            })
+                            ps.push(p1)
+                        }
+                    }
+                }
+                return ps;
             },
-
-
+            //粒子消散 particle
+            disappear: function(opt) {
+                var self = this;
+                var time = opt.disappear || 1000;
+                var dots = this.getPixels();
+                var timeout;
+                var _disappear = function() {
+                    self.clear();
+                    dots.forEach(function(t) {
+                        self.point(t.move());
+                    });
+                    timeout = setTimeout(_disappear, 17)
+                };
+                setTimeout(function() {
+                    _disappear();
+                }, time);
+                setTimeout(function() {
+                    self.clear();
+                    timeout && clearTimeout(timeout)
+                }, time + 10000);
+            }
         }
         draw.prototype.init.prototype = draw.prototype;
-
-
 
 
 
@@ -6157,7 +7731,7 @@
                 var data = this.data = options.data; //参数
                 var callback = options.callback;
                 if (typeof(Worker) !== "undefined") {
-                    if (typeof(this.w) == "undefined") {
+                    if (typeof(this.w) === "undefined") {
                         this.w = new Worker(file);
                     }
                     this.w.addEventListener('message', function(event) {
@@ -6169,7 +7743,7 @@
                 return this;
             },
             open: function(name, cfg) {
-                this.w.postMessage({ name: name, act: "open", cfg: _.extend({}, this.data, cfg) });
+                this.w.postMessage({ name: name, act: "open", cfg: _.clone(this.data, cfg) });
                 console.log("task open: " + name);
                 return this;
             },
@@ -6177,13 +7751,12 @@
                 this.w.postMessage({ name: name, act: "close" })
                 console.log("task close: " + name);
                 return this;
-                // this.w.terminate();
             }
         }
         tasker.prototype.init.prototype = tasker.prototype;
 
 
-        //页面滚动
+        //页面滚动  todo 兼容性有问题
         var scroller = _.scroller = function(options) {
             return new scroller.prototype.init(options);
         }
@@ -6203,9 +7776,6 @@
                             }
                         })
                     }
-
-                    // this=_.extend(this,opetions)
-                    // self.root=document.doctype ? window.document.documentElement : document.body
                     self.root = document.body;
                     if (_.isObject(options)) {
                         self.el = options.el ? _.query(options.el) : self.root;
@@ -6222,9 +7792,9 @@
                 } else {
                     self.el = self.root;
                 }
-                self.isRoot = ["HTMLHtmlElement", "HTMLBodyElement", 'htmldocument'].map(function(t) {
+                self.isRoot = !!~["HTMLHtmlElement", "HTMLBodyElement", 'htmldocument'].map(function(t) {
                     return t.toLowerCase();
-                }).indexOf(_.type(self.el)) >= 0 ? true : false;
+                }).indexOf(_.type(self.el));
 
                 if (self.isRoot) {
                     self.scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
@@ -6240,53 +7810,22 @@
                 //scroolTop=scrollHeight 和 scrollTo(0,h) //会导致 button失效，位置不对
             },
             atTop: function() { //到顶 reach the top
-                return this.el.scrollTop == 0;
+                return this.el.scrollTop === 0;
             },
             atBottom: function() { //到底
                 if (this.isRoot) {
-                    return this.el.scrollTop + this.el.clientHeight == this.el.offsetHeight;
+                    return this.el.scrollTop + this.el.clientHeight === this.el.offsetHeight;
                 } else {
-                    return this.el.scrollTop + this.el.clientHeight == this.el.scrollHeight;
+                    return this.el.scrollTop + this.el.clientHeight === this.el.scrollHeight;
                 }
             },
 
             toTop: function(callback) {
-                // if (this.isRoot) {
-                //     window.scrollTo(0, 0);
-                // } else {
-                //     this.el.scrollTop = 0;
-                // }
                 this.el.scrollTop = 0;
                 callback && callback.call(this.el);
             },
             toBottom: function(callback) {
                 var self = this;
-                // if (this.isRoot) {
-                //     this.el.scrollTop = this.el.scrollHeight;
-                //     // window.scrollTo(0, this.el.offsetHeight);
-                //     // this.el.scrollTop = this.el.offsetHeight - this.el.clientHeight;
-                //     // window.scrollTo(0, this.el.offsetHeight);
-
-                //     // if (_.evnt.isSafari) {
-                //     //     height -= 40;
-                //     // }
-                //     // var height = window.document.documentElement.offsetHeight
-
-                //     //document.body.scrollTop = document.body.scrollHeight
-
-                //     // var _toBottom = function() {
-                //     //     self.timer && clearTimeout(self.timer);
-                //     //     self.el.scrollTop = self.el.scrollHeight;
-                //     //     self.timer = setTimeout(function() {
-                //     //         _toBottom()
-                //     //     }, 100)
-                //     // }
-                //     // _toBottom();
-
-                // } else {
-                //     this.el.scrollTop = this.el.scrollHeight - this.el.clientHeight;
-                // }
-
                 this.el.scrollTop = this.el.scrollHeight;
                 callback && callback.call(this.el);
             },
@@ -6297,35 +7836,10 @@
                 self.srollerTimer && clearTimeout(self.srollerTimer);
                 switch (direction) {
                     case "up":
-                        // if (!distance && self.atTop.call(self)) { //这个判断不准确 safari弹出键盘中
-                        //     self.onTop && self.onTop();
-                        //     return;
-                        // }
-                        // if (self.isRoot) {
-                        //     // window.scrollTo(0, -1 * step);
-                        //     window.scrollBy(0, -1 * step);
-                        // } else {
-                        //     self.el.scrollTop -= step;
-                        // }
+
                         self.el.scrollTop -= step;
                         break;
                     case "down":
-                        // if (!distance && self.atBottom.call(self)) {
-                        //     self.onBottom && self.onBottom();
-                        //     return
-                        // }
-                        // if (self.isRoot) {
-                        //     // window.scrollTo(0, step);
-                        //     window.scrollBy(0, step);
-                        //     //fixed按钮 灵魂出窍的问题，导致无法点击
-                        //     // self.el.scrollTop=self.el.scrollTop;
-                        //     // self.srollerTimer=setTimeout(function(){
-                        //     //     self.el.scrollTop=self.el.scrollTop;
-                        //     // },400)
-
-                        // } else {
-                        //     self.el.scrollTop += step;
-                        // }
                         self.el.scrollTop += step;
                         break;
                 }
@@ -6346,14 +7860,12 @@
             },
             stop: function() {
                 this.timer && clearTimeout(this.timer);
-
-                // this.interval && clearInterval(this.interval);
             }
         }
         scroller.prototype.init.prototype = scroller.prototype;
 
 
-        //路由
+        //路由  todo
         // router({
         //     config:[{name:'',url:'#',template:'#tpl_id'}],
         //     pageAppend:function(){
@@ -6385,19 +7897,7 @@
                 if (options) {
 
                     this.routes = options;
-
-                    // if (_.isArray(options.config)) {
-                    //     this.configs = options.config;
-                    // } else if (_.isObject(options.config)) {
-                    //     for (var page in options.config) {
-                    //         this.push(options.config[page]);
-                    //     }
-                    // }
-
-                    // this.pageAppend = options.pageAppend || function() {};
-                    // this.defaultPage = this._find('name', options.defaultPage);
                 }
-                // this.container = _.$("#container");
 
                 addEvent("hashchange", window, function() {
                     var u = self.parseUrl();
@@ -6407,77 +7907,6 @@
 
 
 
-
-                // addEvent("hashchange", window, function() {
-                //     var state = history.state || {};
-                //     var url = location.hash.indexOf('#') === 0 ? location.hash : '#';
-                //     var page = self._find('url', url) || self.defaultPage;
-                //     if (state.pageIndex <= self.pageIndex || self._findInStack(url)) {
-                //         self._back(page);
-                //     } else {
-                //         self._go(page);
-                //     }
-                // })
-
-
-                //hash改变触发
-                // toucher({
-                //     el: window,
-                //     type: "hashchange",
-                //     callback: function() {
-                //         var u = self.parseUrl();
-
-                //         self._go(u.route);
-                //         // var state = history.state || {};
-                //         // var url = location.hash.indexOf('#') === 0 ? location.hash : '#';
-
-
-                //         // var page = self._find('url', url) || self.defaultPage;
-                //         // if (state.pageIndex <= self.pageIndex || self._findInStack(url)) {
-                //         //     self._back(page);
-                //         // } else {
-                //         //     self._go(page);
-                //         // }
-                //     }
-                // });
-
-
-
-                //浏览器后退触发
-                // toucher({
-                //     el: window,
-                //     type: "popstate",
-                //     callback: function() {
-                //         var state = history.state || {};
-                //         var url = location.hash.indexOf('#') === 0 ? location.hash : '#';
-                //         var page = self._find('url', url) || self.defaultPage;
-                //         if (state.pageIndex <= self.pageIndex || self._findInStack(url)) {
-                //             self._back(page);
-                //         } else {
-                //             self._go(page);
-                //         }
-                //     }
-                // });
-
-
-                // $(window).on('hashchange', function() {
-                //     var state = history.state || {};
-                //     var url = location.hash.indexOf('#') === 0 ? location.hash : '#';
-                //     var page = self._find('url', url) || self.defaultPage;
-                //     if (state.pageIndex <= self.pageIndex || self._findInStack(url)) {
-                //         self._back(page);
-                //     } else {
-                //         self._go(page);
-                //     }
-                // });
-
-                // window.addEventListener('popstate', function(e) {
-                //     if (history.state) {
-                //         var state = e.state;
-                //         console.log(state.url);
-                //         //do something(state.url, state.title);
-                //     }
-                // }, false);
 
                 if (history.state && history.state.pageIndex) {
                     this.pageIndex = history.state.pageIndex;
@@ -6559,11 +7988,6 @@
                 if (to) {
                     location.hash = to;
                 }
-                // var config = this._find('name', to);
-                // if (!config) {
-                //     return;
-                // }
-                // location.hash = config.url;
             },
             _go: function(route) {
                 this.pageIndex++;
@@ -6575,60 +7999,20 @@
                 } else {
                     console.log(a)
                 }
-
                 console.log(this.pageIndex);
-
             },
-            // _go: function(config) {
-            //     if (config) {
-            //         this.pageIndex++;
-
-            //         history.replaceState && history.replaceState({ pageIndex: this.pageIndex }, '', location.href);
-
-            //         // var html = _.$(config.template).html();
-            //         // var $html = _.$(config.template).addClass('slideIn').addClass(config.name);
-            //         // $(html).addClass('slideIn').addClass(config.name);
-            //         // $html.on('animationend webkitAnimationEnd', function() {
-            //         //     $html.removeClass('slideIn').addClass('js_show');
-            //         // });
-
-            //         // if (config.template) {
-            //         //     var $html = _.$(config.template);
-            //         //     if ($html) {
-            //         //         $html.addClass('slideIn').addClass(config.name);
-            //         //         this.container.append($html);
-            //         //         this.pageAppend && this.pageAppend.call(this, $html);
-            //         //         this.pageStack.push({
-            //         //             config: config,
-            //         //             dom: $html
-            //         //         });
-            //         //     }
-            //         // }
-
-
-            //         if (!config.isBind) {
-            //             this._bind(config);
-            //         }
-            //     }
-            //     return this;
-            // },
             back: function() {
                 history.back();
             },
             _back: function(config) {
                 this.pageIndex--;
-
                 var stack = this.pageStack.pop();
                 if (!stack) {
                     return;
                 }
-
                 var url = location.hash.indexOf('#') === 0 ? location.hash : '#';
                 var found = this._findInStack(url);
                 if (!found) {
-                    // var html = $(config.template).html();
-                    // var $html = $(html).addClass('js_show').addClass(config.name);
-
                     var $html = _.$(config.template).addClass('js_show').addClass(config.name);
                     $html.insertBefore(stack.dom);
                     if (!config.isBind) {
@@ -6639,10 +8023,6 @@
                         dom: $html
                     });
                 }
-                // stack.dom.addClass('slideOut').on('animationend webkitAnimationEnd', function() {
-                //     stack.dom.remove();
-                // });
-
                 return this;
             },
             _findInStack: function(url) {
@@ -6688,23 +8068,16 @@
         //标准过滤器
         var StandardFilters = {
             string: function(val) {
-                if (_.isArray(val) || _.isObject(val)) {
-                    // val = JSON.stringify(val);
-                    val = _.stringify(val);
-                }
+                if (_.isArray(val) || _.isObject(val)) val = _.stringify(val); // val = JSON.stringify(val);
                 return val;
             },
             //数组第一个
             first: function(val) {
-                if (_.isArray(val)) {
-                    val = val[0];
-                }
+                if (_.isArray(val)) val = val[0];
                 return val;
             },
             last: function(val) {
-                if (_.isArray(val)) {
-                    val = val[val.length - 1];
-                }
+                if (_.isArray(val)) val = val[val.length - 1];
                 return val;
             },
             pre: function(val) {
@@ -6712,11 +8085,7 @@
             },
             //取整 四舍五入
             int: function(val) {
-                if (_.isNumber(Number(val))) {
-                    return Math.round(Number(val));
-                } else {
-                    return val;
-                }
+                return _.isNumber(Number(val)) ? Math.round(Number(val)) : val;
             },
             number: function(val) {
                 return Number(val);
@@ -6768,11 +8137,7 @@
         });
         ['round', 'ceil', 'floor'].forEach(function(t) {
             StandardFilters[t] = function(val) {
-                if (_.isNumber(Number(val))) {
-                    return Math[t](Number(val));
-                } else {
-                    return val;
-                }
+                return _.isNumber(Number(val)) ? Math[t](Number(val)) : val;
             }
         });
         //调用过滤器 
@@ -6805,7 +8170,7 @@
 
                 var fs = ("" + filter).split(","),
                     len = fs.length;
-                if (len > 0 && fs[len - 1] != "string") { fs.push("string"); }
+                if (len > 0 && fs[len - 1] !== "string") { fs.push("string"); }
                 fs.forEach(function(t) {
                     val = _callFilter.call(self, val, t, data);
                 });
@@ -6839,26 +8204,25 @@
                 name = name.trim();
                 filter = (filter || "string").trim();
                 var val = "";
-
                 try {
-                    if (filter.indexOf("$") == 0) { //filter map
+                    if (filter.indexOf("$") === 0) { //filter map
                         filter = eval("data." + filter.replace("$", ""));
                     }
-                    if ("$index" == name.toLowerCase()) {
+                    if ("$index" === name.toLowerCase()) {
                         return $index++;
-                    } else if ("$length" == name.toLowerCase()) {
+                    } else if ("$length" === name.toLowerCase()) {
                         return $length;
+                    } else if ("$this" === name.toLowerCase()) {
+                        val = data;
                     } else if (reg_operation_symbol.test(name)) {
-                        val = data.cmd(name)
+                        val = data.cmd(name);
                     } else {
                         val = _.getVal(data, name);
                     }
                 } catch (e) {
                     console.log(e, data);
                 }
-                if (_.isUndefined(val)) {
-                    val = "";
-                }
+                if (_.isUndefined(val)) val = "";
                 return val = callFilter.call(self, val, filter, data);
             })
         };
@@ -6875,9 +8239,7 @@
                 syntax = self.syntax,
                 data = self.data;
 
-            if (_.isEmpty(tpl) && _.isEmpty(groupTpl)) {
-                return "";
-            }
+            if (_.isEmpty(tpl) && _.isEmpty(groupTpl)) return "";
 
             tpl && (function() {
                 tpl = preModel(tpl);
@@ -6892,9 +8254,7 @@
                 var $length = data.length;
 
                 var loopNumber = Number(loop) || $length; //循环次数 NaN
-                if ((moreTpl || lazyTpl) && loopNumber >= $length) {
-                    loopNumber = 3
-                }
+                if ((moreTpl || lazyTpl) && loopNumber >= $length) loopNumber = 3;
 
                 var ps = [],
                     lastGroup = "",
@@ -6905,7 +8265,7 @@
 
                     !_.isUndefined(groupTpl) && (function() { //分组模板
                         currGroup = parseTag.call(self, groupTpl, item);
-                        if (currGroup != lastGroup) {
+                        if (currGroup !== lastGroup) {
                             ps.push(currGroup);
                         }
                         lastGroup = currGroup;
@@ -6928,7 +8288,7 @@
                         }
                     }
                 }
-                str = ps.join("");
+                str = ps.join('');
             } else if (_.isObject(data)) {
                 $length = 1;
                 tpl && (function() {
@@ -6963,23 +8323,15 @@
         //elment的tpl
         var elTpl = function(name) {
             var tpl, id;
-            if (_.hasAttr(this, name)) {
+            if (_.hasAttr.call(this, name)) {
                 id = this.attr(name);
-                if (id == "this" || _.isEmpty(id)) {
-                    //用于不需要数据数据 ，但有指令的区块
-                    //这个区块dom内的html不需要重置,意味着之前通过dom操作获取的节点，在模板解析后还可以用。
-                    // tpl = _.text(this).trim();
+                if (id === "this" || _.isEmpty(id)) {
                     tpl = _.html(this).trim();
                 } else {
                     tpl = getTpl(id)
                 }
             }
             return tpl;
-            // return {
-            //     id: id,
-            //     name: name,
-            //     tpl: tpl,
-            // }
         };
 
         //act : append html before 模板替换动作  默认是 html，模板内都替换
@@ -6991,7 +8343,6 @@
                 data = self.data,
                 act = self.act,
                 keyword = self.keyword;
-            // tpl=self.tpl;
             self.tpl = self.template || elTpl.call(el, TEMPLATE);
             [GROUP, LAZY, MORE, DEFAULT].forEach(function(t) {
                 if (self.templates && !_.isUndefined(self.templates[t])) {
@@ -7012,59 +8363,25 @@
                     return false;
                 }
             }
-            // if (_.hasAttr(el, TEMPLATE)) { //有模板情况
-            //     loop = "auto"; //模板标记无限循环次数  
-            // } else if (_.hasAttr(el, GROUP)) {
-
-            // } else {
-            //     tpl = el.html();
-            //     loop = "1"; //非模板不循环
-            //     if (!reg_tpl_tag.test(tpl)) {
-            //         parseDirective.call(self, el, data);
-            //         return false;
-            //     }
-            // }
-
-            // if(_.hasAttr(el),"if"){
-            //     condition=el.attr("if");
-            //     console.log(condition)
-            // }
-
-
-            if (_.hasAttr(el, SYNTAX)) {
-                syntax = el.attr(SYNTAX);
-            }
-            if (_.hasAttr(el, NOLOOP)) { //数组不循环
-                loop = "1";
-            }
-            if (_.hasAttr(el, LOOP)) {
-                loop = el.attr(LOOP);
-            }
-            if (_.hasAttr(el, PAGESIZE)) { //分页
-                loop = el.attr(PAGESIZE);
-            }
-            if (_.hasAttr(el, DATA)) { //指定数据子对象
+            if (_.hasAttr.call(el, SYNTAX)) syntax = el.attr(SYNTAX);
+            if (_.hasAttr.call(el, NOLOOP)) loop = "1"; //数组不循环
+            if (_.hasAttr.call(el, LOOP)) loop = el.attr(LOOP);
+            if (_.hasAttr.call(el, PAGESIZE)) loop = el.attr(PAGESIZE); //分页
+            if (_.hasAttr.call(el, DATA)) { //指定数据子对象
                 var child = el.attr(DATA);
-                // if (_.contains(_.keys(data), child.split(".")[0])) {
-                // if (_.keys(data).indexOf(child.split(".")[0]) != -1) {
-                // if (Object.prototype.hasOwnProperty.call(data, child.split(".")[0])) {
-                if (_.has(data, child)) {
-                    data = eval("data." + child);
-                }
+                if (_.has(data, child)) data = eval("data." + child);
             }
             if (_.isArray(data)) { //数组
-                if (keyword && _.hasAttr(el, KEYWORD)) { //关键字查询
+                if (keyword && _.hasAttr.call(el, KEYWORD)) { //关键字查询
                     var name = el.attr(KEYWORD);
                     data = _.filter(data, function(item) {
                         var ks = name.split(",")
-                        if (ks.length == 1) {
+                        if (ks.length === 1) {
                             return _.has(_.getVal(item, name), keyword);
                         } else {
                             var flag = false;
                             ks.forEach(function(name) {
-                                if (_.has(_.getVal(item, name), keyword)) {
-                                    flag = true;
-                                }
+                                if (_.has(_.getVal(item, name), keyword)) flag = true;
                             });
                             return flag;
                         }
@@ -7084,7 +8401,7 @@
                 $length = 1;
             }
 
-            var tplConfig = _.extend({}, self, {
+            var tplConfig = _.clone(self, {
                 data: data,
                 loop: loop,
                 syntax: syntax,
@@ -7115,14 +8432,11 @@
         var parseDirective = function(elem, data) {
             var self = this,
                 elemModel = elem.query(MODEL.brackets());
-
             var onHandler = function(item, ev) {
                 if (_.isElement(this)) {
                     var name = this.attr(ON),
                         method = self.methods[name]; //每个独立methods
-                    if (method && _.isFunction(method)) {
-                        method.call(self, this, ev);
-                    }
+                    method && _.isFunction(method) && method.call(self, this, ev);
                 }
             };
 
@@ -7134,14 +8448,14 @@
 
             var type;
             _.each(StandardDirectives, function(fn, key) {
-                if (key == DRAG) {
+                if (key === DRAG) {
                     type = DRAG;
                 } else {
                     type = TAP;
                 }
                 var el = _.$(key.brackets(elem));
 
-                if (ON != key) {
+                if (ON !== key) {
                     var customHandler = function(item, ev) {
                         var method = self.methods["_on_" + key];
                         if (method && _.isFunction(method)) {
@@ -7156,7 +8470,6 @@
                     });
 
                 } else {
-
                     toucher({
                         el: el,
                         type: type,
@@ -7177,7 +8490,7 @@
                         var oldVal = _result[name];
                         _result[name] = newVal;
 
-                        if (newVal != oldVal) {
+                        if (newVal !== oldVal) {
                             template.prototype.apply(name, newVal);
                         }
                     },
@@ -7215,38 +8528,20 @@
 
                 switch (len) {
                     case 0:
-                        if (_.isEmpty(self.el)) {
-                            return;
-                        }
+                        if (_.isEmpty(self.el)) return;
                         break;
                     case 1:
                         if (_.isArray(options)) {
-                            options.forEach(function(t) {
-                                template(t)
+                            return options.map(function(t) {
+                                return template(t)
                             })
-                            return;
                         } else if (_.isObject(options)) {
                             _.each(options, function(v, k) {
                                 switch (k) {
                                     case "el":
                                         self.el = options.el;
-                                        if (_.isString(self.el)) {
-                                            self.selector = self.el;
-                                            self.el = _.query(self.el);
-                                        }
-                                        //转化jquery =>Element
-                                        if (_.isJQuery(self.el)) {
-                                            if (self.el.length == 1) {
-                                                self.el = _.autoid(self.el.get(0));
-                                            } else {
-                                                var eles = [];
-                                                self.el.each(function(item, idex) {
-                                                    // eles.push(_.autoid(self));
-                                                    eles.push(_.autoid(item));
-                                                });
-                                                self.el = eles;
-                                            }
-                                        }
+                                        if (_.isString(self.el)) self.el = _.query(self.selector = self.el);
+                                        if (_.isJQuery(self.el)) self.el = _.jqToEl(self.el, _.autoid);
                                         if (_.isElement(self.el) || _.isArray(self.el) && _.size(self.el) > 0) {
                                             rootEl = self.el;
                                         } else {
@@ -7263,15 +8558,9 @@
                                             }
                                             return false;
                                         }
-                                        //事件模块
-                                        // self.toucher = toucher = toucher(self.el);
                                         break;
                                     case "data":
-                                        self.data = options.data;
-
-                                        if (_.isFunction(options.data)) {
-                                            self.data = options.data();
-                                        }
+                                        self.data = _.isFunction(options.data) ? options.data() : options.data;
 
                                         if (_.isObject(self.data) || _.isArray(self.data)) {
 
@@ -7315,7 +8604,7 @@
                                         self.syntax = customSyntax = options.syntax;
                                         break;
                                     case "methods":
-                                        self.methods = _.extend({}, customMethods, v);
+                                        self.methods = _.clone(customMethods, v);
                                         break;
                                     default:
                                         self[k] = v;
@@ -7330,24 +8619,23 @@
                 }
 
 
-                customFilters = _.extend({}, StandardFilters, self.filters);
-                StandardDirectives = _.extend({}, StandardDirectives, self.directives);
+                customFilters = _.clone(StandardFilters, self.filters);
+                _.extend(StandardDirectives, self.directives);
                 // self = _.extend({ methods: {} }, self)
                 _.each(self.directives, function(fn, key) {
                     self.methods["_on_" + key] = fn;
                 })
-                options = _.extend({}, options, { el: self.el, methods: self.methods });
+                options = _.extend(options, { el: self.el, methods: self.methods });
                 //before render
                 _.isFunction(self.before) && self.before.call(self, self.data);
                 var el = self.el;
-                if (self.act == "cloneBefore") {
+                if (self.act === "cloneBefore") {
                     var cloneEl = _.autoid(self.el.cloneNode(true), true);
                     self.el.parentNode.insertBefore(cloneEl, self.el);
                     options.act = "";
                     el = options.el = cloneEl;
-
                 }
-                if (self.act == "cloneAfter") {
+                if (self.act === "cloneAfter") {
                     var cloneEl = _.autoid(self.el.cloneNode(true), true);
                     self.el.parentNode.appendChild(cloneEl, self.el);
                     options.act = "";
@@ -7356,13 +8644,11 @@
                 if (_.isElement(el)) {
                     self.parser.call(options, el);
                 } else if (_.isArray(el) && _.size(el) > 0) {
-                    el.each(function(item, index) {
-                        // self.parser.call(options, item);
-                        self.parser.call(_.extend({}, options, { el: item }), item);
+                    el.forEach(function(t) {
+                        self.parser.call(_.clone(options, { el: t }), t);
                     });
                 }
                 //render ok
-                // _.isFunction(self.callback) && self.callback.call(self, self.data);
                 _.isFunction(self.callback) && self.callback.call(options, self.data);
 
                 //事件代理
@@ -7389,17 +8675,19 @@
             },
             parser: function(el) {
                 var self = this;
-                if (self.template || _.hasAttr(el, TEMPLATE) || _.hasAttr(el, GROUP)) {
+                if (self.template || _.hasAttr.call(el, TEMPLATE) || _.hasAttr.call(el, GROUP)) {
                     parseEl.call(self);
                 } else {
                     // parseEl.call(templateConfig); //self
                     //只解析[template][group]标签下的模板语言
                     var ts = el.query(TEMPLATE.brackets(), GROUP.brackets());
-                    if (_.size(ts) > 0) {
-                        ts.each(function(item, index) {
-                            parseEl.call(_.extend({}, self, { el: item }));
-                        });
-                    }
+                    // _.isArray(ts) && ts.forEach(function(t) {
+                    //     parseEl.call(_.clone(self, { el: t }));
+                    // })
+                    _.size(ts) > 0 && ts.each(function(item, index) {
+                        parseEl.call(_.clone(self, { el: item }));
+                    });
+
                 }
             },
             //同步数据 [model]
@@ -7426,10 +8714,8 @@
             }
         };
         //继承工具
-        template.prototype = _.extend({}, template.prototype, _);
+        _.extend(template.prototype, _);
         template.prototype.init.prototype = template.prototype;
-
-
         if (inBrowser) {
             //兼容 underscore
             if (!window._) { window._ = _; }

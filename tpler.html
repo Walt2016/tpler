@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="css/tpler.min.css">
     <!-- <script src="js/libs/jquery-2.1.1.min.js"></script> -->
     <!-- <script src="js/tpler.min.js"></script> -->
-    <script src="js/custom/tpler.js"></script>
+    <script src="js/tpler.js"></script>
 </head>
 
 <body>
@@ -885,23 +885,23 @@
     // console.log('<div model="name"></div>'.preModel())
 
 
-    'a<div model="name"></div>c'.replace(/<[^>]+?model=\"(.*?)\".*?>(.*?)<\/[^>]+?>/gi, function(match) {
-        // body...
-        console.log(match)
-        console.log(RegExp)
-        console.log(RegExp.$1, RegExp.$2)
-    });
-    console.log("-----------")
-    var data = {
-        a: 1,
-        b: 2,
-        c: 3,
-        d: 4,
-        e: 5,
-        f: 0.09999999,
-        g: 0.00000001
-    }
-    var str = "a+b-c*d/e"
+    // 'a<div model="name"></div>c'.replace(/<[^>]+?model=\"(.*?)\".*?>(.*?)<\/[^>]+?>/gi, function(match) {
+    //     // body...
+    //     console.log(match)
+    //     console.log(RegExp)
+    //     console.log(RegExp.$1, RegExp.$2)
+    // });
+    // console.log("-----------")
+    // var data = {
+    //     a: 1,
+    //     b: 2,
+    //     c: 3,
+    //     d: 4,
+    //     e: 5,
+    //     f: 0.09999999,
+    //     g: 0.00000001
+    // }
+    // var str = "a+b-c*d/e"
 
     // var operation = function(obj, str) {
     //     var symbol = str.match(/([\+|\-|\*|\/]+)/g)
