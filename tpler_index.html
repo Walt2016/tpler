@@ -311,6 +311,10 @@
                 "value": false,
                 "text": "顶点编号"
             },
+            "showAngle": {
+                "value": false,
+                "text": "标注夹角"
+            },
             "showRadius": {
                 "value": false,
                 "text": "显示半径"
@@ -371,14 +375,49 @@
                 "value": 1,
                 "text": "线条宽度"
             },
+            "lineJoin": {
+                "type": "picker",
+                "values": [{
+                        "key": "miter",
+                        "text": "尖角"
+                    },
+                    {
+                        "key": "round",
+                        "text": "圆角"
+                    },
+                    {
+                        "key": "bevel",
+                        "text": "斜角"
+                    },
+                ],
+                "index": 0,
+                "text": "转角样式"
+            },
             "lineColor": {
                 "type": "color_rgb",
                 "length": 15,
                 "text": "线条颜色"
             },
+            
             "dashed": {
                 "value": false,
                 "text": "虚线"
+            },
+            "dashLength": {
+                "type": "slider",
+                "min": 1,
+                "max": 20,
+                "step": 1,
+                "value": 5,
+                "text": "虚线宽度"
+            },
+            "curve": {
+                "value": false,
+                "text": "曲线"
+            },
+            "semiarc": {
+                "value": false,
+                "text": "半圆弧"
             },
             "fill": {
                 "value": false,
@@ -387,6 +426,14 @@
             "fillInterval": {
                 "value": false,
                 "text": "间隔填色"
+            },
+            "alpha": {
+                "type": "slider",
+                "min": 0.1,
+                "max": 1,
+                "step": 0.1,
+                "value": 1,
+                "text": "透明度"
             },
             "color": {
                 "type": "color_rgba",
@@ -461,6 +508,14 @@
                 ],
                 "index": 0,
                 "text": "动画效果"
+            },
+             "vertexTransform": {
+                "value": false,
+                "text": "顶点变形"
+            },
+             "vertexRotate": {
+                "value": false,
+                "text": "顶点旋转"
             },
         },
         "group": {
@@ -616,27 +671,7 @@
                 "index": 0,
                 "text": "时序"
             },
-            "colorful": {
-                "type": "picker",
-                "values": [{
-                        "key": "random",
-                        "text": "随机"
-                    }, {
-                        "key": "gradient",
-                        "text": "渐变"
-                    },
-                    {
-                        "key": "singleGradient",
-                        "text": "单色渐变"
-                    },
-                    {
-                        "key": "solid",
-                        "text": "单色"
-                    }
-                ],
-                "index": 0,
-                "text": "颜色"
-            },
+            
             "showRadius": {
                 "value": false,
                 "text": "显示半径"
@@ -676,6 +711,31 @@
                 "step": 0.5,
                 "value": 1,
                 "text": "线条宽度"
+            },
+            "colorful": {
+                "type": "picker",
+                "values": [{
+                        "key": "circle",
+                        "text": "色相环"
+                    }, {
+                        "key": "gradient",
+                        "text": "渐变"
+                    },
+                    {
+                        "key": "singleGradient",
+                        "text": "单色渐变"
+                    },
+                    {
+                        "key": "random",
+                        "text": "随机"
+                    },
+                    {
+                        "key": "solid",
+                        "text": "单色"
+                    }
+                ],
+                "index": 0,
+                "text": "颜色"
             },
             "lineColor": {
                 "type": "color_rgb",
